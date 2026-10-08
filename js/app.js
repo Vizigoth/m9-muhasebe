@@ -33,13 +33,13 @@ document.getElementById('m9Rail').outerHTML = renderSidebar(
 /* ── Toolbar — Yeni Ekle / Düzenle / Sil + SearchBox (sağa yaslı) ───── */
 document.getElementById('m9Toolbar').innerHTML = `
   <button type="button" class="bt-btn bt-btn--sm bt-btn--primary-solid">
-    <span class="bt-icon">${icoPlus}</span>Yeni Ekle
+    ${icoPlus}<span>Yeni Ekle</span>
   </button>
   <button type="button" class="bt-btn bt-btn--sm bt-btn--base-flat" id="m9EditBtn" disabled>
-    <span class="bt-icon">${icoEdit}</span>Düzenle
+    ${icoEdit}<span>Düzenle</span>
   </button>
   <button type="button" class="bt-btn bt-btn--sm bt-btn--base-flat" id="m9DeleteBtn" disabled>
-    <span class="bt-icon">${icoTrash}</span>Sil
+    ${icoTrash}<span>Sil</span>
   </button>
   ${renderSearchBox({ advanced: true })}
 `;
