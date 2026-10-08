@@ -12,6 +12,7 @@
 /* ── Ortak ikonlar ─────────────────────────────────────────── */
 const icoSearch  = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.34-4.34"/></svg>`;
 const icoClear   = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`;
+const icoSlidersHorizontal = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 5H3"/><path d="M12 19H3"/><path d="M14 3v4"/><path d="M16 17v4"/><path d="M21 12h-9"/><path d="M21 19h-5"/><path d="M21 5h-7"/><path d="M8 10v4"/><path d="M8 12H3"/></svg>`;
 const icoPlus    = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>`;
 const icoEdit    = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>`;
 const icoTrash   = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>`;
@@ -99,6 +100,63 @@ window.tbxBaseInput = tbxBaseInput;
 window.tbxBaseClear = tbxBaseClear;
 
 /* ============================================================
+   SEARCHBOX — Base Input üzerine kurulu, iki tip: Basic / Advanced
+   Filtered (Figma "Inputs NEW" › SearchBox, node 1304:138807 / 1306:139744).
+   Advanced Filtered sağda sabit bir Filter butonu (.bt-input__filter-button,
+   Lucide sliders-horizontal) taşır — Clear butonu (yazınca) Filter
+   butonunun ÖNÜNE eklenir (bkz. sbxSearchInput'un insertBefore'u).
+   Figma'da filtre butonunun tıklama davranışı tanımlı değil (sadece
+   görsel) — gerçek bir filtre paneli bağlanana kadar yalnızca bir
+   açık/kapalı class'ı toggle'lıyor (Bentas DS'in kendi belgelenmiş
+   davranışıyla AYNI, bkz. design system `components/searchbox` "Don't").
+   ============================================================ */
+function sbxSearchInput(el) {
+  const box = el.closest('.bt-input__box');
+  if (!box) return;
+  const hasValue = el.value.length > 0;
+  box.classList.toggle('bt-input__box--filled', hasValue);
+  let clearBtn = box.querySelector('.bt-input__clear-button');
+  if (hasValue && !clearBtn) {
+    const wrap = document.createElement('div');
+    wrap.innerHTML = `<div class="bt-input__clear-button" onclick="sbxSearchClear(this)"><span class="bt-icon">${icoClear}</span></div>`;
+    const filterBtn = box.querySelector('.bt-input__filter-button');
+    box.insertBefore(wrap.firstElementChild, filterBtn || null);
+  } else if (!hasValue && clearBtn) {
+    clearBtn.remove();
+  }
+}
+function sbxSearchClear(el) {
+  const box = el.closest('.bt-input__box');
+  const input = box.querySelector('.bt-input__value');
+  input.value = '';
+  box.classList.remove('bt-input__box--filled');
+  el.remove();
+  input.focus();
+}
+function sbxFilterToggle(el) {
+  el.closest('.bt-input__box').classList.toggle('bt-input__box--filter-open');
+}
+window.sbxSearchInput = sbxSearchInput;
+window.sbxSearchClear = sbxSearchClear;
+window.sbxFilterToggle = sbxFilterToggle;
+
+/**
+ * renderSearchBox — gerçek SearchBox markup'ı.
+ * opts: { size: 'sm'|'md'|'lg', advanced: boolean, placeholder }
+ */
+function renderSearchBox(opts) {
+  const o = opts || {};
+  const size = o.size || 'sm';
+  const placeholder = o.placeholder || 'Ara...';
+  const filterHtml = o.advanced ? `<div class="bt-input__filter-button" onclick="sbxFilterToggle(this)"><span class="bt-icon">${icoSlidersHorizontal}</span></div>` : '';
+  return `<div class="bt-input__box bt-searchbox bt-input__box--${size}">
+    <div class="bt-input__controls"><span class="bt-icon">${icoSearch}</span></div>
+    <div class="bt-input__content"><input class="bt-input__value" type="text" placeholder="${placeholder}" oninput="sbxSearchInput(this)" /></div>
+    ${filterHtml}
+  </div>`;
+}
+
+/* ============================================================
    HUB SIDEBAR — .sbx-shell (Bentas Design System "Sidebar" component,
    Variant A: persistent icon rail + toggleable drawer).
    Kaynak: Bentas-Design-System docs/js/pages-web.js — sidebarMarkupA() /
@@ -163,7 +221,7 @@ function renderSidebar(navItems, bottomItems, variant) {
       <div class="sbx-drawer-top">
         <div class="bt-input__box bt-searchbox bt-input__box--sm">
           <div class="bt-input__controls"><span class="bt-icon">${icoSearch}</span></div>
-          <div class="bt-input__content"><input class="bt-input__value" type="text" placeholder="Ara..." oninput="tbxBaseInput(this)" /></div>
+          <div class="bt-input__content"><input class="bt-input__value" type="text" placeholder="Ara..." oninput="sbxSearchInput(this)" /></div>
           <div class="sbx-searchbox-kbd">Tab</div>
         </div>
       </div>

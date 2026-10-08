@@ -16,6 +16,10 @@
      pattern: sadece boyut context'i override edilir, .sbx-shell'in kendisi
      değişmez. */
   .bt-pl-frame .sbx-shell { height: 100%; border: none; box-shadow: none; }
+  /* Figma "M9 Design" › Main Page 1'de Toolbar SearchBox'ı 280px — page-layouts
+     pattern'inin jenerik ".bt-pl-toolbar .bt-searchbox{width:180px}" varsayılanı
+     bu spesifik ekran için override edilir. */
+  #m9Toolbar .bt-searchbox { width: 280px; }
 </style>
 </head>
 <body>
@@ -33,7 +37,7 @@
     <div class="bt-pl-main">
 
       <div class="bt-pl-header">
-        <span class="bt-pl-header-title" id="m9PageTitle">Kayıtlar</span>
+        <span class="bt-pl-header-title" id="m9PageTitle">Kayıt Listesi</span>
       </div>
 
       <div class="bt-pl-toolbar" id="m9Toolbar"></div>

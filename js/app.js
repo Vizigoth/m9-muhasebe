@@ -41,10 +41,7 @@ document.getElementById('m9Toolbar').innerHTML = `
   <button type="button" class="bt-btn bt-btn--sm bt-btn--base-flat" id="m9DeleteBtn" disabled>
     <span class="bt-icon">${icoTrash}</span>Sil
   </button>
-  <div class="bt-input__box bt-searchbox bt-input__box--sm">
-    <div class="bt-input__controls"><span class="bt-icon">${icoSearch}</span></div>
-    <div class="bt-input__content"><input class="bt-input__value" type="text" placeholder="Ara..." oninput="tbxBaseInput(this)" /></div>
-  </div>
+  ${renderSearchBox({ advanced: true })}
 `;
 
 /* ── Data Table ───────────────────────────────────────────────
