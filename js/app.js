@@ -131,41 +131,124 @@ function m9SyncToolbarButtons() {
 }
 document.getElementById('m9Grid').addEventListener('click', m9SyncToolbarButtons);
 
-/* ── Kayıt detay paneli — bt-window (XL) ─────────────────────────────
-   Üç açılış yolu: "Yeni Ekle" (boş kayıt), "Düzenle" veya Fiş Numarası
-   linkine/satıra çift tıklama (mevcut kaydı doldurur). Bentas DS'in
-   gerçek bt-window bileşeni (XL boyut, 100vw) — renderWindow/winFieldHtml
-   js/components.js'te. Alanlar artık düzenlenebilir (readonly kaldırıldı).
+/* ════════════════════════════════════════════════════════════════
+   KAYIT DETAY PANELİ — bt-window (XL)
 
-   Kaydet butonu — kullanıcı kararı: panel açıldığında (hem mevcut kayıt
-   hem yeni kayıt için) HER ZAMAN disabled başlar, panelde herhangi bir
-   alan değiştirilene kadar öyle kalır — "işlem yapılmadıysa" kaydedecek
-   bir şey yok. İlk input event'inde enable olur (m9SaveBtn.disabled=false).
-   Kaydet'e basınca gerçekten `rows`'a yazılır (yeni kayıtta push, mevcut
-   kayıtta index'e), grid yeniden render edilir (henüz kalıcı bir backend
-   yok — sayfa yenilenince kaybolur). */
+   Kullanıcının gerçek Delphi "Fiş" ekranının (ekran görüntüsü, 2026-10-08)
+   Bentas Design System diliyle yeniden tasarımı. Orijinal ekran tek bir
+   kalabalık label+input ızgarasıydı (20+ alan art arda) + altında geniş
+   bir "kalemler" grid'i + en altta bir özet şeridi — burada aynı BİLGİ
+   kümesi üç mantıksal karta ayrıldı (winSectionHtml, js/components.js):
+     1. "Fiş Bilgileri" — düzenlenebilir ana alanlar (gerçek Dropdown/
+        DatePicker/Textarea component'leri — bkz. winDropdownHtml/
+        winDateHtml/winTextareaHtml), sistem/audit alanları (Giriş Tarihi,
+        Son Değiştirme Tarihi, Kullanıcı) ayrı ve salt-okunur.
+     2. "Kalemler" — fişin muhasebe satırları, GERÇEK Data Table engine'i
+        (renderDataTable) ile, Kayıt Listesi'nin kendisinden bağımsız
+        küçük bir kolon seti.
+     3. "Özet" — kalemlerden hesaplanan toplamlar, salt-okunur.
+   Bentaş'ın orijinal ekranındaki "Detaylı/Standart" tab'ı ve e-Defter
+   şeridi (Ödeme Türü/Evrak Türü/Evrak No) bilinçli olarak bu ilk turda
+   kapsam dışı bırakıldı — gerçek iş kuralları netleşince eklenebilir.
+   ════════════════════════════════════════════════════════════════ */
 document.getElementById('m9WindowMount').outerHTML = renderWindow({
   id: 'm9RecordWindow',
   size: 'xl',
   title: 'Kayıt Detayı',
   headerActions: `<button type="button" class="bt-btn bt-btn--sm bt-btn--primary-solid" id="m9SaveBtn" disabled onclick="m9SaveRecord()">Kaydet</button>`,
 });
+
+const M9_ISLEM_TURU_OPTS = ['Transfer', 'Nakit', 'Çek', 'Senet']; // gerçek liste netleşene kadar varsayım
+const M9_FIS_TIPI_OPTS   = ['Mahsup', 'Tahsilat', 'Tediye', 'Diğer']; // aynı şekilde varsayım
+
+/* Örnek "DD / MM / YYYY HH:MM:SS" (mevcut rows verisi) ↔ date picker'ın
+   ihtiyaç duyduğu iki format: native (yyyy-mm-dd) + display (dd-mm-yyyy). */
+function m9ParseDate(str) {
+  const m = String(str || '').match(/(\d{1,2})\s*[\/\-]\s*(\d{1,2})\s*[\/\-]\s*(\d{4})/);
+  if (!m) return { native: '', display: '' };
+  const d = m[1].padStart(2, '0'), mo = m[2].padStart(2, '0'), y = m[3];
+  return { native: `${y}-${mo}-${d}`, display: `${d}-${mo}-${y}` };
+}
+
+/* Kalemler — gerçek per-fiş muhasebe satırları henüz bir backend'e bağlı
+   değil; mevcut bir kayıt açıldığında kullanıcının ekran görüntüsündeki
+   ÖRNEK 2 satır gösteriliyor (hangi kayıt olursa olsun aynı — açıkça bir
+   yer tutucu), yeni kayıtta boş başlıyor ("Kalem yok"). */
+const M9_DETAIL_COLUMNS = [
+  { field: 'hesapKodu',    headerText: 'Hesap Kodu',   width: 160 },
+  { field: 'ad',           headerText: 'Ünvan / Ad',   width: 220 },
+  { field: 'izahat',       headerText: 'İzahat',       width: 300, fillWidth: true },
+  { field: 'borc',         headerText: 'Borç',         width: 100 },
+  { field: 'alacak',       headerText: 'Alacak',       width: 100 },
+  { field: 'valorTarihi',  headerText: 'Valör Tarihi', width: 130 },
+  { field: 'kdvTutari',    headerText: 'KDV Tutarı',   width: 110 },
+];
+const M9_SAMPLE_DETAIL_ROWS = [
+  { hesapKodu: '120-01-01-001-001', ad: 'YURTİÇİ ALICILAR NAKİT', izahat: 'MAH [No : 37] testSELDA 3 AKDENİZ', borc: '0',   alacak: '100', valorTarihi: '23-09-2026', kdvTutari: '0' },
+  { hesapKodu: '120-01-22-237-1',   ad: 'XXXX HESABI',            izahat: 'MAH [No : 37] testSELDA 3 AKDENİZ', borc: '100', alacak: '0',   valorTarihi: '23-09-2030', kdvTutari: '0' },
+];
+let m9DetailRows = [];
+
+function m9RenderDetailGrid() {
+  document.getElementById('m9DetailGrid').innerHTML = renderDataTable(M9_DETAIL_COLUMNS, m9DetailRows, { emptyText: 'Kalem yok' });
+  const toplamBorc = m9DetailRows.reduce((s, r) => s + (parseFloat(r.borc) || 0), 0);
+  const toplamAlacak = m9DetailRows.reduce((s, r) => s + (parseFloat(r.alacak) || 0), 0);
+  document.getElementById('m9SumBorc').value = toplamBorc.toFixed(2);
+  document.getElementById('m9SumAlacak').value = toplamAlacak.toFixed(2);
+  document.getElementById('m9SumBakiye').value = (toplamBorc - toplamAlacak).toFixed(2);
+}
+
 let m9EditingIndex = null; // null → Yeni Ekle; sayı → rows[] içindeki mevcut kayıt
-function _m9RenderWindowFields(row) {
-  const panel = document.querySelector('#m9RecordWindow .bt-window__panel');
-  // XL tam genişlik olduğu için alanlar .bt-win-row ile 3'erli gruplanıyor
-  // (design system'in kendi .bt-win-row + .bt-win-field deseni) — tek
-  // sütunda 10 alan yerine daha gerçekçi/kompakt bir detay formu.
-  const fields = columns.map(c => winFieldHtml(c.headerText, c.field ? row[c.field] : ''));
-  const rowsHtml = [];
-  for (let i = 0; i < fields.length; i += 3) rowsHtml.push(`<div class="bt-win-row">${fields.slice(i, i + 3).join('')}</div>`);
-  panel.innerHTML = rowsHtml.join('');
+function _m9RenderWindowBody(row, detailRows) {
+  const body = document.getElementById('m9RecordWindow-body');
+  const fisTarihi = m9ParseDate(row.fisTarihi);
+  const valorTarihi = m9ParseDate(row.valorTarihi);
+
+  const fisBilgileri = winSectionHtml('Fiş Bilgileri', `
+    <div class="bt-win-row">
+      ${winFieldHtml('Fiş No', row.fisNo, 'm9f_fisNo')}
+      ${winFieldHtml('Önceki No', row.oncekiNo, 'm9f_oncekiNo')}
+      ${winDropdownHtml({ id: 'm9f_fisTipi', label: 'Fiş Tipi', value: row.fisTipi, options: M9_FIS_TIPI_OPTS })}
+      ${winDropdownHtml({ id: 'm9f_islemTuru', label: 'İşlem Türü', value: row.islemTuru, options: M9_ISLEM_TURU_OPTS })}
+    </div>
+    <div class="bt-win-row">
+      ${winDateHtml({ id: 'm9f_fisTarihi', label: 'Fiş Tarihi', nativeValue: fisTarihi.native, displayValue: fisTarihi.display })}
+      ${winDateHtml({ id: 'm9f_valorTarihi', label: 'Valör Tarihi', nativeValue: valorTarihi.native, displayValue: valorTarihi.display })}
+      ${winFieldHtml('Madde No', row.maddeNo, 'm9f_maddeNo')}
+      ${winFieldHtml('KDV %', row.kdv, 'm9f_kdv')}
+    </div>
+    ${winTextareaHtml('Açıklama', row.aciklama, 'm9f_aciklama')}
+    <div class="bt-win-row">
+      ${winReadonlyFieldHtml('Kullanıcı', row.kullanici)}
+      ${winReadonlyFieldHtml('Giriş Tarihi', '—')}
+      ${winReadonlyFieldHtml('Son Değiştirme Tarihi', '—')}
+    </div>
+  `);
+
+  // flex:none + sabit height — .bt-grid-actions-container'ın kendi flex:1'i
+  // (bir .bt-pl-body gibi TAM YÜKSEKLİK bir flex ebeveyne göre tasarlanmış)
+  // burada (bir kartın İÇİNDE, içerik-boyutlu bir context'te) anlamsız/
+  // öngörülemez olurdu — sabit bir kalem-listesi yüksekliği için override.
+  const kalemler = winSectionHtml('Kalemler', `<div id="m9DetailGrid" class="bt-grid-actions-container" style="flex:none;height:220px;"></div>`);
+
+  const ozet = winSectionHtml('Özet', `
+    <div class="bt-win-row">
+      ${winReadonlyFieldHtml('Toplam Borç', '0.00', 'm9SumBorc')}
+      ${winReadonlyFieldHtml('Toplam Alacak', '0.00', 'm9SumAlacak')}
+      ${winReadonlyFieldHtml('Bakiye', '0.00', 'm9SumBakiye')}
+      ${winReadonlyFieldHtml('Kontrol No', '0')}
+    </div>
+  `);
+
+  body.innerHTML = fisBilgileri + kalemler + ozet;
+  m9DetailRows = detailRows;
+  m9RenderDetailGrid();
   document.getElementById('m9SaveBtn').disabled = true; // her açılışta sıfırlanır
 }
 function m9OpenRecordWindow(idx) {
   m9EditingIndex = idx;
   document.getElementById('m9RecordWindow-title').textContent = 'Kayıt Detayı';
-  _m9RenderWindowFields(rows[idx]);
+  _m9RenderWindowBody(rows[idx], M9_SAMPLE_DETAIL_ROWS.map(r => ({ ...r })));
   dexOpenPanel('m9RecordWindow', 'm9RecordWindowOv');
 }
 function m9OpenNewRecordWindow() {
@@ -173,20 +256,29 @@ function m9OpenNewRecordWindow() {
   document.getElementById('m9RecordWindow-title').textContent = 'Yeni Kayıt';
   const emptyRow = {};
   columns.forEach(c => { if (c.field) emptyRow[c.field] = ''; });
-  _m9RenderWindowFields(emptyRow);
+  _m9RenderWindowBody(emptyRow, []);
   dexOpenPanel('m9RecordWindow', 'm9RecordWindowOv');
 }
-// Panelde HERHANGİ bir alan değiştirilince Kaydet aktifleşir (delege —
-// panel her açılışta yeniden oluşturuluyor, tek tek input'lara değil
-// #m9RecordWindow'un kendisine bağlanıyor).
-document.getElementById('m9RecordWindow').addEventListener('input', function () {
-  document.getElementById('m9SaveBtn').disabled = false;
-});
+// Panelde HERHANGİ bir alan değiştirilince (metin, dropdown seçimi —
+// btWinDropdownSelect kendi 'change'ini dispatch ediyor —, tarih seçimi)
+// Kaydet aktifleşir. Delege: panel her açılışta yeniden oluşturuluyor.
+document.getElementById('m9RecordWindow').addEventListener('input', function () { document.getElementById('m9SaveBtn').disabled = false; });
+document.getElementById('m9RecordWindow').addEventListener('change', function () { document.getElementById('m9SaveBtn').disabled = false; });
 function m9SaveRecord() {
-  const panel = document.querySelector('#m9RecordWindow .bt-window__panel');
-  const values = Array.from(panel.querySelectorAll('.bt-win-input')).map(inp => inp.value);
-  const updatedRow = {};
-  columns.forEach((c, i) => { if (c.field) updatedRow[c.field] = values[i]; });
+  const dd = id => document.getElementById(id).querySelector('.bt-win-dropdown__value').textContent;
+  const val = id => document.getElementById(id).value;
+  const updatedRow = {
+    fisNo: val('m9f_fisNo'),
+    oncekiNo: val('m9f_oncekiNo'),
+    fisTipi: dd('m9f_fisTipi'),
+    islemTuru: dd('m9f_islemTuru'),
+    fisTarihi: val('m9f_fisTarihi-display'),
+    valorTarihi: val('m9f_valorTarihi-display'),
+    maddeNo: val('m9f_maddeNo'),
+    kdv: val('m9f_kdv'),
+    aciklama: val('m9f_aciklama'),
+    kullanici: m9EditingIndex == null ? '' : rows[m9EditingIndex].kullanici, // salt-okunur, sistem alanı
+  };
   if (m9EditingIndex == null) rows.push(updatedRow);
   else rows[m9EditingIndex] = updatedRow;
   document.getElementById('m9Grid').innerHTML = renderDataTable(columns, rows, { emptyText: 'Kayıt bulunamadı' });

@@ -858,13 +858,104 @@ function renderWindow(opts) {
         </div>
         <div class="bt-window__header-actions">${o.headerActions || ''}</div>
       </div>
-      <div class="bt-window__body"><div class="bt-window__panel">${o.bodyHtml || ''}</div></div>
+      <div class="bt-window__body" id="${id}-body">${o.bodyHtml != null ? `<div class="bt-window__panel">${o.bodyHtml}</div>` : ''}</div>
     </aside>`;
 }
-/** .bt-win-field tek satırlık label+değer alanı (şimdilik salt-okunur gösterim — bkz. app.js). */
-function winFieldHtml(label, value) {
+/* ── bt-win-field varyantları ─────────────────────────────────────
+   winFieldHtml — düz metin input. winReadonlyFieldHtml — sistem/audit
+   alanları (Giriş Tarihi vb.) için salt-okunur, soluk görünüm (gerçek
+   .bt-win-input'un disabled state'i — styles.css'te zaten tanımlı).
+   winTextareaHtml/winDropdownHtml/winDateHtml — Bentas DS'in Design
+   Examples sayfasındaki (Uygulama dropdown'ı, Tarih picker'ı, Açıklama
+   textarea'sı) GERÇEK bt-win-* yapıları, genellenmiş. */
+function winFieldHtml(label, value, id) {
   return `<div class="bt-win-field">
     <label class="bt-win-label">${label}</label>
-    <input class="bt-win-input" type="text" value="${String(value == null ? '' : value).replace(/&/g, '&amp;').replace(/"/g, '&quot;')}">
+    <input class="bt-win-input"${id ? ` id="${id}"` : ''} type="text" value="${String(value == null ? '' : value).replace(/&/g, '&amp;').replace(/"/g, '&quot;')}">
   </div>`;
+}
+function winReadonlyFieldHtml(label, value, id) {
+  return `<div class="bt-win-field">
+    <label class="bt-win-label">${label}</label>
+    <input class="bt-win-input"${id ? ` id="${id}"` : ''} type="text" value="${String(value == null ? '' : value).replace(/&/g, '&amp;').replace(/"/g, '&quot;')}" disabled>
+  </div>`;
+}
+function winTextareaHtml(label, value, id) {
+  return `<div class="bt-win-field">
+    <label class="bt-win-label">${label}</label>
+    <textarea class="bt-win-textarea"${id ? ` id="${id}"` : ''}>${String(value == null ? '' : value).replace(/&/g, '&amp;').replace(/</g, '&lt;')}</textarea>
+  </div>`;
+}
+const _winIconChevronDown = `<svg class="bt-win-dropdown__chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>`;
+const _winIconCalendar = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>`;
+window.btWinDropdown = function (ddId) {
+  const dd = document.getElementById(ddId);
+  const isOpen = dd.classList.contains('is-open');
+  document.querySelectorAll('.bt-win-dropdown.is-open').forEach(el => el.classList.remove('is-open'));
+  if (!isOpen) dd.classList.add('is-open');
+};
+window.btWinDropdownSelect = function (ddId, optEl) {
+  const dd = document.getElementById(ddId);
+  dd.querySelector('.bt-win-dropdown__value').textContent = optEl.textContent;
+  dd.querySelector('.bt-win-dropdown__trigger').classList.add('has-value');
+  dd.classList.remove('is-open');
+  dd.dispatchEvent(new Event('change', { bubbles: true })); // dirty-state takibi için (bkz. app.js)
+};
+document.addEventListener('click', function (e) {
+  if (!e.target.closest('.bt-win-dropdown')) {
+    document.querySelectorAll('.bt-win-dropdown.is-open').forEach(el => el.classList.remove('is-open'));
+  }
+});
+window.btWinDatePicker = function (nativeId) {
+  const native = document.getElementById(nativeId);
+  if (native.showPicker) native.showPicker(); else native.click();
+};
+window.btWinDateChange = function (nativeId, displayId) {
+  const native = document.getElementById(nativeId);
+  const display = document.getElementById(displayId);
+  if (native.value) {
+    const [y, m, d] = native.value.split('-');
+    display.value = `${d}-${m}-${y}`;
+  }
+};
+/** opts: { id, label, value, options:[string] } */
+function winDropdownHtml(opts) {
+  const o = opts || {};
+  return `<div class="bt-win-field">
+    <label class="bt-win-label">${o.label || ''}</label>
+    <div class="bt-win-dropdown" id="${o.id}">
+      <div class="bt-win-dropdown__wrap">
+        <button type="button" class="bt-win-dropdown__trigger${o.value ? ' has-value' : ''}" onclick="btWinDropdown('${o.id}')">
+          <span class="bt-win-dropdown__value">${o.value || 'Seçin…'}</span>
+          ${_winIconChevronDown}
+        </button>
+        <ul class="bt-win-dropdown__list" role="listbox">
+          ${(o.options || []).map(opt => `<li class="bt-win-dropdown__option" role="option" onclick="btWinDropdownSelect('${o.id}',this)">${opt}</li>`).join('')}
+        </ul>
+      </div>
+    </div>
+  </div>`;
+}
+/** opts: { id, label, displayValue:'dd-mm-yyyy', nativeValue:'yyyy-mm-dd' } */
+function winDateHtml(opts) {
+  const o = opts || {};
+  const nativeId = o.id + '-native';
+  const displayId = o.id + '-display';
+  return `<div class="bt-win-field">
+    <label class="bt-win-label">${o.label || ''}</label>
+    <div class="bt-win-datepicker">
+      <input class="bt-win-input bt-win-datepicker__display" type="text" readonly placeholder="Tarih seçin…" id="${displayId}" value="${o.displayValue || ''}" onclick="btWinDatePicker('${nativeId}')">
+      <button class="bt-win-datepicker__icon" type="button" onclick="btWinDatePicker('${nativeId}')" aria-label="Tarih seç">${_winIconCalendar}</button>
+      <input type="date" class="bt-win-datepicker__native" id="${nativeId}" value="${o.nativeValue || ''}" onchange="btWinDateChange('${nativeId}','${displayId}')">
+    </div>
+  </div>`;
+}
+/** Form kartı — .bt-window__panel + opsiyonel başlık (bu projeye özel küçük
+ * bir kompozisyon yardımcısı — tek .bt-window__panel yerine birden fazla
+ * mantıksal bölüm/kart göstermek için; bt-window'un kendisinde "section
+ * title" diye ayrı bir alt-component yok, bu yüzden .bt-window__title ile
+ * aynı font/ağırlık token'ları kullanılarak minimal bir başlık ekleniyor). */
+function winSectionHtml(title, innerHtml) {
+  const titleHtml = title ? `<div style="font:var(--bt-title-md-regular,400 16px/24px var(--font));color:var(--bt-text-primary-default);margin-bottom:var(--bt-space-md,8px);">${title}</div>` : '';
+  return `<div class="bt-window__panel" style="flex:none;">${titleHtml}${innerHtml}</div>`;
 }
