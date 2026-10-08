@@ -17,7 +17,7 @@ göre iki FARKLI desen var:
 | Input/SearchBox controls (`.bt-input__controls`, clear/filter button) | `<span class="bt-icon">{svg}</span>` — svg'ye width/height **yazılmaz**, `.bt-icon svg{width:16px;height:16px}` CSS'i zorluyor | wrapper 24×24, svg görsel 16×16 |
 | Button (`.bt-btn`) ikonu | Wrapper **yok** — svg doğrudan buton içine, boyut svg'nin **kendi** `width`/`height` attribute'unda | 16×16 (gerçek sayfa instance'ları — docs'un kendi demo'su farklı/keyfi 14×14 kullanıyor, ona güvenme) |
 | Grid satır menüsü (`.bt-grid__menu-item-icon`) | Wrapper var ama CSS svg boyutunu **zorlamıyor** — svg'nin kendi width/height'ı şart | 16×16 |
-| Hub Sidebar Controls (`.sbx-btn`) / Drawer Item (`.sbx-item-icon`) | Wrapper var ama CSS svg boyutunu **zorlamıyor** (flex-center + sabit konteyner boyutu) — svg'nin kendi width/height'ı şart | 24×24 (konteyner 32×32, 4px padding) |
+| Hub Sidebar Controls (`.sbx-btn`) / Drawer Item (`.sbx-item-icon`) | Wrapper var ama CSS svg boyutunu **zorlamıyor** — svg'nin kendi width/height'ı şart | **14×14** (bkz. aşağıdaki uyarı — 24 DEĞİL) |
 
 **Kural**: Yeni bir ikon eklerken önce o component'in CSS'inde wrapper class'ının
 (`.bt-icon`, `.bt-grid__menu-item-icon`, `.sbx-item-icon`, `.sbx-btn` vb.) svg boyutunu
@@ -25,6 +25,16 @@ GERÇEKTEN zorlayıp zorlamadığını kontrol et (`<wrapper> svg { width: …; 
 styles.css'te var mı — yoksa güvenme). Varsa svg'ye width/height **yazma**, wrapper'a güven.
 Yoksa svg'nin **kendisine** explicit `width`/`height` yaz — wrapper'ın kendi boyutu (24×24,
 32×32 vb.) seni yanıltmasın, içindeki svg'nin gerçek intrinsic boyutu ayrı bir şeydir.
+
+**ÖNEMLİ UYARI (Hub Sidebar'da gerçekten yaşandı, iki kez yanlış yapıldı):** Wrapper CSS'i
+svg boyutunu zorlamıyorsa, boyutu Figma'nın ham Tailwind pikselinden de türetme — Figma'nın
+"Icon/placeholder" gibi genel/geçici bir component'i design dosyasında büyük (örn. 24×24)
+görünebilir ama GERÇEK, zaten kodlanmış implementasyon bambaşka bir boyut seçmiş olabilir
+(Hub Sidebar'da `pages-web.js`'teki gerçek `sbxIconPlaceholder` sabiti `width="14" height="14"`
+— Figma'nın 24px'i değil). **Önce o component'in `pages-web.js`'teki GERÇEK ikon sabitine
+bak** (örn. `sbxIconPlaceholder`, `_btnIcon`, `_gridIconEditItem`) — o, bu projede zaten
+üzerinde anlaşılmış/doğrulanmış otorite; Figma'nın ham pikseli sadece o sabit yoksa/yeni bir
+component içinse başvurulacak ikinci kaynak.
 
 ## Figma'yı asla hafızadan/önceki fetch'ten yorumlama
 
