@@ -70,8 +70,14 @@ const columns = [
   // Kullanıcı — Figma'da "Avatar Control" (28×28, .bt-avatar--xs .bt-avatar--brand)
   // taşıyor, Data Table'ın zaten var olan avatar leading kind'i. İsimden
   // baş harfler türetiliyor (docs'un hardcoded "EG" demo'sunun aksine gerçek
-  // satır verisiyle çalışsın diye).
-  { field: 'kullanici',   headerText: 'Kullanıcı',        filter: true, width: 128, cellLeading: 'avatar', leadingOpts: row => ({ initials: m9Initials(row.kullanici) }) },
+  // satır verisiyle çalışsın diye). fillWidth:true — design system'in kendi
+  // kuralı: non-frozen Data Table'larda SON kolon fillWidth taşır ki diğer
+  // kolonlar daraltıldığında boşalan alanı dolana kadar genişlesin (bkz.
+  // design.md "Email kolonu + tablo tam genişlik fill" notu) — ayrıca son
+  // kolonun kendi resize handle'ı yok (Bentas DS'te kasıtlı: handle'ın 3px
+  // dışarı taşması gereksiz scrollbar tetikliyor), fillWidth onun yerine
+  // otomatik boyutlanmasını sağlıyor.
+  { field: 'kullanici',   headerText: 'Kullanıcı',        filter: true, width: 128, fillWidth: true, cellLeading: 'avatar', leadingOpts: row => ({ initials: m9Initials(row.kullanici) }) },
 ];
 function m9Initials(name) {
   const parts = String(name || '').trim().split(/\s+/).filter(Boolean);

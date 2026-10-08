@@ -48,6 +48,17 @@
      clientWidth), örtük auto'nun gösterecek bir şeyi olmuyor, TÜM yatay
      scroll SADECE dış .bt-grid-scroll-x'te oluyor. */
   #m9Grid .bt-grid { min-width: max-content; }
+  /* min-width:max-content taşmayı/kırpmayı giderdi ama CSS'in o tuhaflığı
+     (yukarıdaki not) teorik olarak hâlâ .bt-grid__body'nin overflow-x'ini
+     örtük "auto"ya çevirebiliyor — küçük bir piksel yuvarlama farkı (resize
+     sırasında header/body hücre genişlikleri ayrı ayrı set edildiği için
+     ihtimal dahilinde) bile ikinci, bağımsız bir scrollbar tetikleyebilir.
+     Kesin çözüm: overflow-x'i AÇIKÇA 'hidden' yap (sadece overflow-y'yi
+     bırakmak değil) — 'visible' olmayan bir değer kuralı hiç tetiklemiyor,
+     yani artık body'nin KENDİ başına yatay scroll olma ihtimali tamamen
+     ortadan kalkıyor; min-width:max-content zaten içeriğin asla kırpılmasını
+     engelliyor, tüm yatay scroll SADECE .bt-grid-scroll-x'te kalıyor. */
+  #m9Grid .bt-grid__body { overflow-x: hidden; }
 </style>
 </head>
 <body>
