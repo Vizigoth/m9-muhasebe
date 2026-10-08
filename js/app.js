@@ -45,17 +45,27 @@ document.getElementById('m9Toolbar').innerHTML = `
   ${renderSearchBox({ advanced: true })}
 `;
 
-/* ── Data Table ───────────────────────────────────────────────
-   Bu ekranın gerçek veri modeli (Cari Hesaplar / Faturalar / vb.)
-   henüz tanımlanmadı — kolonlar Figma'nın genel 4-kolon şablonunu
-   birebir yansıtıyor. Gerçek entity belirlenince `columns`/`rows`
-   burada değiştirilecek, renderDataTable'ın kendisi dokunulmadan
-   kalabilir. */
+/* ── Data Table — Kayıt Listesi (fiş/muhasebe kaydı listesi) ────
+   Figma "DataTable" (node 1709:188606) ile birebir: 10 sabit-genişlik
+   kolon, hepsinde Filter Control (sort YOK — Figma'da hiçbir header'da
+   sort ikonu yok), sadece ilk kolonda (Fiş Numarası) select-all checkbox.
+   Genişlikler Figma'daki Header Row'un gerçek piksel değerleri (toplam
+   1840px — viewport daha darsa .bt-grid-scroll-x yatay scroll sağlıyor).
+   Satırlar boş: Figma'nın kendi mockup'ında 6 örnek satır vardı ama bu
+   proje henüz bir backend'e bağlı değil — gerçek veri yerine sahte içerik
+   koymamak için rows=[] bırakıldı (diğer ekranlarla tutarlı), "No Record
+   Available" durumu (Kayıt bulunamadı) gösteriliyor. */
 const columns = [
-  { field: 'col1', headerText: 'Sütun 1', headerCheckbox: true, cellLeading: 'checkbox', sort: true, filter: true, fillWidth: true, width: 200 },
-  { field: 'col2', headerText: 'Sütun 2', sort: true, filter: true, fillWidth: true, width: 200 },
-  { field: 'col3', headerText: 'Sütun 3', sort: true, filter: true, fillWidth: true, width: 200 },
-  { field: 'col4', headerText: 'Sütun 4', fillWidth: true, width: 200, cellTrailing: 'button', trailingOpts: () => ({}) },
+  { field: 'fisNo',       headerText: 'Fiş Numarası',     headerCheckbox: true, cellLeading: 'checkbox', filter: true, width: 215 },
+  { field: 'fisTipi',     headerText: 'Fiş Tipi',         filter: true, width: 146 },
+  { field: 'fisTarihi',   headerText: 'Fiş Tarihi',       filter: true, width: 174 },
+  { field: 'oncekiNo',    headerText: 'Önceki Numarası',  filter: true, width: 136 },
+  { field: 'maddeNo',     headerText: 'Madde Numarası',   filter: true, width: 142 },
+  { field: 'valorTarihi', headerText: 'Valör Tarihi',     filter: true, width: 174 },
+  { field: 'islemTuru',   headerText: 'İşlem Türü',       filter: true, width: 174 },
+  { field: 'aciklama',    headerText: 'Açıklama',         filter: true, width: 455 },
+  { field: 'kdv',         headerText: 'KDV%',             filter: true, width: 96 },
+  { field: 'kullanici',   headerText: 'Kullanıcı',        filter: true, width: 128 },
 ];
 const rows = []; // Kayıt yok → Figma'daki "No Record Available" durumu.
 
