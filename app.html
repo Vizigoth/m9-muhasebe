@@ -25,6 +25,19 @@
      ekranın Page Header'ı "Title/md/Regular" (16px/400/24px, Font/Family/Title
      = Geist) kullanıyor. */
   #m9PageTitle { font: 400 16px/24px var(--font); }
+  /* ÇİFT YATAY SCROLLBAR DÜZELTMESİ — .bt-grid-container içinde İKİ ayrı
+     eleman aynı anda (1840px'lik kolon toplamının) yatay taşmasını
+     yakalıyor: .bt-grid-scroll-x (overflow-x:auto — header+body'yi TEK
+     senkron birimde sarmak için zaten tasarlanmış, styles.css'teki kendi
+     yorumu bunu açıkça belirtiyor) VE .bt-grid__body (overflow:auto, hem
+     x hem y) — ikisi de BAĞIMSIZ kendi scrollbar'ını üretiyor (biri
+     satırların hemen altında, diğeri flex:1 ile gerilen kutunun en
+     altında/sayfa sonunda) ve kolon resize'da birbirinden SENKRONSUZ
+     kalıyor. Asıl iş zaten .bt-grid-scroll-x'e ait — .bt-grid__body'nin
+     yatay scroll'u burada kapatılıyor, SADECE dikey (çok satır olduğunda)
+     kalıyor. Canonical styles.css'e dokunulmadı, sadece bu sayfada
+     override edildi. */
+  #m9Grid .bt-grid__body { overflow-x: hidden; overflow-y: auto; }
 </style>
 </head>
 <body>
