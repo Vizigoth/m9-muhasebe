@@ -32,33 +32,6 @@
      .bt-grid-actions-container'a uygulanmıyor; burada aynı değerle geri
      veriliyor. */
   #m9Grid { border-radius: var(--bt-radius-sm, 4px); }
-  /* .bt-grid-actions-container'a geçiş kolonun GİZLENMESİNİ (önceki hatalı
-     overflow-x:hidden fix'imin yan etkisi) düzeltti, ama ÇİFT SCROLL'u tam
-     gidermedi — CSS'in "overflow-x/y'den biri 'visible' ise diğeri 'auto'
-     olduğunda ikisi de 'auto'ya zorlanır" kuralı (styles.css'in Frozen
-     Column/Actions geçmişinde "sticky'yi kıran" olarak belgelenen AYNI
-     tuhaflık) yüzünden .bt-grid__body'nin overflow-y:auto'su overflow-x'i
-     de örtük olarak auto yapıyor — .bt-grid-scroll-x'ten BAĞIMSIZ, kendi
-     scrollLeft'i olan ikinci bir yatay scroll konteyneri oluşuyor (hareket
-     ettirilince header'dan senkronsuz kalıp kolonları "kaybediyor").
-     design.md'nin aynı notunda geçen ama benim kopyamda eksik kalan asıl
-     çözüm: .bt-grid'i (header+body'nin ortak ebeveyni) GERÇEK içerik
-     genişliğine (1840px, resize sonrası değişebilir) zorlamak — böylece
-     .bt-grid__body'nin KENDİ içinde hiç taşma kalmıyor (scrollWidth ===
-     clientWidth), örtük auto'nun gösterecek bir şeyi olmuyor, TÜM yatay
-     scroll SADECE dış .bt-grid-scroll-x'te oluyor. */
-  #m9Grid .bt-grid { min-width: max-content; }
-  /* min-width:max-content taşmayı/kırpmayı giderdi ama CSS'in o tuhaflığı
-     (yukarıdaki not) teorik olarak hâlâ .bt-grid__body'nin overflow-x'ini
-     örtük "auto"ya çevirebiliyor — küçük bir piksel yuvarlama farkı (resize
-     sırasında header/body hücre genişlikleri ayrı ayrı set edildiği için
-     ihtimal dahilinde) bile ikinci, bağımsız bir scrollbar tetikleyebilir.
-     Kesin çözüm: overflow-x'i AÇIKÇA 'hidden' yap (sadece overflow-y'yi
-     bırakmak değil) — 'visible' olmayan bir değer kuralı hiç tetiklemiyor,
-     yani artık body'nin KENDİ başına yatay scroll olma ihtimali tamamen
-     ortadan kalkıyor; min-width:max-content zaten içeriğin asla kırpılmasını
-     engelliyor, tüm yatay scroll SADECE .bt-grid-scroll-x'te kalıyor. */
-  #m9Grid .bt-grid__body { overflow-x: hidden; }
 </style>
 </head>
 <body>

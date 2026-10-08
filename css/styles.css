@@ -6690,20 +6690,43 @@ pre.code-block.line-numbers {
   min-height: 0;
   overflow-x: auto;
   max-width: 100%;
+  display: flex;
+  flex-direction: column;
 }
+/* min-width:max-content — .bt-grid'i (header+body'nin ortak ebeveyni)
+   GERÇEK içerik genişliğine zorlar (kolonlar container'dan genişse, örn.
+   resize sonrası). width:100% tek başına .bt-grid'i mevcut alana sığacak
+   şekilde küçültüyordu — bu da .bt-grid__body'nin KENDİ içinde (header'dan
+   bağımsız) taşma/kırpma oluşmasına yol açıyordu. max-content floor
+   sayesinde .bt-grid__body (width:100%, artık genişlemiş .bt-grid'e göre)
+   içeriğiyle TAM örtüşüyor, hiç taşma kalmıyor — bkz. aşağıdaki not. */
 .bt-grid-container .bt-grid {
   display: flex;
   width: 100%;
+  min-width: max-content;
   flex: 1;
   min-height: 0;
 }
 .bt-grid-container .bt-grid__row {
   width: 100%;
 }
+/* overflow-x AÇIKÇA hidden (sadece overflow-y bırakmak değil) — CSS'in
+   "overflow-x/y'den biri 'visible' ise diğeri 'auto' olduğunda ikisi de
+   'auto'ya zorlanır" kuralı yüzünden sadece overflow-y:auto bırakmak,
+   .bt-grid__body'yi .bt-grid-scroll-x'ten BAĞIMSIZ, kendi scrollLeft'i
+   olan bir yatay scroll container'a çeviriyordu (resize sonrası
+   header'dan senkronsuz kalıp sağdaki kolon(lar)ı kayboluyormuş gibi
+   gösteriyordu). min-width:max-content zaten içeriğin asla kırpılmasını
+   engelliyor — tüm yatay scroll artık SADECE dış .bt-grid-scroll-x'te,
+   tek ve senkron. Gerçek bir projede (m9-muhasebe, 10 kolon/1840px, tam
+   yükseklik app shell) canlı test edilip doğrulandı — bu repo'nun kendi
+   demo kolonları (bkz. gridTableColumns, toplam 572px + Email fillWidth)
+   hiçbir zaman taşma yaratmadığı için bug daha önce hiç tetiklenmemişti. */
 .bt-grid-container .bt-grid__body {
   flex: 1;
   min-height: 0;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 /* Container kendi sol/sağ border'ını sağladığı için hücrelerin Position
    bazlı sol/sağ border'ları çift çizgi oluşturmasın diye bastırılır —
@@ -6808,9 +6831,26 @@ pre.code-block.line-numbers {
   display: flex;
   flex-direction: column;
 }
+/* Not (2026-10-08) — yukarıdaki açıklama tam değildi: overflow-y:auto TEK
+   BAŞINA bırakmak CSS'in "overflow-x/y'den biri 'visible' ise diğeri
+   'auto' olduğunda ikisi de 'auto'ya zorlanır" kuralını tetikliyor —
+   .bt-grid__body, .bt-grid-scroll-x'ten BAĞIMSIZ kendi scrollLeft'i olan
+   bir container'a dönüşüyordu (resize sonrası header'dan senkronsuz kalıp
+   sağ kolon(lar) kayboluyormuş gibi görünüyordu) — önceki not bunu
+   "Actions kolonu playground genişliğini aşınca" diye TEŞHİS etmişti ama
+   asıl kalan sorunu (gizli ikinci scrollbar) kapatmamıştı. Gerçek bir
+   projede (m9-muhasebe, 10 kolon/1840px, tam yükseklik app shell) canlı
+   kullanılırken ortaya çıktı, iki ek satırla kapatıldı: .bt-grid'e
+   min-width:max-content (width:100%'in yanına — .bt-grid__body'nin KENDİ
+   içinde hiç taşma kalmasın diye) ve .bt-grid__body'ye overflow-x AÇIKÇA
+   hidden (sadece overflow-y bırakmak değil — yukarıdaki kural hiç
+   tetiklenmesin diye). Bu repo'nun kendi demo kolonları (gridActionsColumns,
+   playground genişliğini aşmayacak şekilde kasıtlı dar tutulmuş) bug'ı
+   hiç tetiklemediği için şimdiye kadar fark edilmemişti. */
 .bt-grid-actions-container .bt-grid {
   display: flex;
   width: 100%;
+  min-width: max-content;
   flex: 1;
   min-height: 0;
 }
@@ -6821,6 +6861,7 @@ pre.code-block.line-numbers {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 .bt-grid-actions-container .bt-grid__no-record {
   flex: 1;
