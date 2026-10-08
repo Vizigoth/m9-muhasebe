@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>M9 Muhasebe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+  <!--
+    Figma "M9 Design" › Main Page 1 (1697:25814) ile birebir:
+    Hub Sidebar (collapsed, 48px) + Page Header (36px) + Toolbar (40px) +
+    Data Table (kalan alan). Yapı/CSS: .bt-pl-* (Bentas Design System
+    "Page Layouts" pattern'i, css/styles.css'te hazır).
+  -->
+  <div class="bt-pl-frame">
+
+    <div id="m9Rail"></div>
+
+    <div class="bt-pl-main">
+
+      <div class="bt-pl-header">
+        <span class="bt-pl-header-title" id="m9PageTitle">Kayıtlar</span>
+      </div>
+
+      <div class="bt-pl-toolbar" id="m9Toolbar"></div>
+
+      <div class="bt-pl-body">
+        <div class="bt-grid-container" id="m9Grid"></div>
+      </div>
+
+    </div>
+
+  </div>
+
+<script src="js/components.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
