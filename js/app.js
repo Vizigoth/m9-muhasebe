@@ -76,8 +76,14 @@ const columns = [
   // design.md "Email kolonu + tablo tam genişlik fill" notu) — ayrıca son
   // kolonun kendi resize handle'ı yok (Bentas DS'te kasıtlı: handle'ın 3px
   // dışarı taşması gereksiz scrollbar tetikliyor), fillWidth onun yerine
-  // otomatik boyutlanmasını sağlıyor.
-  { field: 'kullanici',   headerText: 'Kullanıcı',        filter: true, width: 128, fillWidth: true, cellLeading: 'avatar', leadingOpts: row => ({ initials: m9Initials(row.kullanici) }) },
+  // otomatik boyutlanmasını sağlıyor. width 128→150: .bt-grid'in
+  // min-width:max-content'i (çift-scroll fix'i) kolonun KENDİ doğal
+  // (avatar 28px + gap + "Emre Göcer" metni) genişliğini hesaba katıyor —
+  // 128px bu doğal genişliği karşılamaya yetmeyince grid'in toplam gerekli
+  // genişliği 1840px'i aşıp görsel olarak sığıyormuş gibi dururken bile
+  // kalıcı birkaç piksellik bir yatay scroll'a yol açıyordu. 150px bu doğal
+  // genişliği rahat karşılıyor, grid'i şişirmiyor.
+  { field: 'kullanici',   headerText: 'Kullanıcı',        filter: true, width: 150, fillWidth: true, cellLeading: 'avatar', leadingOpts: row => ({ initials: m9Initials(row.kullanici) }) },
 ];
 function m9Initials(name) {
   const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
