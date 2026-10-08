@@ -36,6 +36,25 @@ bak** (örn. `sbxIconPlaceholder`, `_btnIcon`, `_gridIconEditItem`) — o, bu pr
 üzerinde anlaşılmış/doğrulanmış otorite; Figma'nın ham pikseli sadece o sabit yoksa/yeni bir
 component içinse başvurulacak ikinci kaynak.
 
+## Data Table — `.bt-grid-container` DEĞİL, `.bt-grid-actions-container` kullan
+
+Grid'i çok satır/geniş kolon içeren GERÇEK bir uygulama ekranında (bizim app.html gibi,
+docs'un dar playground önizlemesi değil) kullanırken `.bt-grid-container` class'ı **kullanma**
+— temel container'ın `.bt-grid__body`'si `overflow:auto` (hem x hem y) taşıyor, bu geniş
+kolonlarla (toplam container genişliğini aşan) çift/senkronsuz yatay scrollbar'a VE kolon
+resize sonrası son kolonun body hücrelerinin kaybolmasına yol açıyor — temel container bu
+senaryoda hiç test edilmemiş gibi duruyor. Bunun yerine **`.bt-grid-actions-container`**
+kullan (Bentas DS'te "Data Table Actions" sayfası için 2026-08-14'te 3 iterasyonda
+kanıtlanmış/Playwright ile doğrulanmış çözüm — `design.md`'deki "Data Table Actions'ta çift
+scrollbar..." notuna bak): `.bt-grid__body`'de sadece `overflow-y:auto` + `.bt-grid-scroll-x`'e
+`display:flex`. Tek eksik: `.bt-pl-body .bt-grid-container{border-radius}` kuralı o class'a
+özel, `.bt-grid-actions-container`'a uygulanmaz — kendi sayfanda `#senin-id{border-radius:
+var(--bt-radius-sm,4px)}` ile ayrıca ver.
+
+**Kendi CSS akıl yürütmenle (overflow-x:hidden gibi) yama yapma** — teorik olarak makul
+görünse de (bir kere burada denendi, YENİ bir bug'a yol açtı: son kolon body'de tamamen
+kayboldu) önce `design.md`/`HISTORY.md`'de aynı sınıf sorunun zaten çözülüp çözülmediğine bak.
+
 ## Figma'yı asla hafızadan/önceki fetch'ten yorumlama
 
 Bu projede birden fazla kez aynı node "tekrar incele" dendiğinde önceden gözden kaçırdığım
