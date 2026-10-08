@@ -726,3 +726,92 @@ function renderDataTable(columns, rows, opts) {
     <div class="bt-grid__body">${bodyHtml}</div>
   </div></div>`;
 }
+
+/* ============================================================
+   WINDOW (.bt-window) — sağdan kayan panel, Bentas Design System'in
+   gerçek "Form Panel"/"Sizes" örneğinden (foundations/design-examples,
+   components/nav-drawer) birebir taşındı. Boyut `.bt-window--{sm|md|lg|xl}`
+   (33vw/50vw/66vw/100%) — sm/md/lg'nin maxbtn'i dexToggleMaximize ile
+   tam ekrana BÜYÜR; xl zaten tam ekran başladığı için maxbtn'i
+   dexToggleMinimize ile 50vw'a KÜÇÜLÜR (ikon başlangıçta ters — bkz.
+   renderWindow'daki isXl dalı). Açma/kapama: dexOpenPanel(panelId,
+   overlayId) / dexClosePanel(panelId, overlayId) — hidden→reflow→
+   is-open sırası (dexOpenPanel) ve transitionend sonrası hidden=true
+   (dexClosePanel) kaynak koddaki AYNI desen.
+   ============================================================ */
+window.dexOpenPanel = function (panelId, overlayId) {
+  const panel = document.getElementById(panelId);
+  const overlay = overlayId ? document.getElementById(overlayId) : null;
+  panel.hidden = false;
+  panel.getBoundingClientRect(); // reflow — animasyon başlasın diye şart
+  panel.classList.add('is-open');
+  if (overlay) overlay.classList.add('is-open');
+};
+window.dexClosePanel = function (panelId, overlayId) {
+  const panel = document.getElementById(panelId);
+  const overlay = overlayId ? document.getElementById(overlayId) : null;
+  panel.classList.remove('is-open');
+  if (overlay) overlay.classList.remove('is-open');
+  panel.addEventListener('transitionend', function hide() {
+    panel.hidden = true;
+    panel.removeEventListener('transitionend', hide);
+  }, { once: true });
+};
+window.dexToggleMaximize = function (panelId) {
+  const panel = document.getElementById(panelId);
+  const btn = document.getElementById(panelId + '-maxbtn');
+  const isMax = panel.classList.toggle('is-maximized');
+  btn.querySelector('.bt-maxbtn-max').style.display = isMax ? 'none' : '';
+  btn.querySelector('.bt-maxbtn-min').style.display = isMax ? '' : 'none';
+};
+window.dexToggleMinimize = function (panelId) {
+  const panel = document.getElementById(panelId);
+  const btn = document.getElementById(panelId + '-maxbtn');
+  const isMin = panel.classList.toggle('is-minimized');
+  btn.querySelector('.bt-maxbtn-max').style.display = isMin ? '' : 'none';
+  btn.querySelector('.bt-maxbtn-min').style.display = isMin ? 'none' : '';
+};
+
+const _winIconClose = `<span class="bt-window__icon-slot">${icoClear}</span>`;
+const _winIconMax = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>`;
+const _winIconMin = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/></svg>`;
+
+/**
+ * renderWindow — gerçek bt-window markup'ı (overlay + aside.bt-window).
+ * opts: { id, overlayId, size:'sm'|'md'|'lg'|'xl', title, headerActions:html,
+ *         bodyHtml }
+ */
+function renderWindow(opts) {
+  const o = opts || {};
+  const id = o.id;
+  const overlayId = o.overlayId || (id + 'Ov');
+  const size = o.size || 'md';
+  const isXl = size === 'xl';
+  // xl zaten tam ekran açılıyor — maxbtn onu KÜÇÜLTÜR (dexToggleMinimize),
+  // bu yüzden başlangıç ikonu ters: max ikonu gizli, min ikonu görünür.
+  const maxBtnOnClick = isXl ? `dexToggleMinimize('${id}')` : `dexToggleMaximize('${id}')`;
+  const maxIconHtml = `<span class="bt-maxbtn-max"${isXl ? ' style="display:none;"' : ''}>${_winIconMax}</span>`;
+  const minIconHtml = `<span class="bt-maxbtn-min"${isXl ? '' : ' style="display:none;"'}>${_winIconMin}</span>`;
+  return `
+    <div class="bt-win-overlay" id="${overlayId}" onclick="dexClosePanel('${id}','${overlayId}')"></div>
+    <aside class="bt-window bt-window--${size}" id="${id}" role="dialog" aria-modal="true" aria-labelledby="${id}-title" hidden>
+      <div class="bt-window__header">
+        <div class="bt-window__header-left">
+          <div class="bt-window__controls">
+            <button class="bt-btn bt-btn--sm bt-btn--base-flat bt-btn--icon" onclick="dexClosePanel('${id}','${overlayId}')" aria-label="Kapat">${_winIconClose}</button>
+            <button class="bt-btn bt-btn--sm bt-btn--base-flat bt-btn--icon" id="${id}-maxbtn" onclick="${maxBtnOnClick}" aria-label="Boyutu değiştir">${maxIconHtml}${minIconHtml}</button>
+          </div>
+          <span class="bt-window__title" id="${id}-title">${o.title || ''}</span>
+        </div>
+        <div class="bt-window__header-actions">${o.headerActions || ''}</div>
+      </div>
+      <div class="bt-window__body"><div class="bt-window__panel">${o.bodyHtml || ''}</div></div>
+    </aside>`;
+}
+/** .bt-win-field tek satırlık label+değer alanı (şimdilik salt-okunur gösterim — bkz. app.js). */
+function winFieldHtml(label, value) {
+  return `<div class="bt-win-field">
+    <label class="bt-win-label">${label}</label>
+    <input class="bt-win-input" type="text" value="${String(value == null ? '' : value).replace(/&/g, '&amp;').replace(/"/g, '&quot;')}" readonly>
+  </div>`;
+}

@@ -107,3 +107,55 @@ const _m9SampleRow = {
 const rows = Array(6).fill(0).map(() => ({ ..._m9SampleRow }));
 
 document.getElementById('m9Grid').innerHTML = renderDataTable(columns, rows, { emptyText: 'Kayıt bulunamadı' });
+
+/* ── Toolbar: satır seçimine göre Düzenle/Sil aktif/pasif ───────────
+   Data Table engine'inin kendi window.btGridUpdateToolbar'ı (bkz.
+   components.js) toolbar'ı bulmak için grid'in bir .bt-grid-panel
+   atasını arıyor — bu sayfa onun yerine .bt-pl-* Page Layout deseni
+   kullandığı için (toolbar ve grid KARDEŞ, ortak .bt-grid-panel sarıcısı
+   yok) o fonksiyon burada hiçbir şey yapmıyordu (sessiz no-op → Düzenle/
+   Sil hep disabled kalıyordu). Burada sayfaya özel, basit bir senkron:
+   satır click'i önce btGridRowToggle'ı (satırın kendi onclick'i) çalıştırır,
+   SONRA bu delege edilmiş listener aynı click event'inin bubble'ında çalışıp
+   seçili satır olup olmadığına göre butonları günceller. */
+function m9SyncToolbarButtons() {
+  const hasSelection = !!document.querySelector('#m9Grid .bt-grid__row--active');
+  document.getElementById('m9EditBtn').disabled = !hasSelection;
+  document.getElementById('m9DeleteBtn').disabled = !hasSelection;
+}
+document.getElementById('m9Grid').addEventListener('click', m9SyncToolbarButtons);
+
+/* ── Kayıt detay paneli — bt-window (XL) ─────────────────────────────
+   "Düzenle"ye (veya bir satıra çift tıklanınca) basınca seçili satırın
+   verisi Bentas DS'in gerçek bt-window bileşeninde (XL boyut, 100vw)
+   açılır. Alanlar columns'taki headerText/field sırasını birebir izliyor
+   — henüz salt-okunur gösterim (backend yok), "Kaydet" şimdilik paneli
+   kapatmaktan öteye gitmiyor. */
+document.getElementById('m9WindowMount').outerHTML = renderWindow({
+  id: 'm9RecordWindow',
+  size: 'xl',
+  title: 'Kayıt Detayı',
+  headerActions: `<button type="button" class="bt-btn bt-btn--sm bt-btn--primary-solid" onclick="dexClosePanel('m9RecordWindow','m9RecordWindowOv')">Kaydet</button>`,
+});
+function m9OpenRecordWindow(row) {
+  const panel = document.querySelector('#m9RecordWindow .bt-window__panel');
+  // XL tam genişlik olduğu için alanlar .bt-win-row ile 3'erli gruplanıyor
+  // (design system'in kendi .bt-win-row + .bt-win-field deseni) — tek
+  // sütunda 10 alan yerine daha gerçekçi/kompakt bir detay formu.
+  const fields = columns.map(c => winFieldHtml(c.headerText, c.field ? row[c.field] : ''));
+  const rowsHtml = [];
+  for (let i = 0; i < fields.length; i += 3) rowsHtml.push(`<div class="bt-win-row">${fields.slice(i, i + 3).join('')}</div>`);
+  panel.innerHTML = rowsHtml.join('');
+  dexOpenPanel('m9RecordWindow', 'm9RecordWindowOv');
+}
+document.getElementById('m9EditBtn').addEventListener('click', function () {
+  const activeRow = document.querySelector('#m9Grid .bt-grid__row--active');
+  if (!activeRow) return;
+  m9OpenRecordWindow(rows[Number(activeRow.dataset.rowIndex)]);
+});
+// Satıra çift tıklamak da direkt açar (checkbox/seçim davranışına ek, yaygın grid kısayolu).
+document.getElementById('m9Grid').addEventListener('dblclick', function (e) {
+  const rowEl = e.target.closest('.bt-grid__row');
+  if (!rowEl) return;
+  m9OpenRecordWindow(rows[Number(rowEl.dataset.rowIndex)]);
+});
