@@ -99,8 +99,18 @@ window.tbxBaseInput = tbxBaseInput;
 window.tbxBaseClear = tbxBaseClear;
 
 /* ============================================================
-   HUB SIDEBAR — .sbx-rail (collapsed ikon rayı)
+   HUB SIDEBAR — .sbx-shell (Bentas Design System "Sidebar" component,
+   Variant A: persistent icon rail + toggleable drawer).
+   Kaynak: Bentas-Design-System docs/js/pages-web.js — sidebarMarkupA() /
+   sbxRailButton() / sbxDrawerItem() / _sbxToggle() / _sbxSelectBtn() /
+   _sbxSelectItem() birebir taşındı. TEK fark: orijinalde her ikon sabit
+   sbxIconPlaceholder'dı (docs demo'su gerçek nav taşımıyordu) — burada
+   item başına gerçek ikon/label parametre, DOM/class yapısı AYNI.
    ============================================================ */
+window._sbxToggle = function () {
+  const el = document.getElementById('sbxDrawer');
+  if (el) el.classList.toggle('is-collapsed');
+};
 window._sbxSelectBtn = function (el) {
   const rail = el.closest('.sbx-rail');
   if (!rail) return;
@@ -108,20 +118,58 @@ window._sbxSelectBtn = function (el) {
   if (current && current !== el) current.classList.remove('is-selected');
   el.classList.add('is-selected');
 };
+window._sbxSelectItem = function (el) {
+  const list = el.closest('.sbx-drawer-center') || el.closest('.sbx-drawer-bottom');
+  if (!list) return;
+  const current = list.querySelector('.sbx-item-inner.is-selected');
+  if (current && current !== el) current.classList.remove('is-selected');
+  el.classList.add('is-selected');
+};
 // item: { icon, label, selected, onClick }
 function sbxRailButtonHtml(item) {
   const i = item || {};
-  return `<div class="sbx-btn${i.selected ? ' is-selected' : ''}" tabindex="0" title="${i.label || ''}" onclick="window._sbxSelectBtn(this);${i.onClick || ''}">${i.icon || icoPlus}</div>`;
+  return `<div class="sbx-btn${i.selected ? ' is-selected' : ''}" tabindex="0" title="${i.label || ''}" onclick="window._sbxSelectBtn(this);${i.onClick || ''}">${i.icon || ''}</div>`;
+}
+function sbxDrawerItemHtml(item) {
+  const i = item || {};
+  return `<div class="sbx-item">
+            <div class="sbx-item-inner${i.selected ? ' is-selected' : ''}" tabindex="0" onclick="window._sbxSelectItem(this);${i.onClick || ''}">
+              <div class="sbx-item-icon">${i.icon || ''}</div>
+              <div class="sbx-item-label">${i.label || ''}</div>
+            </div>
+          </div>`;
 }
 /**
- * Collapsed Hub Sidebar rayını render eder (Figma "Hub Sidebar Collapsed",
- * 48px). center/bottom: sbxRailButtonHtml() dizisi.
+ * Hub Sidebar'ı render eder (rail + toggleable drawer).
+ * navItems/bottomItems: [{ icon, label, selected, onClick }] — rail ve
+ * drawer AYNI listeden üretilir (rail = ikon-only kısayol, drawer = gerçek
+ * etiketli nav listesi), orijinal sidebarMarkupA'daki collapse toggle'ın
+ * rail içindeki konumu (ilk butondan sonra) korunur.
  */
-function renderSidebarRail(center, bottom) {
-  return `<div class="sbx-rail">
-    <div class="sbx-logo"></div>
-    <div class="sbx-center">${(center || []).map(sbxRailButtonHtml).join('')}</div>
-    <div class="sbx-bottom">${(bottom || []).map(sbxRailButtonHtml).join('')}</div>
+function renderSidebar(navItems, bottomItems, variant) {
+  const nav = navItems || [];
+  const bottom = bottomItems || [];
+  const collapsedCls = variant === 'collapsed' ? ' is-collapsed' : '';
+  const railCenter = nav.length
+    ? `${sbxRailButtonHtml(nav[0])}<div class="sbx-collapse" onclick="window._sbxToggle()" title="Daralt/Genişlet"></div>${nav.slice(1).map(sbxRailButtonHtml).join('')}`
+    : `<div class="sbx-collapse" onclick="window._sbxToggle()" title="Daralt/Genişlet"></div>`;
+  return `<div class="sbx-shell">
+    <div class="sbx-rail">
+      <div class="sbx-logo"></div>
+      <div class="sbx-center">${railCenter}</div>
+      <div class="sbx-bottom">${bottom.map(sbxRailButtonHtml).join('')}</div>
+    </div>
+    <div class="sbx-drawer${collapsedCls}" id="sbxDrawer">
+      <div class="sbx-drawer-top">
+        <div class="bt-input__box bt-searchbox bt-input__box--sm">
+          <div class="bt-input__controls"><span class="bt-icon">${icoSearch}</span></div>
+          <div class="bt-input__content"><input class="bt-input__value" type="text" placeholder="Ara..." oninput="tbxBaseInput(this)" /></div>
+          <div class="sbx-searchbox-kbd">Tab</div>
+        </div>
+      </div>
+      <div class="sbx-drawer-center">${nav.map(sbxDrawerItemHtml).join('')}</div>
+      <div class="sbx-drawer-bottom">${bottom.map(sbxDrawerItemHtml).join('')}</div>
+    </div>
   </div>`;
 }
 

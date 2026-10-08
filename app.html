@@ -8,6 +8,15 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
 <link rel="stylesheet" href="css/styles.css" />
+<style>
+  /* .sbx-shell'in kendi CSS'i (styles.css) docs playground önizlemesi için
+     sabit height:460px + kart border/box-shadow taşıyor — gerçek uygulama
+     kabuğunda tam yükseklik ve kenardan kenara (border'sız) olması gerekiyor.
+     Docs sitesinin ".iso-shell--app .bt-pl-frame" ile aynı amaç, aynı
+     pattern: sadece boyut context'i override edilir, .sbx-shell'in kendisi
+     değişmez. */
+  .bt-pl-frame .sbx-shell { height: 100%; border: none; box-shadow: none; }
+</style>
 </head>
 <body>
 
