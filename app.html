@@ -32,6 +32,19 @@
      .bt-grid-actions-container'a uygulanmıyor; burada aynı değerle geri
      veriliyor. */
   #m9Grid { border-radius: var(--bt-radius-sm, 4px); }
+  /* Fiş Numarası kolonu frozen (position:sticky) — bu, styles.css'in kendi
+     tarihinde belgelenen bir kuralla çakışıyor: .bt-grid__body'de HERHANGİ
+     bir overflow değeri (görünürde hiç taşma olmasa bile — overflow-y:auto
+     dahil, .bt-grid-actions-container'ın kendi kuralı) onu kendi başına bir
+     scroll/containing-block'a çeviriyor, bu da içindeki sticky hücrelerin
+     referans aldığı container'ı YANLIŞLIKLA .bt-grid-scroll-x yerine
+     .bt-grid__body yapıp sticky'yi tamamen kırıyor (Data Table "Frozen
+     Column" sayfasının kendi geçmişinde bulunmuş bir bug, bkz. styles.css
+     .bt-grid__body yorumu). Bu yüzden SADECE frozen kolon kullanan bu
+     sayfada overflow visible'a geri döndürülüyor — bilinen ödün: çok
+     satır olursa dikey scroll güvenlik ağı kalmıyor (Bentas DS'in kendi
+     .bt-grid-frozen-container'ı da aynı ödünü kabul ediyor). */
+  #m9Grid .bt-grid__body { overflow: visible; }
 </style>
 </head>
 <body>

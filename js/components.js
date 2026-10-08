@@ -334,15 +334,29 @@ function gridHeaderCellHtml(opts) {
   const width = o.width || 180;
   const fillWidth = o.fillWidth === true;
   const forceSorted = o.forceSorted === true;
+  // sticky/frozenEdge — Data Table "Frozen Column" sayfasındaki AYNI desen
+  // (gerçek position:sticky, sağ kenarda yumuşak gölge) — bir kolonu sol
+  // kenara sabitlemek için sticky:0 (px), frozenEdge:true geçilir.
+  const sticky = o.sticky;
+  const frozenEdge = o.frozenEdge === true;
+  const stickyRight = o.stickyRight;
+  const frozenRightEdge = o.frozenRightEdge === true;
 
   const cls = [
     'bt-grid__header-cell',
     `bt-grid__header-cell--${position}`,
     showSort ? 'bt-grid__header-cell--sortable' : '',
     forceSorted ? 'bt-grid__header-cell--sorted' : '',
+    frozenEdge ? 'bt-grid__header-cell--frozen-edge' : '',
+    frozenRightEdge ? 'bt-grid__header-cell--frozen-right-edge' : '',
   ].filter(Boolean).join(' ');
   const sortDirAttr = forceSorted ? ` data-sort-dir="${o.sortDir || 'asc'}"` : '';
   const sortClickAttrs = showSort ? ` onclick="btGridSortBy(event,this)"` : '';
+  const stickyStyle = sticky != null
+    ? `position:sticky;left:${sticky}px;z-index:5;`
+    : stickyRight != null
+      ? `position:sticky;right:${stickyRight}px;z-index:5;`
+      : '';
 
   const checkboxHtml = showCheckbox ? gridHeaderCheckboxHtml() : '';
   const contentHtml  = showContent ? `<span class="bt-grid__content">${contentText}</span>` : '';
@@ -354,7 +368,7 @@ function gridHeaderCellHtml(opts) {
   const resizeHandle = (showContent && position !== 'right') ? `<span class="bt-grid__resize-handle" onmousedown="btGridResizeStart(event,this)"></span>` : '';
 
   const widthStyleH = fillWidth ? `flex:1;min-width:${width}px;` : `width:${width}px;`;
-  return `<div class="${cls}" style="${widthStyleH}box-sizing:border-box;"${sortClickAttrs}${sortDirAttr}>${checkboxHtml}${contentHtml}${sortHtml}${filterHtml}${resizeHandle}</div>`;
+  return `<div class="${cls}" style="${widthStyleH}box-sizing:border-box;${stickyStyle}"${sortClickAttrs}${sortDirAttr}>${checkboxHtml}${contentHtml}${sortHtml}${filterHtml}${resizeHandle}</div>`;
 }
 
 function gridCellHtml(opts) {
@@ -368,16 +382,35 @@ function gridCellHtml(opts) {
   const width = o.width || 180;
   const fillWidth = o.fillWidth === true;
   const sortValue = o.sortValue;
+  const sticky = o.sticky;
+  const frozenEdge = o.frozenEdge === true;
+  const stickyRight = o.stickyRight;
+  const frozenRightEdge = o.frozenRightEdge === true;
 
-  const cls = ['bt-grid__cell', `bt-grid__cell--${position}`].filter(Boolean).join(' ');
+  const cls = [
+    'bt-grid__cell',
+    `bt-grid__cell--${position}`,
+    frozenEdge ? 'bt-grid__cell--frozen-edge' : '',
+    frozenRightEdge ? 'bt-grid__cell--frozen-right-edge' : '',
+  ].filter(Boolean).join(' ');
   const sortValueAttr = sortValue != null ? ` data-sort-value="${String(sortValue).replace(/&/g, '&amp;').replace(/"/g, '&quot;')}"` : '';
+  const stickyStyle = sticky != null
+    ? `position:sticky;left:${sticky}px;z-index:5;`
+    : stickyRight != null
+      ? `position:sticky;right:${stickyRight}px;z-index:5;`
+      : '';
+  // onClick — ör. "Fiş Numarası" gibi link görünümlü bir hücrenin kendi
+  // tıklamasıyla (satırın kendi onclick'inden, btGridRowToggle'dan BAĞIMSIZ,
+  // stopPropagation ile) bir kaydı açması için. contentLink'ten ayrı —
+  // contentLink sadece görsel (.bt-grid__content--link, mavi+altı çizili).
+  const onClickAttr = o.onClick ? ` onclick="event.stopPropagation();${o.onClick}"` : '';
 
   const leadingHtml  = gridLeadingHtml(leading, o.leadingOpts);
-  const contentHtml  = showContent ? `<span class="bt-grid__content${contentLink ? ' bt-grid__content--link' : ''}">${contentText}</span>` : '';
+  const contentHtml  = showContent ? `<span class="bt-grid__content${contentLink ? ' bt-grid__content--link' : ''}"${onClickAttr}>${contentText}</span>` : '';
   const trailingHtml = gridTrailingHtml(trailing, o.trailingOpts);
 
   const widthStyleC = fillWidth ? `flex:1;min-width:${width}px;` : `width:${width}px;`;
-  return `<div class="${cls}" style="${widthStyleC}box-sizing:border-box;"${sortValueAttr}>${leadingHtml}${contentHtml}${trailingHtml}</div>`;
+  return `<div class="${cls}" style="${widthStyleC}box-sizing:border-box;${stickyStyle}"${sortValueAttr}>${leadingHtml}${contentHtml}${trailingHtml}</div>`;
 }
 
 function gridNoRecordHtml(width, text) {
@@ -681,13 +714,19 @@ document.addEventListener('click', function (e) {
 /**
  * renderDataTable — gerçek proje verisiyle çalışan genel Data Table render'ı.
  *
- * columns: [{ field, headerText, width, fillWidth, sort, filter,
+ * columns: [{ field, headerText, width, fillWidth, sort, filter, frozen,
  *              headerCheckbox, cellLeading: 'none'|'checkbox'|'dot'|'avatar',
  *              leadingOpts(row) => opts (avatar: { initials }),
  *              cellTrailing: 'none'|'badge'|'button',
- *              trailingOpts(row) => opts, format(row) => string }]
+ *              trailingOpts(row) => opts, format(row) => string,
+ *              contentLink, onClick(row) => jsString }]
  * rows: [{ ...herhangi bir alan... }]
  * opts: { emptyText }
+ *
+ * frozen:true — sol kenara sabit (position:sticky, "Frozen Column" sayfasının
+ * aynısı). Sadece sol-baştan ardışık bir ÖN EK (ilk N kolon) desteklenir —
+ * offset'ler bu N kolonun genişlik toplamından, edge gölgesi son frozen
+ * kolonun sağ kenarından otomatik hesaplanır.
  */
 function renderDataTable(columns, rows, opts) {
   const o = opts || {};
@@ -695,10 +734,20 @@ function renderDataTable(columns, rows, opts) {
   const posFor = i => i === 0 ? 'left' : i === cols.length - 1 ? 'right' : 'middle';
   const totalWidth = cols.reduce((sum, c) => sum + (c.width || 180), 0);
 
+  let _frozenOffset = 0;
+  const frozenInfo = cols.map((c, i) => {
+    if (!c.frozen) return null;
+    const sticky = _frozenOffset;
+    _frozenOffset += (c.width || 180);
+    return { sticky, frozenEdge: !(cols[i + 1] && cols[i + 1].frozen) };
+  });
+
   const headerRow = cols.map((c, i) => gridHeaderCellHtml({
     position: posFor(i),
     width: c.width,
     fillWidth: c.fillWidth,
+    sticky: frozenInfo[i] ? frozenInfo[i].sticky : undefined,
+    frozenEdge: frozenInfo[i] ? frozenInfo[i].frozenEdge : false,
     showCheckbox: !!c.headerCheckbox,
     showContent: c.headerText !== undefined,
     contentText: c.headerText || '',
@@ -712,12 +761,16 @@ function renderDataTable(columns, rows, opts) {
         position: posFor(i),
         width: c.width,
         fillWidth: c.fillWidth,
+        sticky: frozenInfo[i] ? frozenInfo[i].sticky : undefined,
+        frozenEdge: frozenInfo[i] ? frozenInfo[i].frozenEdge : false,
         leading: c.cellLeading || 'none',
         leadingOpts: c.leadingOpts ? c.leadingOpts(row) : undefined,
         trailing: c.cellTrailing || 'none',
         trailingOpts: c.trailingOpts ? c.trailingOpts(row) : undefined,
         showContent: (c.cellTrailing || 'none') === 'none',
         contentText: c.format ? c.format(row) : (c.field ? row[c.field] : ''),
+        contentLink: !!c.contentLink,
+        onClick: c.onClick ? c.onClick(row, idx) : undefined,
         sortValue: c.field ? row[c.field] : undefined,
       })).join('')}</div>`).join('');
 
@@ -812,6 +865,6 @@ function renderWindow(opts) {
 function winFieldHtml(label, value) {
   return `<div class="bt-win-field">
     <label class="bt-win-label">${label}</label>
-    <input class="bt-win-input" type="text" value="${String(value == null ? '' : value).replace(/&/g, '&amp;').replace(/"/g, '&quot;')}" readonly>
+    <input class="bt-win-input" type="text" value="${String(value == null ? '' : value).replace(/&/g, '&amp;').replace(/"/g, '&quot;')}">
   </div>`;
 }

@@ -33,7 +33,7 @@ document.getElementById('m9Rail').outerHTML = renderSidebar(
 
 /* ── Toolbar — Yeni Ekle / Düzenle / Sil + SearchBox (sağa yaslı) ───── */
 document.getElementById('m9Toolbar').innerHTML = `
-  <button type="button" class="bt-btn bt-btn--sm bt-btn--primary-solid">
+  <button type="button" class="bt-btn bt-btn--sm bt-btn--primary-solid" id="m9AddBtn">
     ${icoPlus}<span>Yeni Ekle</span>
   </button>
   <button type="button" class="bt-btn bt-btn--sm bt-btn--base-flat" id="m9EditBtn" disabled>
@@ -58,7 +58,13 @@ document.getElementById('m9Toolbar').innerHTML = `
    değeri Figma'da hâlâ kendi başlık metnini taşıyor (doldurulmamış
    kalmış, Figma'nın kendi eksikliği) — birebir aynen yansıtıldı. */
 const columns = [
-  { field: 'fisNo',       headerText: 'Fiş Numarası',     headerCheckbox: true, cellLeading: 'checkbox', filter: true, width: 215 },
+  // frozen — Data Table "Frozen Column" sayfasının aynısı (position:sticky,
+  // sağ kenarda yumuşak edge gölgesi, bkz. app.html'deki #m9Grid .bt-grid__body
+  // override notu). contentLink + onClick — Figma'da/Bentas DS'te ID benzeri
+  // kolonların link olarak kullanıldığı desen (gridTableColumns'daki ID
+  // kolonunun contentLink:true'su) — tıklanınca satırın kendi seçim onclick'i
+  // TETİKLENMEDEN (stopPropagation, bkz. gridCellHtml) doğrudan kaydı açar.
+  { field: 'fisNo',       headerText: 'Fiş Numarası',     headerCheckbox: true, cellLeading: 'checkbox', filter: true, width: 215, frozen: true, contentLink: true, onClick: (row, idx) => `m9OpenRecordWindow(${idx})` },
   { field: 'fisTipi',     headerText: 'Fiş Tipi',         filter: true, width: 146 },
   { field: 'fisTarihi',   headerText: 'Fiş Tarihi',       filter: true, width: 174 },
   { field: 'oncekiNo',    headerText: 'Önceki Numarası',  filter: true, width: 136 },
@@ -126,18 +132,26 @@ function m9SyncToolbarButtons() {
 document.getElementById('m9Grid').addEventListener('click', m9SyncToolbarButtons);
 
 /* ── Kayıt detay paneli — bt-window (XL) ─────────────────────────────
-   "Düzenle"ye (veya bir satıra çift tıklanınca) basınca seçili satırın
-   verisi Bentas DS'in gerçek bt-window bileşeninde (XL boyut, 100vw)
-   açılır. Alanlar columns'taki headerText/field sırasını birebir izliyor
-   — henüz salt-okunur gösterim (backend yok), "Kaydet" şimdilik paneli
-   kapatmaktan öteye gitmiyor. */
+   Üç açılış yolu: "Yeni Ekle" (boş kayıt), "Düzenle" veya Fiş Numarası
+   linkine/satıra çift tıklama (mevcut kaydı doldurur). Bentas DS'in
+   gerçek bt-window bileşeni (XL boyut, 100vw) — renderWindow/winFieldHtml
+   js/components.js'te. Alanlar artık düzenlenebilir (readonly kaldırıldı).
+
+   Kaydet butonu — kullanıcı kararı: panel açıldığında (hem mevcut kayıt
+   hem yeni kayıt için) HER ZAMAN disabled başlar, panelde herhangi bir
+   alan değiştirilene kadar öyle kalır — "işlem yapılmadıysa" kaydedecek
+   bir şey yok. İlk input event'inde enable olur (m9SaveBtn.disabled=false).
+   Kaydet'e basınca gerçekten `rows`'a yazılır (yeni kayıtta push, mevcut
+   kayıtta index'e), grid yeniden render edilir (henüz kalıcı bir backend
+   yok — sayfa yenilenince kaybolur). */
 document.getElementById('m9WindowMount').outerHTML = renderWindow({
   id: 'm9RecordWindow',
   size: 'xl',
   title: 'Kayıt Detayı',
-  headerActions: `<button type="button" class="bt-btn bt-btn--sm bt-btn--primary-solid" onclick="dexClosePanel('m9RecordWindow','m9RecordWindowOv')">Kaydet</button>`,
+  headerActions: `<button type="button" class="bt-btn bt-btn--sm bt-btn--primary-solid" id="m9SaveBtn" disabled onclick="m9SaveRecord()">Kaydet</button>`,
 });
-function m9OpenRecordWindow(row) {
+let m9EditingIndex = null; // null → Yeni Ekle; sayı → rows[] içindeki mevcut kayıt
+function _m9RenderWindowFields(row) {
   const panel = document.querySelector('#m9RecordWindow .bt-window__panel');
   // XL tam genişlik olduğu için alanlar .bt-win-row ile 3'erli gruplanıyor
   // (design system'in kendi .bt-win-row + .bt-win-field deseni) — tek
@@ -146,16 +160,48 @@ function m9OpenRecordWindow(row) {
   const rowsHtml = [];
   for (let i = 0; i < fields.length; i += 3) rowsHtml.push(`<div class="bt-win-row">${fields.slice(i, i + 3).join('')}</div>`);
   panel.innerHTML = rowsHtml.join('');
+  document.getElementById('m9SaveBtn').disabled = true; // her açılışta sıfırlanır
+}
+function m9OpenRecordWindow(idx) {
+  m9EditingIndex = idx;
+  document.getElementById('m9RecordWindow-title').textContent = 'Kayıt Detayı';
+  _m9RenderWindowFields(rows[idx]);
   dexOpenPanel('m9RecordWindow', 'm9RecordWindowOv');
 }
+function m9OpenNewRecordWindow() {
+  m9EditingIndex = null;
+  document.getElementById('m9RecordWindow-title').textContent = 'Yeni Kayıt';
+  const emptyRow = {};
+  columns.forEach(c => { if (c.field) emptyRow[c.field] = ''; });
+  _m9RenderWindowFields(emptyRow);
+  dexOpenPanel('m9RecordWindow', 'm9RecordWindowOv');
+}
+// Panelde HERHANGİ bir alan değiştirilince Kaydet aktifleşir (delege —
+// panel her açılışta yeniden oluşturuluyor, tek tek input'lara değil
+// #m9RecordWindow'un kendisine bağlanıyor).
+document.getElementById('m9RecordWindow').addEventListener('input', function () {
+  document.getElementById('m9SaveBtn').disabled = false;
+});
+function m9SaveRecord() {
+  const panel = document.querySelector('#m9RecordWindow .bt-window__panel');
+  const values = Array.from(panel.querySelectorAll('.bt-win-input')).map(inp => inp.value);
+  const updatedRow = {};
+  columns.forEach((c, i) => { if (c.field) updatedRow[c.field] = values[i]; });
+  if (m9EditingIndex == null) rows.push(updatedRow);
+  else rows[m9EditingIndex] = updatedRow;
+  document.getElementById('m9Grid').innerHTML = renderDataTable(columns, rows, { emptyText: 'Kayıt bulunamadı' });
+  m9SyncToolbarButtons(); // yeniden render sonrası seçim sıfırlandı → Düzenle/Sil tekrar disabled
+  dexClosePanel('m9RecordWindow', 'm9RecordWindowOv');
+}
+document.getElementById('m9AddBtn').addEventListener('click', m9OpenNewRecordWindow);
 document.getElementById('m9EditBtn').addEventListener('click', function () {
   const activeRow = document.querySelector('#m9Grid .bt-grid__row--active');
   if (!activeRow) return;
-  m9OpenRecordWindow(rows[Number(activeRow.dataset.rowIndex)]);
+  m9OpenRecordWindow(Number(activeRow.dataset.rowIndex));
 });
 // Satıra çift tıklamak da direkt açar (checkbox/seçim davranışına ek, yaygın grid kısayolu).
 document.getElementById('m9Grid').addEventListener('dblclick', function (e) {
   const rowEl = e.target.closest('.bt-grid__row');
   if (!rowEl) return;
-  m9OpenRecordWindow(rows[Number(rowEl.dataset.rowIndex)]);
+  m9OpenRecordWindow(Number(rowEl.dataset.rowIndex));
 });
