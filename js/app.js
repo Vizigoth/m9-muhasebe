@@ -65,7 +65,11 @@ const columns = [
   { field: 'maddeNo',     headerText: 'Madde Numarası',   filter: true, width: 142 },
   { field: 'valorTarihi', headerText: 'Valör Tarihi',     filter: true, width: 174 },
   { field: 'islemTuru',   headerText: 'İşlem Türü',       filter: true, width: 174 },
-  { field: 'aciklama',    headerText: 'Açıklama',         filter: true, width: 455 },
+  // Açıklama 455→453: aşağıdaki not — toplam kolon genişliği, .bt-grid-
+  // actions-container'ın kendi 1px sol + 1px sağ border'ı (Figma'nın 1840px
+  // DataTable ölçüsü bu border'sız bir alanı varsayıyor) için 2px geri
+  // veriyor. En az göze batacak, en geniş/esnek kolondan kırpıldı.
+  { field: 'aciklama',    headerText: 'Açıklama',         filter: true, width: 453 },
   { field: 'kdv',         headerText: 'KDV%',             filter: true, width: 96 },
   // Kullanıcı — Figma'da "Avatar Control" (28×28, .bt-avatar--xs .bt-avatar--brand)
   // taşıyor, Data Table'ın zaten var olan avatar leading kind'i. İsimden
@@ -76,14 +80,12 @@ const columns = [
   // design.md "Email kolonu + tablo tam genişlik fill" notu) — ayrıca son
   // kolonun kendi resize handle'ı yok (Bentas DS'te kasıtlı: handle'ın 3px
   // dışarı taşması gereksiz scrollbar tetikliyor), fillWidth onun yerine
-  // otomatik boyutlanmasını sağlıyor. width 128→150: .bt-grid'in
-  // min-width:max-content'i (çift-scroll fix'i) kolonun KENDİ doğal
-  // (avatar 28px + gap + "Emre Göcer" metni) genişliğini hesaba katıyor —
-  // 128px bu doğal genişliği karşılamaya yetmeyince grid'in toplam gerekli
-  // genişliği 1840px'i aşıp görsel olarak sığıyormuş gibi dururken bile
-  // kalıcı birkaç piksellik bir yatay scroll'a yol açıyordu. 150px bu doğal
-  // genişliği rahat karşılıyor, grid'i şişirmiyor.
-  { field: 'kullanici',   headerText: 'Kullanıcı',        filter: true, width: 150, fillWidth: true, cellLeading: 'avatar', leadingOpts: row => ({ initials: m9Initials(row.kullanici) }) },
+  // otomatik boyutlanmasını sağlıyor. width Figma'daki orijinal 128 —
+  // önceki turda "kolonun kendi doğal içeriği 128px'i aşıyor" teorisiyle
+  // 150'ye çıkarılmıştı, ama kullanıcı HİÇ resize yapılmamış varsayılan
+  // ekranda da aynı (küçük) scroll'un sürdüğünü gösterdi — o teori yanlıştı,
+  // geri alındı (bkz. Açıklama'daki 453 notu — asıl fark container border'ı).
+  { field: 'kullanici',   headerText: 'Kullanıcı',        filter: true, width: 128, fillWidth: true, cellLeading: 'avatar', leadingOpts: row => ({ initials: m9Initials(row.kullanici) }) },
 ];
 function m9Initials(name) {
   const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
