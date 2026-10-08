@@ -51,10 +51,12 @@ document.getElementById('m9Toolbar').innerHTML = `
    sort ikonu yok), sadece ilk kolonda (Fiş Numarası) select-all checkbox.
    Genişlikler Figma'daki Header Row'un gerçek piksel değerleri (toplam
    1840px — viewport daha darsa .bt-grid-scroll-x yatay scroll sağlıyor).
-   Satırlar boş: Figma'nın kendi mockup'ında 6 örnek satır vardı ama bu
-   proje henüz bir backend'e bağlı değil — gerçek veri yerine sahte içerik
-   koymamak için rows=[] bırakıldı (diğer ekranlarla tutarlı), "No Record
-   Available" durumu (Kayıt bulunamadı) gösteriliyor. */
+   Satırlar Figma'daki 6 örnek satırla birebir (hepsi aynı mockup verisi,
+   Figma'nın kendisinde de 6 satır birbirinin kopyası) — bu yüzden gerçek
+   bir kayıt setini DEĞİL, Figma'nın kendi görsel-tamamlanmış örneğini
+   yansıtıyor. "Önceki Numarası" ve "Madde Numarası" kolonlarının hücre
+   değeri Figma'da hâlâ kendi başlık metnini taşıyor (doldurulmamış
+   kalmış, Figma'nın kendi eksikliği) — birebir aynen yansıtıldı. */
 const columns = [
   { field: 'fisNo',       headerText: 'Fiş Numarası',     headerCheckbox: true, cellLeading: 'checkbox', filter: true, width: 215 },
   { field: 'fisTipi',     headerText: 'Fiş Tipi',         filter: true, width: 146 },
@@ -67,6 +69,18 @@ const columns = [
   { field: 'kdv',         headerText: 'KDV%',             filter: true, width: 96 },
   { field: 'kullanici',   headerText: 'Kullanıcı',        filter: true, width: 128 },
 ];
-const rows = []; // Kayıt yok → Figma'daki "No Record Available" durumu.
+const _m9SampleRow = {
+  fisNo: '000001',
+  fisTipi: 'Mahsup',
+  fisTarihi: '01 / 01 / 2026 09:00:00',
+  oncekiNo: 'Önceki Numarası',
+  maddeNo: 'Madde Numarası',
+  valorTarihi: '01 / 01 / 2026 09:00:00',
+  islemTuru: 'Transfer',
+  aciklama: 'Tarihli 37 Numarali (CMA) CARI MAHSUP ISLEMLERI (MAH) MAHSUP TIPI HAREKET Evraki  (Belge No/Tarih: 37 23-09-2026) (Sirket/ Isyeri: 10/1)',
+  kdv: '18',
+  kullanici: 'Emre Göcer',
+};
+const rows = Array(6).fill(0).map(() => ({ ..._m9SampleRow }));
 
 document.getElementById('m9Grid').innerHTML = renderDataTable(columns, rows, { emptyText: 'Kayıt bulunamadı' });
