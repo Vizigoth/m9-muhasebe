@@ -64,7 +64,7 @@ const columns = [
   // kolonların link olarak kullanıldığı desen (gridTableColumns'daki ID
   // kolonunun contentLink:true'su) — tıklanınca satırın kendi seçim onclick'i
   // TETİKLENMEDEN (stopPropagation, bkz. gridCellHtml) doğrudan kaydı açar.
-  { field: 'fisNo',       headerText: 'Fiş Numarası',     headerCheckbox: true, cellLeading: 'checkbox', filter: true, width: 215, frozen: true, contentLink: true, onClick: (row, idx) => `m9OpenRecordWindow(${idx})` },
+  { field: 'fisNo',       headerText: 'Fiş Numarası',     headerCheckbox: true, cellLeading: 'checkbox', filter: true, width: 160, frozen: true, contentLink: true, onClick: (row, idx) => `m9OpenRecordWindow(${idx})` },
   { field: 'fisTipi',     headerText: 'Fiş Tipi',         filter: true, width: 146 },
   { field: 'fisTarihi',   headerText: 'Fiş Tarihi',       filter: true, width: 174 },
   { field: 'oncekiNo',    headerText: 'Önceki Numarası',  filter: true, width: 136 },
