@@ -5,6 +5,22 @@ B2B muhasebe uygulaması. Bu dosya, o projeyle paylaşılmayan — bu projeye ö
 oturumlarda gerçekten hata yapılmış — kuralları taşır. Genel `--bt-*` token/component kuralları
 için Bentas Design System'in kendi `CLAUDE.md`'sine bakılır (orası kaynak, burası onu tekrar etmez).
 
+## bt-window içine input koyarken: Design Examples'ın kendi demo alanlarına GÜVENME
+
+`foundations/design-examples` sayfasındaki "Form Panel" örneği, kendi `.bt-win-input`/
+`.bt-win-dropdown`/`.bt-win-datepicker` sistemini kullanıyor — bu, Base Input mimarisiyle
+(`.bt-input`/`.bt-textbox`/`.bt-dropdown`/`.bt-datepicker`, uygulamanın HER YERİNDE kullanılan
+gerçek component'ler) **PAYLAŞILMAYAN**, SADECE o tek demo panelinde yaşayan, basitleştirilmiş
+bir alternatif set — gerçek TextBox/Dropdown/DatePicker/Textarea component'leri DEĞİL. Bir
+kere bu projede bt-window içine bu sahte alanlar kondu, kullanıcı düzeltti.
+
+**Kural**: bt-window İÇİNE bir input koyarken önce o input TÜRÜNÜN KENDİ component sayfasına
+(`components/textbox`, `components/dropdown`, `components/date-picker`, `components/textarea`)
+bak, Design Examples'ın kendi örneğine güvenme — gerçek mimariyi `js/components.js`'teki
+`winFieldHtml`/`winReadonlyFieldHtml`/`winDropdownHtml`/`winDateHtml`/`winTextareaHtml`
+(hepsi gerçek component'lere taşındı, 2026-10-08) zaten taşıyor, yeni bir form alanı
+eklerken bunları kullan/genişlet — `.bt-win-*` class'larını YENİDEN icat etme.
+
 ## İkon boyutlandırma — TEK bir kural yok, component'e göre değişir
 
 Bentas Design System'in "her zaman `.bt-icon` wrapper kullan" kuralı **sadece bazı bağlamlar
