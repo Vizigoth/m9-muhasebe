@@ -283,12 +283,19 @@ function gridControlIcon(icon, color) {
 function gridHeaderCheckboxHtml() {
   return `<span class="bt-grid__control" onclick="btGridSelectAll(this)" style="cursor:pointer;"><span class="bt-checkbox__box">${_chkCheck}</span></span>`;
 }
-function gridLeadingHtml(kind) {
+function gridLeadingHtml(kind, opts) {
+  const o = opts || {};
   switch (kind) {
     case 'checkbox':
       return `<span class="bt-grid__control" onclick="this.querySelector('.bt-checkbox__box').classList.toggle('bt-checkbox__box--checked')" style="cursor:pointer;"><span class="bt-checkbox__box">${_chkCheck}</span></span>`;
     case 'dot':
       return `<span class="bt-grid__control"><span class="bt-grid__dot"></span></span>`;
+    case 'avatar':
+      // Figma "Avatar Control" (28×28, .bt-avatar--xs .bt-avatar--brand) —
+      // gerçek Avatar component'i, Data Table'ın zaten var olan leading
+      // kind'i. initials verilmezse (Avatar component'inin kendi docs
+      // demo'sundaki gibi) 'EG' varsayılanına düşer.
+      return `<span class="bt-grid__control"><span class="bt-avatar bt-avatar--xs bt-avatar--brand"><span class="bt-avatar__initials">${o.initials || 'EG'}</span></span></span>`;
     default:
       return '';
   }
@@ -365,7 +372,7 @@ function gridCellHtml(opts) {
   const cls = ['bt-grid__cell', `bt-grid__cell--${position}`].filter(Boolean).join(' ');
   const sortValueAttr = sortValue != null ? ` data-sort-value="${String(sortValue).replace(/&/g, '&amp;').replace(/"/g, '&quot;')}"` : '';
 
-  const leadingHtml  = gridLeadingHtml(leading);
+  const leadingHtml  = gridLeadingHtml(leading, o.leadingOpts);
   const contentHtml  = showContent ? `<span class="bt-grid__content${contentLink ? ' bt-grid__content--link' : ''}">${contentText}</span>` : '';
   const trailingHtml = gridTrailingHtml(trailing, o.trailingOpts);
 
@@ -675,7 +682,8 @@ document.addEventListener('click', function (e) {
  * renderDataTable — gerçek proje verisiyle çalışan genel Data Table render'ı.
  *
  * columns: [{ field, headerText, width, fillWidth, sort, filter,
- *              headerCheckbox, cellLeading: 'none'|'checkbox'|'dot',
+ *              headerCheckbox, cellLeading: 'none'|'checkbox'|'dot'|'avatar',
+ *              leadingOpts(row) => opts (avatar: { initials }),
  *              cellTrailing: 'none'|'badge'|'button',
  *              trailingOpts(row) => opts, format(row) => string }]
  * rows: [{ ...herhangi bir alan... }]
@@ -705,6 +713,7 @@ function renderDataTable(columns, rows, opts) {
         width: c.width,
         fillWidth: c.fillWidth,
         leading: c.cellLeading || 'none',
+        leadingOpts: c.leadingOpts ? c.leadingOpts(row) : undefined,
         trailing: c.cellTrailing || 'none',
         trailingOpts: c.trailingOpts ? c.trailingOpts(row) : undefined,
         showContent: (c.cellTrailing || 'none') === 'none',

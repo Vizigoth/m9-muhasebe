@@ -67,8 +67,17 @@ const columns = [
   { field: 'islemTuru',   headerText: 'İşlem Türü',       filter: true, width: 174 },
   { field: 'aciklama',    headerText: 'Açıklama',         filter: true, width: 455 },
   { field: 'kdv',         headerText: 'KDV%',             filter: true, width: 96 },
-  { field: 'kullanici',   headerText: 'Kullanıcı',        filter: true, width: 128 },
+  // Kullanıcı — Figma'da "Avatar Control" (28×28, .bt-avatar--xs .bt-avatar--brand)
+  // taşıyor, Data Table'ın zaten var olan avatar leading kind'i. İsimden
+  // baş harfler türetiliyor (docs'un hardcoded "EG" demo'sunun aksine gerçek
+  // satır verisiyle çalışsın diye).
+  { field: 'kullanici',   headerText: 'Kullanıcı',        filter: true, width: 128, cellLeading: 'avatar', leadingOpts: row => ({ initials: m9Initials(row.kullanici) }) },
 ];
+function m9Initials(name) {
+  const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return '';
+  return (parts[0][0] + (parts[parts.length - 1][0] || '')).toUpperCase();
+}
 const _m9SampleRow = {
   fisNo: '000001',
   fisTipi: 'Mahsup',
