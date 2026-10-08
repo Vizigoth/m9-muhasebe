@@ -161,13 +161,13 @@ document.getElementById('m9WindowMount').outerHTML = renderWindow({
 const M9_ISLEM_TURU_OPTS = ['Transfer', 'Nakit', 'Çek', 'Senet']; // gerçek liste netleşene kadar varsayım
 const M9_FIS_TIPI_OPTS   = ['Mahsup', 'Tahsilat', 'Tediye', 'Diğer']; // aynı şekilde varsayım
 
-/* Örnek "DD / MM / YYYY HH:MM:SS" (mevcut rows verisi) ↔ date picker'ın
-   ihtiyaç duyduğu iki format: native (yyyy-mm-dd) + display (dd-mm-yyyy). */
+/* Örnek "DD / MM / YYYY HH:MM:SS" (mevcut rows verisi) → gerçek DatePicker
+   component'inin beklediği "dd/mm/yyyy" (bkz. components.js _calParseDdMmYyyy). */
 function m9ParseDate(str) {
   const m = String(str || '').match(/(\d{1,2})\s*[\/\-]\s*(\d{1,2})\s*[\/\-]\s*(\d{4})/);
-  if (!m) return { native: '', display: '' };
+  if (!m) return '';
   const d = m[1].padStart(2, '0'), mo = m[2].padStart(2, '0'), y = m[3];
-  return { native: `${y}-${mo}-${d}`, display: `${d}-${mo}-${y}` };
+  return `${d}/${mo}/${y}`;
 }
 
 /* Kalemler — gerçek per-fiş muhasebe satırları henüz bir backend'e bağlı
@@ -201,8 +201,6 @@ function m9RenderDetailGrid() {
 let m9EditingIndex = null; // null → Yeni Ekle; sayı → rows[] içindeki mevcut kayıt
 function _m9RenderWindowBody(row, detailRows) {
   const body = document.getElementById('m9RecordWindow-body');
-  const fisTarihi = m9ParseDate(row.fisTarihi);
-  const valorTarihi = m9ParseDate(row.valorTarihi);
 
   const fisBilgileri = winSectionHtml('Fiş Bilgileri', `
     <div class="bt-win-row">
@@ -212,8 +210,8 @@ function _m9RenderWindowBody(row, detailRows) {
       ${winDropdownHtml({ id: 'm9f_islemTuru', label: 'İşlem Türü', value: row.islemTuru, options: M9_ISLEM_TURU_OPTS })}
     </div>
     <div class="bt-win-row">
-      ${winDateHtml({ id: 'm9f_fisTarihi', label: 'Fiş Tarihi', nativeValue: fisTarihi.native, displayValue: fisTarihi.display })}
-      ${winDateHtml({ id: 'm9f_valorTarihi', label: 'Valör Tarihi', nativeValue: valorTarihi.native, displayValue: valorTarihi.display })}
+      ${winDateHtml({ id: 'm9f_fisTarihi', label: 'Fiş Tarihi', value: m9ParseDate(row.fisTarihi) })}
+      ${winDateHtml({ id: 'm9f_valorTarihi', label: 'Valör Tarihi', value: m9ParseDate(row.valorTarihi) })}
       ${winFieldHtml('Madde No', row.maddeNo, 'm9f_maddeNo')}
       ${winFieldHtml('KDV %', row.kdv, 'm9f_kdv')}
     </div>
@@ -260,20 +258,23 @@ function m9OpenNewRecordWindow() {
   dexOpenPanel('m9RecordWindow', 'm9RecordWindowOv');
 }
 // Panelde HERHANGİ bir alan değiştirilince (metin, dropdown seçimi —
-// btWinDropdownSelect kendi 'change'ini dispatch ediyor —, tarih seçimi)
-// Kaydet aktifleşir. Delege: panel her açılışta yeniden oluşturuluyor.
+// ddBaseOptionSelect kendi 'change'ini dispatch ediyor —, tarih seçimi —
+// dpBaseInput de aynı şekilde) Kaydet aktifleşir. Delege: panel her
+// açılışta yeniden oluşturuluyor.
 document.getElementById('m9RecordWindow').addEventListener('input', function () { document.getElementById('m9SaveBtn').disabled = false; });
 document.getElementById('m9RecordWindow').addEventListener('change', function () { document.getElementById('m9SaveBtn').disabled = false; });
 function m9SaveRecord() {
-  const dd = id => document.getElementById(id).querySelector('.bt-win-dropdown__value').textContent;
+  // dd(id) — gerçek .bt-dropdown'ın seçili değerini okur (id .bt-input__box'ın
+  // üzerinde). val(id) — gerçek TextBox/DatePicker'ın .bt-input__value'su.
+  const dd = id => document.getElementById(id).querySelector('.bt-input__value').textContent;
   const val = id => document.getElementById(id).value;
   const updatedRow = {
     fisNo: val('m9f_fisNo'),
     oncekiNo: val('m9f_oncekiNo'),
     fisTipi: dd('m9f_fisTipi'),
     islemTuru: dd('m9f_islemTuru'),
-    fisTarihi: val('m9f_fisTarihi-display'),
-    valorTarihi: val('m9f_valorTarihi-display'),
+    fisTarihi: val('m9f_fisTarihi'),
+    valorTarihi: val('m9f_valorTarihi'),
     maddeNo: val('m9f_maddeNo'),
     kdv: val('m9f_kdv'),
     aciklama: val('m9f_aciklama'),

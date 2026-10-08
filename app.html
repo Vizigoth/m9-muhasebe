@@ -45,6 +45,13 @@
      satır olursa dikey scroll güvenlik ağı kalmıyor (Bentas DS'in kendi
      .bt-grid-frozen-container'ı da aynı ödünü kabul ediyor). */
   #m9Grid .bt-grid__body { overflow: visible; }
+  /* .bt-win-row'un kendi CSS'i (styles.css) sadece .bt-win-field çocuklarına
+     flex:1 veriyor — Kayıt Detayı paneli artık gerçek TextBox/Dropdown/
+     DatePicker/Textarea component'lerini (.bt-input/.bt-txa) kullandığı
+     için (bkz. "bt window içindeki inputlar gerçek olmalıydı" düzeltmesi)
+     bu çocuklara da aynı eşit-dağılım davranışı burada veriliyor. */
+  #m9RecordWindow .bt-win-row > .bt-input,
+  #m9RecordWindow .bt-win-row > .bt-txa { flex: 1; min-width: 0; }
 </style>
 </head>
 <body>

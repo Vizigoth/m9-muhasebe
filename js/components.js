@@ -861,94 +861,330 @@ function renderWindow(opts) {
       <div class="bt-window__body" id="${id}-body">${o.bodyHtml != null ? `<div class="bt-window__panel">${o.bodyHtml}</div>` : ''}</div>
     </aside>`;
 }
-/* ── bt-win-field varyantları ─────────────────────────────────────
-   winFieldHtml — düz metin input. winReadonlyFieldHtml — sistem/audit
-   alanları (Giriş Tarihi vb.) için salt-okunur, soluk görünüm (gerçek
-   .bt-win-input'un disabled state'i — styles.css'te zaten tanımlı).
-   winTextareaHtml/winDropdownHtml/winDateHtml — Bentas DS'in Design
-   Examples sayfasındaki (Uygulama dropdown'ı, Tarih picker'ı, Açıklama
-   textarea'sı) GERÇEK bt-win-* yapıları, genellenmiş. */
+/* ════════════════════════════════════════════════════════════════
+   GERÇEK TextBox / Dropdown / DatePicker / Textarea — Base Input
+   mimarisi (.bt-input/.bt-textbox/.bt-dropdown/.bt-datepicker) ve
+   Textarea'nın kendi .bt-txa sistemi. pages-web.js'teki tbxBase-,
+   ddBase-, dpBase-, _cal- ve txaCls fonksiyonlarından birebir taşındı.
+
+   ÖNEMLİ (kullanıcı düzeltmesi, 2026-10-08): bt-window'un kendi Design
+   Examples sayfasındaki form alanları (.bt-win-input/.bt-win-dropdown/
+   .bt-win-datepicker) bu projede ÖNCE kullanılmıştı — ama bunlar sadece
+   o TEK demo panelinde yaşayan, Base Input mimarisiyle PAYLAŞILMAYAN,
+   basitleştirilmiş bir alternatif set; gerçek TextBox/Dropdown/DatePicker
+   component'leri DEĞİL. CLAUDE.md'nin "Mevcut Component'leri Reuse Et"
+   kuralı gereği buradaki her alan artık uygulamanın başka hiçbir yerinde
+   (örn. Toolbar SearchBox) kullanılanla AYNI gerçek component mimarisini
+   kullanıyor — sadece "default" (interaktif) state, docs'un 9-state
+   önizleme sistemi değil. */
+
+// ── TextBox — zaten var olan tbxBaseInput/tbxBaseClear'ı kullanır ──
 function winFieldHtml(label, value, id) {
-  return `<div class="bt-win-field">
-    <label class="bt-win-label">${label}</label>
-    <input class="bt-win-input"${id ? ` id="${id}"` : ''} type="text" value="${String(value == null ? '' : value).replace(/&/g, '&amp;').replace(/"/g, '&quot;')}">
+  const esc = String(value == null ? '' : value).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+  return `<div class="bt-input bt-textbox bt-input--md">
+    <div class="bt-input__label-value"><span class="bt-input__label">${label}</span></div>
+    <div class="bt-input__box bt-input__box--md">
+      <div class="bt-input__content"><input class="bt-input__value"${id ? ` id="${id}"` : ''} type="text" value="${esc}" oninput="tbxBaseInput(this)" /></div>
+    </div>
   </div>`;
 }
+// Sistem/audit alanları (Giriş Tarihi vb.) — gerçek TextBox'ın Disabled state'i.
 function winReadonlyFieldHtml(label, value, id) {
-  return `<div class="bt-win-field">
-    <label class="bt-win-label">${label}</label>
-    <input class="bt-win-input"${id ? ` id="${id}"` : ''} type="text" value="${String(value == null ? '' : value).replace(/&/g, '&amp;').replace(/"/g, '&quot;')}" disabled>
+  const esc = String(value == null ? '' : value).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+  return `<div class="bt-input bt-textbox bt-input--md">
+    <div class="bt-input__label-value"><span class="bt-input__label">${label}</span></div>
+    <div class="bt-input__box bt-input__box--md bt-input__box--disabled">
+      <div class="bt-input__content"><input class="bt-input__value"${id ? ` id="${id}"` : ''} type="text" value="${esc}" disabled /></div>
+    </div>
   </div>`;
 }
+// ── Textarea — gerçek .bt-txa sistemi (Base Input'a henüz taşınmamış,
+// Bentas DS'teki kendi bağımsız mimarisi — bkz. pages-web.js txaPreview). ──
 function winTextareaHtml(label, value, id) {
-  return `<div class="bt-win-field">
-    <label class="bt-win-label">${label}</label>
-    <textarea class="bt-win-textarea"${id ? ` id="${id}"` : ''}>${String(value == null ? '' : value).replace(/&/g, '&amp;').replace(/</g, '&lt;')}</textarea>
+  const esc = String(value == null ? '' : value).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  return `<div class="bt-txa bt-txa--md">
+    <div class="bt-txa__meta"><span class="bt-txa__label">${label}</span></div>
+    <div class="bt-txa__input"><textarea class="bt-txa__text"${id ? ` id="${id}"` : ''}>${esc}</textarea></div>
   </div>`;
 }
-const _winIconChevronDown = `<svg class="bt-win-dropdown__chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>`;
-const _winIconCalendar = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>`;
-window.btWinDropdown = function (ddId) {
-  const dd = document.getElementById(ddId);
-  const isOpen = dd.classList.contains('is-open');
-  document.querySelectorAll('.bt-win-dropdown.is-open').forEach(el => el.classList.remove('is-open'));
-  if (!isOpen) dd.classList.add('is-open');
+
+// ── Dropdown — gerçek .bt-dropdown (Base Input), ddBaseToggle/
+// ddBaseOptionSelect pages-web.js'ten birebir (sadece dirty-state için
+// bir 'change' dispatch'i eklendi). ──
+const _ddIconChevronDown = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>`;
+const _ddIconChevronUp   = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>`;
+window.ddBaseToggle = function (boxEl) {
+  const anchor = boxEl.closest('.bt-input__anchor');
+  const isOpen = boxEl.classList.toggle('bt-input__box--active');
+  const opts = anchor ? anchor.querySelector('.bt-dropdown-list') : null;
+  if (opts) opts.style.display = isOpen ? '' : 'none';
+  const iconSpan = boxEl.querySelector('.bt-input__controls .bt-icon');
+  if (iconSpan) iconSpan.innerHTML = isOpen ? _ddIconChevronUp : _ddIconChevronDown;
 };
-window.btWinDropdownSelect = function (ddId, optEl) {
-  const dd = document.getElementById(ddId);
-  dd.querySelector('.bt-win-dropdown__value').textContent = optEl.textContent;
-  dd.querySelector('.bt-win-dropdown__trigger').classList.add('has-value');
-  dd.classList.remove('is-open');
-  dd.dispatchEvent(new Event('change', { bubbles: true })); // dirty-state takibi için (bkz. app.js)
+window.ddBaseOptionSelect = function (event, optEl) {
+  event.stopPropagation();
+  const anchor = optEl.closest('.bt-input__anchor');
+  const box = anchor.querySelector('.bt-input__box');
+  const label = optEl.querySelector('.bt-dropdown-list-item__text').textContent;
+  const valueSpan = box.querySelector('.bt-input__value');
+  if (valueSpan) { valueSpan.textContent = label; valueSpan.style.color = 'var(--bt-text-primary-default,#1a1a1a)'; }
+  optEl.parentElement.querySelectorAll('.bt-dropdown-list-item').forEach(o => o.classList.remove('bt-dropdown-list-item--selected'));
+  optEl.classList.add('bt-dropdown-list-item--selected');
+  box.classList.remove('bt-input__box--active');
+  const list = anchor.querySelector('.bt-dropdown-list');
+  if (list) list.style.display = 'none';
+  const iconSpan = box.querySelector('.bt-input__controls .bt-icon');
+  if (iconSpan) iconSpan.innerHTML = _ddIconChevronDown;
+  box.dispatchEvent(new Event('change', { bubbles: true })); // dirty-state takibi için (bkz. app.js)
 };
 document.addEventListener('click', function (e) {
-  if (!e.target.closest('.bt-win-dropdown')) {
-    document.querySelectorAll('.bt-win-dropdown.is-open').forEach(el => el.classList.remove('is-open'));
+  if (!e.target.closest('.bt-dropdown .bt-input__anchor')) {
+    document.querySelectorAll('.bt-dropdown .bt-input__box--active').forEach(box => {
+      box.classList.remove('bt-input__box--active');
+      const list = box.closest('.bt-input__anchor').querySelector('.bt-dropdown-list');
+      if (list) list.style.display = 'none';
+      const iconSpan = box.querySelector('.bt-input__controls .bt-icon');
+      if (iconSpan) iconSpan.innerHTML = _ddIconChevronDown;
+    });
   }
 });
-window.btWinDatePicker = function (nativeId) {
-  const native = document.getElementById(nativeId);
-  if (native.showPicker) native.showPicker(); else native.click();
-};
-window.btWinDateChange = function (nativeId, displayId) {
-  const native = document.getElementById(nativeId);
-  const display = document.getElementById(displayId);
-  if (native.value) {
-    const [y, m, d] = native.value.split('-');
-    display.value = `${d}-${m}-${y}`;
-  }
-};
-/** opts: { id, label, value, options:[string] } */
+/** opts: { id, label, value, options:[string] } — id gerçek .bt-input__box'a konur. */
 function winDropdownHtml(opts) {
   const o = opts || {};
-  return `<div class="bt-win-field">
-    <label class="bt-win-label">${o.label || ''}</label>
-    <div class="bt-win-dropdown" id="${o.id}">
-      <div class="bt-win-dropdown__wrap">
-        <button type="button" class="bt-win-dropdown__trigger${o.value ? ' has-value' : ''}" onclick="btWinDropdown('${o.id}')">
-          <span class="bt-win-dropdown__value">${o.value || 'Seçin…'}</span>
-          ${_winIconChevronDown}
-        </button>
-        <ul class="bt-win-dropdown__list" role="listbox">
-          ${(o.options || []).map(opt => `<li class="bt-win-dropdown__option" role="option" onclick="btWinDropdownSelect('${o.id}',this)">${opt}</li>`).join('')}
-        </ul>
+  const hasValue = !!o.value;
+  const valueColor = hasValue ? 'var(--bt-text-primary-default,#1a1a1a)' : 'var(--bt-text-primary-muted,#a3a3a3)';
+  return `<div class="bt-input bt-dropdown bt-input--md">
+    <div class="bt-input__label-value"><span class="bt-input__label">${o.label || ''}</span></div>
+    <div class="bt-input__anchor">
+      <div class="bt-input__box bt-input__box--md"${o.id ? ` id="${o.id}"` : ''} onclick="ddBaseToggle(this)" style="cursor:pointer;">
+        <div class="bt-input__content"><span class="bt-input__value" style="color:${valueColor};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${o.value || 'Seçin…'}</span></div>
+        <div class="bt-input__controls"><div class="bt-input__button"><span class="bt-icon">${_ddIconChevronDown}</span></div></div>
+      </div>
+      <div class="bt-dropdown-list" style="display:none;">
+        ${(o.options || []).map(opt => `<div class="bt-dropdown-list-item${opt === o.value ? ' bt-dropdown-list-item--selected' : ''}" onclick="ddBaseOptionSelect(event,this)"><span class="bt-dropdown-list-item__text">${opt}</span></div>`).join('')}
       </div>
     </div>
   </div>`;
 }
-/** opts: { id, label, displayValue:'dd-mm-yyyy', nativeValue:'yyyy-mm-dd' } */
-function winDateHtml(opts) {
-  const o = opts || {};
-  const nativeId = o.id + '-native';
-  const displayId = o.id + '-display';
-  return `<div class="bt-win-field">
-    <label class="bt-win-label">${o.label || ''}</label>
-    <div class="bt-win-datepicker">
-      <input class="bt-win-input bt-win-datepicker__display" type="text" readonly placeholder="Tarih seçin…" id="${displayId}" value="${o.displayValue || ''}" onclick="btWinDatePicker('${nativeId}')">
-      <button class="bt-win-datepicker__icon" type="button" onclick="btWinDatePicker('${nativeId}')" aria-label="Tarih seç">${_winIconCalendar}</button>
-      <input type="date" class="bt-win-datepicker__native" id="${nativeId}" value="${o.nativeValue || ''}" onchange="btWinDateChange('${nativeId}','${displayId}')">
+
+// ── DatePicker + Calendar — gerçek .bt-datepicker (Base Input) +
+// .bt-calendar motoru (Day/Month/Year/Decade navigasyonu dahil),
+// pages-web.js'teki dpBase*/_cal*/calXxx'ten birebir. ──
+const CAL_MONTH_NAMES = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+const CAL_WEEKDAY_NAMES = ['PZT', 'SL', 'ÇR', 'PR', 'CM', 'CT', 'PZ'];
+const _dpIconCalendar = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>`;
+const _dpIconChevronLeft  = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>`;
+const _dpIconChevronRight = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>`;
+function _calIso(y, m, d) { return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`; }
+function _calParseDdMmYyyy(v) {
+  const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(String(v || ''));
+  if (!m) return null;
+  return { d: parseInt(m[1], 10), m: parseInt(m[2], 10) - 1, y: parseInt(m[3], 10) };
+}
+function _calStateFromEl(panel) {
+  return { view: panel.dataset.calView || 'day', year: parseInt(panel.dataset.calYear, 10), month: parseInt(panel.dataset.calMonth, 10), selected: panel.dataset.calSelected || '' };
+}
+function _calRerender(panel, state) {
+  panel.dataset.calView = state.view; panel.dataset.calYear = state.year; panel.dataset.calMonth = state.month; panel.dataset.calSelected = state.selected || '';
+  panel.innerHTML = _calBodyHtml(state);
+}
+function _calDayViewHtml(state) {
+  const { year, month } = state;
+  const today = new Date();
+  const todayIso = _calIso(today.getFullYear(), today.getMonth(), today.getDate());
+  const firstDow = new Date(year, month, 1).getDay();
+  const startOffset = firstDow === 0 ? 6 : firstDow - 1;
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const daysInPrev = new Date(year, month, 0).getDate();
+  const cells = [];
+  for (let i = startOffset - 1; i >= 0; i--) {
+    const d = daysInPrev - i;
+    const m = month === 0 ? 11 : month - 1, y = month === 0 ? year - 1 : year;
+    cells.push({ day: d, iso: _calIso(y, m, d), edge: 'previous' });
+  }
+  for (let d = 1; d <= daysInMonth; d++) cells.push({ day: d, iso: _calIso(year, month, d), edge: null });
+  const rem = (7 - (cells.length % 7)) % 7;
+  for (let d = 1; d <= rem; d++) {
+    const m = month === 11 ? 0 : month + 1, y = month === 11 ? year + 1 : year;
+    cells.push({ day: d, iso: _calIso(y, m, d), edge: 'next' });
+  }
+  let rows = '';
+  for (let i = 0; i < cells.length; i += 7) {
+    const rowHtml = cells.slice(i, i + 7).map(c => {
+      const cls = ['bt-calendar__cell', 'bt-calendar__cell--day'];
+      if (c.edge === 'previous') cls.push('bt-calendar__cell--previous');
+      if (c.edge === 'next') cls.push('bt-calendar__cell--next');
+      if (c.iso === state.selected) cls.push('bt-calendar__cell--selected');
+      else if (c.iso === todayIso) cls.push('bt-calendar__cell--current');
+      return `<button type="button" class="${cls.join(' ')}" data-date="${c.iso}" onclick="calCellClick(this)">${c.day}</button>`;
+    }).join('');
+    rows += `<div class="bt-calendar__row">${rowHtml}</div>`;
+  }
+  const weekdaysHtml = CAL_WEEKDAY_NAMES.map(w => `<div class="bt-calendar__weekday">${w}</div>`).join('');
+  return `<div class="bt-calendar__weekdays">${weekdaysHtml}</div><div class="bt-calendar__body">${rows}</div>`;
+}
+function _calPeriodViewHtml(state) {
+  const now = new Date();
+  let items;
+  if (state.view === 'month') {
+    items = CAL_MONTH_NAMES.map((name, i) => ({ label: name.toLocaleUpperCase('tr-TR'), attr: `data-month="${i}"`, current: i === now.getMonth() && state.year === now.getFullYear() }));
+  } else if (state.view === 'year') {
+    const start = Math.floor(state.year / 10) * 10 - 1;
+    items = Array.from({ length: 10 }, (_, i) => { const y = start + i; return { label: String(y), attr: `data-year="${y}"`, current: y === now.getFullYear() }; });
+  } else {
+    const start = Math.floor(state.year / 100) * 100;
+    items = Array.from({ length: 10 }, (_, i) => { const y = start + i * 10; return { label: `${y}-${y + 9}`, attr: `data-decade-start="${y}"`, current: false }; });
+  }
+  let rows = '';
+  for (let i = 0; i < items.length; i += 4) {
+    const rowHtml = items.slice(i, i + 4).map(it => {
+      const cls = ['bt-calendar__cell', 'bt-calendar__cell--period'];
+      if (it.current) cls.push('bt-calendar__cell--current');
+      return `<button type="button" class="${cls.join(' ')}" ${it.attr} onclick="calCellClick(this)">${it.label}</button>`;
+    }).join('');
+    rows += `<div class="bt-calendar__row bt-calendar__row--period">${rowHtml}</div>`;
+  }
+  return `<div class="bt-calendar__body">${rows}</div>`;
+}
+function _calHeaderHtml(state) {
+  let titleText;
+  if (state.view === 'day') titleText = `${CAL_MONTH_NAMES[state.month]} ${state.year}`;
+  else if (state.view === 'month') titleText = String(state.year);
+  else if (state.view === 'year') { const s = Math.floor(state.year / 10) * 10 - 1; titleText = `${s} - ${s + 9}`; }
+  else { const s = Math.floor(state.year / 100) * 100; titleText = `${s} - ${s + 90}`; }
+  return `<div class="bt-calendar__header">
+    <button type="button" class="bt-calendar__title" onclick="calTitleClick(this)">${titleText}</button>
+    <div class="bt-calendar__nav">
+      <button type="button" class="bt-calendar__nav-btn" onclick="calNav(this,-1)" aria-label="Önceki"><span class="bt-icon">${_dpIconChevronLeft}</span></button>
+      <button type="button" class="bt-calendar__today-btn" onclick="calToday(this)">Bugün</button>
+      <button type="button" class="bt-calendar__nav-btn" onclick="calNav(this,1)" aria-label="Sonraki"><span class="bt-icon">${_dpIconChevronRight}</span></button>
     </div>
   </div>`;
+}
+function _calBodyHtml(state) { return `${_calHeaderHtml(state)}${state.view === 'day' ? _calDayViewHtml(state) : _calPeriodViewHtml(state)}`; }
+function _calPanelHtml(state, hidden) {
+  return `<div class="bt-calendar"${hidden ? ' style="display:none;"' : ''} data-cal-view="${state.view}" data-cal-year="${state.year}" data-cal-month="${state.month}" data-cal-selected="${state.selected || ''}">${_calBodyHtml(state)}</div>`;
+}
+window.calCellClick = function (el) {
+  const panel = el.closest('.bt-calendar');
+  const state = _calStateFromEl(panel);
+  if (state.view === 'decade') { state.year = parseInt(el.dataset.decadeStart, 10); state.view = 'year'; _calRerender(panel, state); }
+  else if (state.view === 'year') { state.year = parseInt(el.dataset.year, 10); state.view = 'month'; _calRerender(panel, state); }
+  else if (state.view === 'month') { state.month = parseInt(el.dataset.month, 10); state.view = 'day'; _calRerender(panel, state); }
+  else { state.selected = el.dataset.date; calCommitSelection(panel, state); }
+};
+window.calTitleClick = function (el) {
+  const panel = el.closest('.bt-calendar');
+  const state = _calStateFromEl(panel);
+  state.view = state.view === 'day' ? 'month' : state.view === 'month' ? 'year' : 'decade';
+  _calRerender(panel, state);
+};
+window.calNav = function (el, dir) {
+  const panel = el.closest('.bt-calendar');
+  const state = _calStateFromEl(panel);
+  if (state.view === 'day') { state.month += dir; if (state.month < 0) { state.month = 11; state.year--; } if (state.month > 11) { state.month = 0; state.year++; } }
+  else if (state.view === 'month') state.year += dir;
+  else if (state.view === 'year') state.year += dir * 10;
+  else state.year += dir * 100;
+  _calRerender(panel, state);
+};
+window.calToday = function (el) {
+  const panel = el.closest('.bt-calendar');
+  const now = new Date();
+  _calRerender(panel, { view: 'day', year: now.getFullYear(), month: now.getMonth(), selected: _calStateFromEl(panel).selected });
+};
+function calCommitSelection(panel, state) {
+  _calRerender(panel, state);
+  const anchor = panel.closest('.bt-input__anchor');
+  const box = anchor && anchor.querySelector('.bt-input__box');
+  const input = box && box.querySelector('.bt-input__value');
+  if (input) {
+    const [y, m, d] = state.selected.split('-');
+    input.value = `${d}/${m}/${y}`;
+    window.dpBaseInput(input);
+  }
+  dpClosePanel(box);
+}
+window.dpBaseToggle = function (buttonEl) {
+  const box = buttonEl.closest('.bt-input__box');
+  const anchor = box.closest('.bt-input__anchor');
+  const panel = anchor ? anchor.querySelector('.bt-calendar') : null;
+  const isOpen = box.classList.toggle('bt-input__box--active');
+  if (!panel) return;
+  if (isOpen) {
+    const input = box.querySelector('.bt-input__value');
+    const parsed = input && _calParseDdMmYyyy(input.value);
+    const now = new Date();
+    _calRerender(panel, parsed
+      ? { view: 'day', year: parsed.y, month: parsed.m, selected: _calIso(parsed.y, parsed.m, parsed.d) }
+      : { view: 'day', year: now.getFullYear(), month: now.getMonth(), selected: '' });
+    panel.style.display = '';
+    _dpBindOutsideClickOnce();
+  } else {
+    panel.style.display = 'none';
+  }
+};
+function dpClosePanel(box) {
+  if (!box) return;
+  box.classList.remove('bt-input__box--active');
+  const anchor = box.closest('.bt-input__anchor');
+  const panel = anchor && anchor.querySelector('.bt-calendar');
+  if (panel) panel.style.display = 'none';
+}
+let _dpOutsideBound = false;
+function _dpBindOutsideClickOnce() {
+  if (_dpOutsideBound) return;
+  _dpOutsideBound = true;
+  document.addEventListener('click', function (e) {
+    const path = e.composedPath ? e.composedPath() : [e.target];
+    document.querySelectorAll('.bt-datepicker .bt-input__box--active').forEach(function (box) {
+      const anchor = box.closest('.bt-input__anchor');
+      if (anchor && !path.includes(anchor)) dpClosePanel(box);
+    });
+  });
+}
+function _dtiFormatDateMask(raw) {
+  const digits = String(raw).replace(/\D/g, '').slice(0, 8);
+  let out = digits.slice(0, 2);
+  if (digits.length > 2) out += '/' + digits.slice(2, 4);
+  if (digits.length > 4) out += '/' + digits.slice(4, 8);
+  return out;
+}
+window.dpBaseInput = function (el) {
+  const box = el.closest('.bt-input__box');
+  const caretAtEnd = el.selectionStart === el.value.length;
+  el.value = _dtiFormatDateMask(el.value);
+  if (caretAtEnd) { el.selectionStart = el.selectionEnd = el.value.length; }
+  box.dispatchEvent(new Event('change', { bubbles: true })); // dirty-state takibi için (bkz. app.js)
+};
+/** opts: { id, label, value:'dd/mm/yyyy' } — id gerçek .bt-input__value'ya konur. */
+function winDateHtml(opts) {
+  const o = opts || {};
+  const value = o.value || '';
+  const parsed = _calParseDdMmYyyy(value);
+  const now = new Date();
+  const initState = parsed
+    ? { view: 'day', year: parsed.y, month: parsed.m, selected: _calIso(parsed.y, parsed.m, parsed.d) }
+    : { view: 'day', year: now.getFullYear(), month: now.getMonth(), selected: '' };
+  return `<div class="bt-input bt-datepicker bt-input--md">
+    <div class="bt-input__label-value"><span class="bt-input__label">${o.label || ''}</span></div>
+    <div class="bt-input__anchor">
+      <div class="bt-input__box bt-input__box--md">
+        <div class="bt-input__controls"><button type="button" class="bt-input__button" onclick="dpBaseToggle(this)" aria-label="Tarih seç"><span class="bt-icon">${_dpIconCalendar}</span></button></div>
+        <div class="bt-input__content"><input class="bt-input__value"${o.id ? ` id="${o.id}"` : ''} type="text" inputmode="numeric" maxlength="10" placeholder="gg/aa/yyyy" value="${value}" oninput="dpBaseInput(this)" /></div>
+      </div>
+      ${_calPanelHtml(initState, true)}
+    </div>
+  </div>`;
+}
+/** Form kartı — .bt-window__panel + opsiyonel başlık (bu projeye özel küçük
+ * bir kompozisyon yardımcısı — tek .bt-window__panel yerine birden fazla
+ * mantıksal bölüm/kart göstermek için; bt-window'un kendisinde "section
+ * title" diye ayrı bir alt-component yok, bu yüzden .bt-window__title ile
+ * aynı font/ağırlık token'ları kullanılarak minimal bir başlık ekleniyor). */
+function winSectionHtml(title, innerHtml) {
+  const titleHtml = title ? `<div style="font:var(--bt-title-md-regular,400 16px/24px var(--font));color:var(--bt-text-primary-default);margin-bottom:var(--bt-space-md,8px);">${title}</div>` : '';
+  return `<div class="bt-window__panel" style="flex:none;">${titleHtml}${innerHtml}</div>`;
 }
 /** Form kartı — .bt-window__panel + opsiyonel başlık (bu projeye özel küçük
  * bir kompozisyon yardımcısı — tek .bt-window__panel yerine birden fazla
