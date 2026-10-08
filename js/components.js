@@ -164,13 +164,36 @@ function renderSearchBox(opts) {
 
 /* ============================================================
    HUB SIDEBAR — .sbx-shell (Bentas Design System "Sidebar" component,
-   Variant A: persistent icon rail + toggleable drawer).
+   Figma "Hub Sidebar Expanded" node 1705:182027).
+
+   Bu bir TEK uygulamanın sidebar'ı DEĞİL — M9 ailesindeki BİRDEN FAZLA
+   uygulamanın paylaştığı ortak "Hub" kabuğu:
+   - Sidebar Top'taki logo (sbx-logo, 40×40) genel/hub markası — statik,
+     tıklanmaz.
+   - Rail'in ortasındaki İKİNCİ, küçük logo (sbx-collapse, 36×36, Figma'da
+     literal adı "Logo") BU UYGULAMANIN (M9 Muhasebe) kendi simgesi —
+     tıklanınca BU uygulamanın drawer'ını açar/kapatır (_sbxToggle).
+     Rail'deki diğer ikonlar (dashboard/bell/calendar/star/grip/profil)
+     hub-geneli kısayollar, drawer'ın İÇERİĞİYLE İLİŞKİLİ DEĞİL — ayrı
+     hedeflere gider (henüz bağlanmadı, bkz. sbxHubAction).
+   - Drawer HER ZAMAN bu uygulamanın kendi nav listesini gösterir (hangi
+     rail ikonuna tıklandığından bağımsız) — sadece Logo açıp/kapatır.
    Kaynak: Bentas-Design-System docs/js/pages-web.js — sidebarMarkupA() /
-   sbxRailButton() / sbxDrawerItem() / _sbxToggle() / _sbxSelectBtn() /
-   _sbxSelectItem() birebir taşındı. TEK fark: orijinalde her ikon sabit
-   sbxIconPlaceholder'dı (docs demo'su gerçek nav taşımıyordu) — burada
-   item başına gerçek ikon/label parametre, DOM/class yapısı AYNI.
+   sbxDrawerItem() / _sbxToggle() / _sbxSelectItem() birebir taşındı; rail
+   artık docs'un generic placeholder-ikon listesi değil, bu Figma node'unun
+   GERÇEK ikonları (layout-dashboard/bell/calendar/star/grip) ile sabit.
    ============================================================ */
+const icoLayoutDashboard = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>`;
+const icoBell = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg>`;
+const icoCalendar = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>`;
+const icoStar = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/></svg>`;
+const icoGrip = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1"/><circle cx="19" cy="5" r="1"/><circle cx="5" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/><circle cx="12" cy="19" r="1"/><circle cx="19" cy="19" r="1"/><circle cx="5" cy="19" r="1"/></svg>`;
+const icoUser = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+// Figma'da drawer item'ların ikonu henüz atanmamış — hepsi aynı "Icon/placeholder"
+// (bracket/scan) ikonunu taşıyor (bkz. node 1705:181912 vb., _crdIconScan ile
+// AYNI SVG). Gerçek per-item ikon atanana kadar bu kullanılır.
+const icoDrawerItemPlaceholder = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/></svg>`;
+
 window._sbxToggle = function () {
   const el = document.getElementById('sbxDrawer');
   if (el) el.classList.toggle('is-collapsed');
@@ -189,7 +212,12 @@ window._sbxSelectItem = function (el) {
   if (current && current !== el) current.classList.remove('is-selected');
   el.classList.add('is-selected');
 };
-// item: { icon, label, selected, onClick }
+// Hub-geneli rail kısayolları (Dashboard/Bildirim/Takvim/Favoriler/Diğer
+// Uygulamalar/Profil) henüz gerçek bir hedefe bağlı değil — backend/routing
+// eklenince burası güncellenecek.
+window._sbxHubAction = function (name) {
+  console.log('[Hub Sidebar] henüz bağlanmadı:', name);
+};
 function sbxRailButtonHtml(item) {
   const i = item || {};
   return `<div class="sbx-btn${i.selected ? ' is-selected' : ''}" tabindex="0" title="${i.label || ''}" onclick="window._sbxSelectBtn(this);${i.onClick || ''}">${i.icon || ''}</div>`;
@@ -198,39 +226,37 @@ function sbxDrawerItemHtml(item) {
   const i = item || {};
   return `<div class="sbx-item">
             <div class="sbx-item-inner${i.selected ? ' is-selected' : ''}" tabindex="0" onclick="window._sbxSelectItem(this);${i.onClick || ''}">
-              <div class="sbx-item-icon">${i.icon || ''}</div>
+              <div class="sbx-item-icon">${i.icon || icoDrawerItemPlaceholder}</div>
               <div class="sbx-item-label">${i.label || ''}</div>
             </div>
           </div>`;
 }
 /**
- * Hub Sidebar'ı render eder (rail + toggleable drawer).
- * navItems/bottomItems: [{ icon, label, selected, onClick }] — rail ve
- * drawer AYNI listeden üretilir (rail = ikon-only kısayol, drawer = gerçek
- * etiketli nav listesi), orijinal sidebarMarkupA'daki collapse toggle'ın
- * rail içindeki konumu (ilk butondan sonra) korunur.
+ * Hub Sidebar'ı render eder. Rail SABİTTİR (hub-geneli, tüm M9 uygulamaları
+ * arasında aynı) — parametre almaz. drawerItems/drawerBottomItems BU
+ * UYGULAMANIN kendi nav listesidir: [{ icon, label, selected, onClick }].
  */
-function renderSidebar(navItems, bottomItems, variant) {
-  const nav = navItems || [];
-  const bottom = bottomItems || [];
+function renderSidebar(drawerItems, drawerBottomItems, variant) {
+  const nav = drawerItems || [];
+  const bottom = drawerBottomItems || [];
   const collapsedCls = variant === 'collapsed' ? ' is-collapsed' : '';
-  const railCenter = nav.length
-    ? `${sbxRailButtonHtml(nav[0])}<div class="sbx-collapse" onclick="window._sbxToggle()" title="Daralt/Genişlet"></div>${nav.slice(1).map(sbxRailButtonHtml).join('')}`
-    : `<div class="sbx-collapse" onclick="window._sbxToggle()" title="Daralt/Genişlet"></div>`;
+  const railCenter = `
+    <div class="sbx-btn" tabindex="0" title="Uygulamalar" onclick="window._sbxSelectBtn(this);window._sbxHubAction('dashboard')">${icoLayoutDashboard}</div>
+    <div class="sbx-collapse" onclick="window._sbxToggle()" title="M9 Muhasebe — menüyü aç/kapat"></div>
+    <div class="sbx-btn" tabindex="0" title="Bildirimler" onclick="window._sbxSelectBtn(this);window._sbxHubAction('notifications')">${icoBell}</div>
+    <div class="sbx-btn" tabindex="0" title="Takvim" onclick="window._sbxSelectBtn(this);window._sbxHubAction('calendar')">${icoCalendar}</div>
+    <div class="sbx-btn" tabindex="0" title="Favoriler" onclick="window._sbxSelectBtn(this);window._sbxHubAction('favorites')">${icoStar}</div>`;
+  const railBottom = `
+    <div class="sbx-btn" tabindex="0" title="Diğer Uygulamalar" onclick="window._sbxSelectBtn(this);window._sbxHubAction('apps')">${icoGrip}</div>
+    <div class="sbx-btn" tabindex="0" title="Profil" onclick="window._sbxSelectBtn(this);window._sbxHubAction('profile')">${icoUser}</div>`;
   return `<div class="sbx-shell">
     <div class="sbx-rail">
       <div class="sbx-logo"></div>
       <div class="sbx-center">${railCenter}</div>
-      <div class="sbx-bottom">${bottom.map(sbxRailButtonHtml).join('')}</div>
+      <div class="sbx-bottom">${railBottom}</div>
     </div>
     <div class="sbx-drawer${collapsedCls}" id="sbxDrawer">
-      <div class="sbx-drawer-top">
-        <div class="bt-input__box bt-searchbox bt-input__box--sm">
-          <div class="bt-input__controls"><span class="bt-icon">${icoSearch}</span></div>
-          <div class="bt-input__content"><input class="bt-input__value" type="text" placeholder="Ara..." oninput="sbxSearchInput(this)" /></div>
-          <div class="sbx-searchbox-kbd">Tab</div>
-        </div>
-      </div>
+      <div class="sbx-drawer-top">${renderSearchBox({ advanced: true })}</div>
       <div class="sbx-drawer-center">${nav.map(sbxDrawerItemHtml).join('')}</div>
       <div class="sbx-drawer-bottom">${bottom.map(sbxDrawerItemHtml).join('')}</div>
     </div>
