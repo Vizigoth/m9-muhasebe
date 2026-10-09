@@ -45,13 +45,117 @@
      satır olursa dikey scroll güvenlik ağı kalmıyor (Bentas DS'in kendi
      .bt-grid-frozen-container'ı da aynı ödünü kabul ediyor). */
   #m9Grid .bt-grid__body { overflow: visible; }
-  /* .bt-win-row'un kendi CSS'i (styles.css) sadece .bt-win-field çocuklarına
-     flex:1 veriyor — Kayıt Detayı paneli artık gerçek TextBox/Dropdown/
-     DatePicker/Textarea component'lerini (.bt-input/.bt-txa) kullandığı
-     için (bkz. "bt window içindeki inputlar gerçek olmalıydı" düzeltmesi)
-     bu çocuklara da aynı eşit-dağılım davranışı burada veriliyor. */
-  #m9RecordWindow .bt-win-row > .bt-input,
-  #m9RecordWindow .bt-win-row > .bt-txa { flex: 1; min-width: 0; }
+  /* .bt-pl-toolbar'ın display:flex'i [hidden] attribute'unu eziyor — toolbar'ı
+     olmayan ekranlar (bkz. router.js m9RenderPlaceholder) için geri veriliyor. */
+  .bt-pl-toolbar[hidden] { display: none; }
+  /* Henüz ekranı yazılmamış nav item'ları için geçici içerik */
+  .m9-screen-placeholder {
+    flex: 1;
+    display: flex; align-items: center; justify-content: center;
+    font: var(--bt-text-sm-regular, 400 14px/16px var(--font));
+    color: var(--bt-text-primary-strong);
+  }
+  /* ── Fiş Detayı window (Figma "Window" 1738:135102) — .bt-window__body'nin
+     varsayılan 16px padding'li tek-kart düzeni yerine kenardan kenara iki
+     panel: sol form (440px) + sağ Hareketler. Zemin body'nin kendi
+     --bt-surface-primary-light'ı (Figma Container fill'i ile aynı). */
+  #m9RecordWindow .bt-window__body { padding: 0; flex-direction: row; overflow: hidden; }
+  /* Window Toolbar (Figma 1742:138375) — Page Layout toolbar'ının aynısı
+     (40px, beyaz, alt border, 16px yatay padding), tek fark Figma'daki
+     sabit 10px buton aralığı. Sığmayan butonlar "⋯" Overflow Menu'ye
+     taşınır (btToolbarFitOverflow) — taşma ölçümü için overflow:hidden. */
+  .m9-fis-toolbar { gap: 10px; overflow: hidden; }
+  .m9-fis-toolbar > .bt-btn,
+  .m9-fis-toolbar > .bt-ovf-menu { flex-shrink: 0; }
+  .m9-fis-toolbar > [hidden] { display: none; }
+  /* Ünvan LookUp (sm window) — Fiş Detayı (xl) window'unun ÜSTÜNDE açılan ikinci
+     pencere. DS'te overlay 999 / window 1000 — tek pencere için; iç içe açılınca
+     ikinci overlay xl window'un altında kalıp karartmıyor/dışarı tıklamayı
+     yakalamıyordu, bu yüzden bir kat yukarı alınıyor. */
+  #m9UnvanLookupOv { z-index: 1001; }
+  #m9UnvanLookup { z-index: 1002; }
+  /* arama tam genişlik, grid kalan yüksekliği doldurur */
+  #m9UnvanLookup .bt-window__panel { min-height: 0; overflow: hidden; }
+  #m9UnvanLookup .bt-searchbox { flex-shrink: 0; width: 100%; }
+  #m9UnvanLookupGrid { flex: 1; min-height: 0; border-radius: var(--bt-radius-sm, 4px); }
+  /* Overflow Menu listesi açılınca body'ye portal'lanıyor ve DS'teki z-index'i
+     200 — .bt-window (1000) içinden açıldığında pencerenin ARKASINDA kalıyordu. */
+  body > .bt-ovf-menu__list[data-bt-ovf-portal="1"] { z-index: 1010; }
+
+  .m9-fis-form {
+    width: 440px; flex-shrink: 0;
+    display: flex; flex-direction: column; gap: var(--bt-space-2xl);
+    padding: var(--bt-space-2xl);
+    background: var(--bt-surface-primary-default);
+    border-right: 1px solid var(--bt-border-primary-default);
+    box-sizing: border-box;
+    overflow-y: auto;
+  }
+  /* Segmented tab track'i Figma'da HUG — tam genişliğe yayılmasın */
+  .m9-fis-form > .bt-tab-list { align-self: flex-start; flex-shrink: 0; }
+  .m9-fis-form__tab { display: flex; flex-direction: column; gap: var(--bt-space-2xl); }
+  .m9-fis-form__tab[hidden] { display: none; }
+  .m9-fis-form__row { display: flex; gap: var(--bt-space-2xl); }
+  .m9-fis-form__row > .bt-input { flex: 1; min-width: 0; }
+
+  .m9-fis-moves {
+    flex: 1; min-width: 0;
+    display: flex; flex-direction: column;
+    padding: var(--bt-space-2xl);
+  }
+  .m9-fis-moves__card {
+    flex: 1; min-height: 0;
+    display: flex; flex-direction: column; gap: var(--bt-space-xl);
+    background: var(--bt-surface-primary-default);
+    border: 1px solid var(--bt-border-primary-default);
+    border-radius: var(--bt-radius-sm);
+  }
+  .m9-fis-moves__header {
+    padding: var(--bt-space-xs) var(--bt-space-2xl);
+    border-bottom: 1px solid var(--bt-border-primary-default);
+    flex-shrink: 0;
+  }
+  .m9-fis-moves__title { font: var(--bt-title-md-medium, 500 16px/24px var(--font)); color: var(--bt-text-primary-default); }
+  .m9-fis-moves__subtitle { font: var(--bt-subtitle-xs-regular, 400 12px/16px var(--font)); color: var(--bt-text-primary-emphasis); }
+  .m9-fis-moves__toolbar {
+    display: flex; align-items: center; gap: 10px; /* Figma: sabit 10px, token'a bağlı değil */
+    padding: 0 var(--bt-space-2xl);
+    flex-shrink: 0;
+  }
+  .m9-fis-moves__toolbar .bt-searchbox { margin-left: auto; width: 320px; }
+  .m9-fis-moves__content {
+    flex: 1; min-height: 0;
+    display: flex; flex-direction: column;
+    padding: 0 var(--bt-space-2xl) var(--bt-space-2xl);
+  }
+  .m9-fis-moves__content { gap: var(--bt-space-2xl); }
+  /* DataTable Summary (Figma 1748:158681) — grid altında, içeriğe göre (HUG)
+     genişleyen toplam şeridi. Item 160px sabit, aralarında 1px×40px ayraç
+     (Figma "Seperator", --bt-border-primary-default). */
+  .m9-grid-summary {
+    align-self: flex-start; flex-shrink: 0;
+    display: flex; align-items: center; gap: var(--bt-space-xs);
+    padding: var(--bt-space-xs);
+    background: var(--bt-surface-primary-subtle);
+    border: 1px solid var(--bt-border-primary-default);
+    border-radius: var(--bt-radius-sm);
+    max-width: 100%; overflow-x: auto; box-sizing: border-box;
+  }
+  .m9-grid-summary__item {
+    width: 160px; flex-shrink: 0;
+    display: flex; flex-direction: column; gap: var(--bt-space-xs);
+    padding: var(--bt-space-xs); box-sizing: border-box;
+  }
+  .m9-grid-summary__label { font: var(--bt-text-xs-medium, 500 12px/16px var(--font)); color: var(--bt-text-primary-default); }
+  .m9-grid-summary__value { font: var(--bt-text-xs-regular, 400 12px/16px var(--font)); color: var(--bt-text-primary-default); font-variant-numeric: tabular-nums; }
+  .m9-grid-summary__value--empty { color: var(--bt-text-primary-muted); }
+  .m9-grid-summary__sep { width: 1px; height: 40px; flex-shrink: 0; background: var(--bt-border-primary-default); }
+  /* bkz. #m9Grid notu — .bt-grid-actions-container'a radius ayrıca verilir */
+  #m9DetailGrid { border-radius: var(--bt-radius-sm, 4px); }
+  /* Sıra kolonu frozen — #m9Grid ile AYNI sebep/ödün: .bt-grid__body'nin
+     overflow-y:auto'su sticky hücrelerin referansını bozuyor, visible'a
+     dönülüyor (çok satırda dikey scroll güvenlik ağı kalmaz). */
+  #m9DetailGrid .bt-grid__body { overflow: visible; }
 </style>
 </head>
 <body>
@@ -69,14 +173,13 @@
     <div class="bt-pl-main">
 
       <div class="bt-pl-header">
-        <span class="bt-pl-header-title" id="m9PageTitle">Kayıt Listesi</span>
+        <span class="bt-pl-header-title" id="m9PageTitle"></span>
       </div>
 
+      <!-- Toolbar + body aktif ekrana göre doldurulur (js/router.js, js/screens/*.js) -->
       <div class="bt-pl-toolbar" id="m9Toolbar"></div>
 
-      <div class="bt-pl-body">
-        <div class="bt-grid-actions-container" id="m9Grid"></div>
-      </div>
+      <div class="bt-pl-body" id="m9Body"></div>
 
     </div>
 
@@ -86,6 +189,8 @@
   <div id="m9WindowMount"></div>
 
 <script src="js/components.js"></script>
+<script src="js/router.js"></script>
+<script src="js/screens/fis-listesi.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

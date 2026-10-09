@@ -2250,6 +2250,39 @@ pre.code-block.line-numbers {
 .sbx-item-icon { display:flex; align-items:center; justify-content:center; width:32px; height:32px; padding: var(--bt-space-xs); color: var(--bt-text-primary-strong); box-sizing:border-box; flex-shrink:0; }
 .sbx-item-label { flex:1; padding: var(--bt-space-md) var(--bt-space-xs); font: var(--bt-text-xs-regular, 400 12px/16px var(--font)); color: var(--bt-text-primary-default); }
 
+/* Drawer grupları (child → grandchild) — Standart Sidebar'daki .nav-chevron +
+   grid-rows açılma deseninin Hub drawer karşılığı. Grup trigger'ı normal
+   .sbx-item-inner görünümünde, sadece seçilmez ve sağda chevron taşır;
+   alt item'lar her derinlikte bir girinti (--bt-space-xl) içeri kayar. */
+.sbx-group-trigger .sbx-item-label { font: var(--bt-text-xs-medium, 500 12px/16px var(--font)); }
+.sbx-group-chevron {
+  display: flex; align-items: center; justify-content: center;
+  padding: var(--bt-space-2xs);
+  margin-right: var(--bt-space-xs);
+  color: var(--bt-icon-primary-heavy);
+  flex-shrink: 0;
+  transition: transform 180ms ease;
+}
+.sbx-group.is-open > .sbx-item .sbx-group-chevron { transform: rotate(90deg); }
+/* Açık grup trigger'ı drawer item'ın Active/Selected arka planını taşır */
+.sbx-group.is-open > .sbx-item > .sbx-group-trigger { background: var(--bt-surface-primary-muted); }
+.sbx-group-children {
+  display: grid;
+  grid-template-rows: 0fr;
+  overflow: hidden;
+  transition: grid-template-rows 220ms ease;
+}
+.sbx-group.is-open > .sbx-group-children { grid-template-rows: 1fr; }
+.sbx-group-inner {
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: var(--bt-space-2xs);
+  padding-left: var(--bt-space-xl);
+}
+.sbx-group.is-open > .sbx-group-children > .sbx-group-inner { padding-top: var(--bt-space-2xs); }
+
 /* ── Standart Sidebar — single panel, collapses to icon rail ──── */
 /* Figma: node 502:18421. One shell toggles width via .is-collapsed;
    item rows are shared markup — collapsing just hides the label/right
@@ -7012,9 +7045,13 @@ pre.code-block.line-numbers {
    olmayan bespoke bir değer kullanılıyor (kullanıcı isteğiyle, bkz.
    HISTORY.md): geniş blur'lu (10-20px) iki katman, düşük opaklık — keskin
    bir çizgi yerine yumuşak/kademeli bir gölge geçişi. */
-.bt-grid__header-cell--frozen-edge { box-shadow: 4px 0 10px rgba(16,24,40,0.06), 10px 0 20px rgba(16,24,40,0.035); }
+/* Frozen kolon kenar gölgesi — M9 projesinde inceltildi (kullanıcı geri bildirimi
+   "çok abartılı", 2026-10-09): DS'teki iki katmanlı 10px+20px blur yerine tek,
+   ince 2px/4px katman. Yatay olduğu için dikey --bt-shadow-* token'ları
+   kullanılamıyor. DS'e henüz yansıtılmadı. */
+.bt-grid__header-cell--frozen-edge { box-shadow: 2px 0 4px rgba(16,24,40,0.08); }
 /* Sağdan donmuş kolonun sol kenarı — aynı renk/blur, yön ters */
-.bt-grid__header-cell--frozen-right-edge { box-shadow: -4px 0 10px rgba(16,24,40,0.06), -10px 0 20px rgba(16,24,40,0.035); }
+.bt-grid__header-cell--frozen-right-edge { box-shadow: -2px 0 4px rgba(16,24,40,0.08); }
 .bt-grid__header-cell--hover  { background: var(--bt-base-subtle, #f5f5f5); }
 .bt-grid__header-cell--active { background: var(--bt-surface-brand-subtle, #e2edfc); }
 /* Building Blocks'taki tekil Header Cell playground'unda gerçek mouse
@@ -7039,9 +7076,9 @@ pre.code-block.line-numbers {
    kaydırılabilir kolonlardan ayırmak için — sadece son donmuş kolonda.
    Token'a bağlı olmayan bespoke, yumuşak/geniş-blur'lu edge-fade — bkz.
    header cell'deki aynı kuralın notu. */
-.bt-grid__cell--frozen-edge { box-shadow: 4px 0 10px rgba(16,24,40,0.06), 10px 0 20px rgba(16,24,40,0.035); }
+.bt-grid__cell--frozen-edge { box-shadow: 2px 0 4px rgba(16,24,40,0.08); }
 /* Sağdan donmuş kolonun sol kenarı — aynı renk/blur, yön ters */
-.bt-grid__cell--frozen-right-edge { box-shadow: -4px 0 10px rgba(16,24,40,0.06), -10px 0 20px rgba(16,24,40,0.035); }
+.bt-grid__cell--frozen-right-edge { box-shadow: -2px 0 4px rgba(16,24,40,0.08); }
 .bt-grid__cell--hover  { background: var(--bt-base-subtle, #f5f5f5); }
 .bt-grid__cell--active { background: var(--bt-surface-brand-subtle, #e2edfc); }
 /* Building Blocks'taki tekil Grid Cell playground'unda gerçek mouse hover'ı
@@ -7162,6 +7199,34 @@ pre.code-block.line-numbers {
   font: var(--bt-text-xs-regular, 400 12px/16px var(--font));
   color: var(--bt-text-primary-default, #1a1a1a);
 }
+/* Sayısal kolonlar (tutar, adet, numara) — Figma'da metin sağa yaslı */
+.bt-grid__cell .bt-grid__content--right { text-align: right; }
+/* Boş hücre (Default state) — placeholder metni, input placeholder'ıyla aynı renk */
+.bt-grid__cell .bt-grid__content--placeholder { color: var(--bt-text-primary-muted, #a3a3a3); }
+
+/* — InCell Editing — Bentas DS styles.css'ten birebir (sadece hücre seviyesi;
+   satır seviyesi Inline Editing bu projede henüz kullanılmıyor). Editable
+   hücre hem view (.bt-grid__content) hem edit (.bt-grid__cell-edit)
+   markup'ını taşır, görünürlüğü SADECE .bt-grid__cell--editing belirler. */
+.bt-grid__cell-edit {
+  display: none;
+  flex: 1 1 auto;
+  min-width: 0;
+  align-items: center;
+  padding: var(--bt-space-md, 8px);
+  box-sizing: border-box;
+}
+.bt-grid__cell--editable.bt-grid__cell--editing > .bt-grid__content,
+.bt-grid__cell--editable.bt-grid__cell--editing > .bt-grid__control {
+  display: none;
+}
+.bt-grid__cell--editable.bt-grid__cell--editing > .bt-grid__cell-edit {
+  display: flex;
+}
+.bt-grid__cell--editable.bt-grid__cell--editing {
+  background: var(--bt-surface-brand-subtle, #e2edfc);
+}
+
 /* — Hyperlink stili ID / kayıt numarası kolonları için — */
 .bt-grid__cell .bt-grid__content--link {
   color: var(--bt-text-primary-default, #1a1a1a);
@@ -7171,6 +7236,17 @@ pre.code-block.line-numbers {
   color: var(--bt-text-brand-default, #0d4e97);
   text-decoration: underline;
 }
+/* Link hover ikonu (square-arrow-out-up-right) — yeri baştan ayrılı, sadece
+   görünürlüğü değişir (hover'da metin kaymasın). inline-flex: underline ikona
+   taşınmaz. Renk currentColor → hover'da metinle birlikte brand mavisi. */
+.bt-grid__link-icon {
+  display: inline-flex;
+  vertical-align: -2px;
+  margin-left: var(--bt-space-xs, 4px);
+  opacity: 0;
+  transition: opacity 100ms;
+}
+.bt-grid__cell .bt-grid__content--link:hover .bt-grid__link-icon { opacity: 1; }
 
 /* — Sort Control — up/down ikon çifti, 24×24 her biri. Sortable bir header'da
    (Table prop grubundaki "Sort" toggle'ı ile TÜM kolon header'larına birden

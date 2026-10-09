@@ -106,10 +106,10 @@ Bu, kullanıcının sözlü anlattığı, Figma node yapısından/metadata'sınd
 ## Proje durumu / henüz yapılmayanlar
 
 - Login (`index.html`) backend'e bağlı değil — submit doğrudan `app.html`'e yönlendiriyor.
-- Drawer'daki gerçek nav item'ları (Kayıt Listesi/Hesap Planı Listesi/Günlük Kur Bilgisi/
-  Hesap Planı Maliyet Merkezi/Sermaye Listesi/İştirak Listesi — Figma'dan birebir) şu an
-  hepsi aynı `app.html`'e işaret ediyor; her biri kendi sayfasına kavuşunca `onClick`'ler
-  güncellenecek.
+- Ekranlar hash route'larıyla açılıyor (`js/router.js`): her drawer yaprak item'ının `id`'si
+  bir route, ekranlar `js/screens/*.js` içinde `M9_SCREENS[route] = { title, render(toolbar, body) }`
+  olarak kaydoluyor ve `app.html`'e script olarak ekleniyor. Şu an sadece
+  `yevmiye-fis-listesi` (Fiş Listesi) yazıldı; diğerleri "henüz hazırlanmadı" placeholder'ı.
 - Drawer'ın alt (Drawer Buttom) öğesi Figma'da henüz "Drawer Item Label" placeholder'ı —
   "Ayarlar" varsayıldı, kesinleşmedi.
 - Drawer item ikonları Figma'da henüz atanmamış (hepsi aynı bracket/scan placeholder) —
@@ -117,5 +117,8 @@ Bu, kullanıcının sözlü anlattığı, Figma node yapısından/metadata'sınd
 - Data table engine (`js/components.js`'teki grid fonksiyonları) Bentas DS'in gerçek,
   çalışan sort/filter/resize/satır-seçim mantığını taşıyor — docs-demo'nun sahte verisi yok,
   `renderDataTable(columns, rows, opts)` gerçek veriyle çağrılmak üzere genelleştirildi.
-  Inline/InCell Editing ve Avatar/Switch/Dropdown trailing-leading kind'ları bilinçli olarak
-  v1 kapsamı dışı (gerektiğinde aynı yöntemle `pages-web.js`'ten taşınabilir).
+  InCell Editing (sadece TextBox editKind'ı) taşındı — kolona `editable: true` ver, commit
+  sonrası hücreden `btgridcelledit` event'i ({ rowIndex, field, value }) bubble eder, sayfa
+  kendi `rows[]`'unu oradan günceller. Inline (satır) Editing, Dropdown editKind'ı ve
+  Switch/Dropdown trailing-leading kind'ları hâlâ kapsam dışı (gerektiğinde aynı yöntemle
+  `pages-web.js`'ten taşınabilir).

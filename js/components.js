@@ -231,10 +231,39 @@ function sbxRailButtonHtml(item) {
   const i = item || {};
   return `<div class="sbx-btn${i.selected ? ' is-selected' : ''}" tabindex="0" title="${i.label || ''}" onclick="window._sbxSelectBtn(this);${i.onClick || ''}">${i.icon || ''}</div>`;
 }
+// Drawer grup chevron'u — Standart Sidebar'daki .nav-chevron ile aynı desen
+// (16px ikon, açıkken 90° döner). .sbx-group-chevron svg boyutunu zorlamıyor,
+// boyut svg'nin kendi attribute'unda.
+const icoDrawerChevron = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>`;
+window._sbxToggleGroup = function (el) {
+  const group = el.closest('.sbx-group');
+  if (group) group.classList.toggle('is-open');
+};
+/**
+ * Drawer item'ı render eder. `children` varsa item bir grup trigger'ı olur
+ * (tıklanınca açılır/kapanır, seçilmez) ve altındaki item'lar girintili,
+ * açılır/kapanır bir liste olarak gelir — iç içe (child → grandchild) desteklenir.
+ * { id, label, icon, selected, onClick, children, open } — id, item'a
+ * data-nav-id olarak yazılır (sayfa router'ı seçimi buradan senkronlar).
+ */
 function sbxDrawerItemHtml(item) {
   const i = item || {};
+  if (Array.isArray(i.children)) {
+    return `<div class="sbx-group${i.open ? ' is-open' : ''}">
+            <div class="sbx-item">
+              <div class="sbx-item-inner sbx-group-trigger" tabindex="0" onclick="window._sbxToggleGroup(this)">
+                <div class="sbx-item-icon">${i.icon || icoDrawerItemPlaceholder}</div>
+                <div class="sbx-item-label">${i.label || ''}</div>
+                <div class="sbx-group-chevron">${icoDrawerChevron}</div>
+              </div>
+            </div>
+            <div class="sbx-group-children">
+              <div class="sbx-group-inner">${i.children.map(sbxDrawerItemHtml).join('')}</div>
+            </div>
+          </div>`;
+  }
   return `<div class="sbx-item">
-            <div class="sbx-item-inner${i.selected ? ' is-selected' : ''}" tabindex="0" onclick="window._sbxSelectItem(this);${i.onClick || ''}">
+            <div class="sbx-item-inner${i.selected ? ' is-selected' : ''}"${i.id ? ` data-nav-id="${i.id}"` : ''} tabindex="0" onclick="window._sbxSelectItem(this);${i.onClick || ''}">
               <div class="sbx-item-icon">${i.icon || icoDrawerItemPlaceholder}</div>
               <div class="sbx-item-label">${i.label || ''}</div>
             </div>
@@ -386,13 +415,33 @@ function gridCellHtml(opts) {
   const frozenEdge = o.frozenEdge === true;
   const stickyRight = o.stickyRight;
   const frozenRightEdge = o.frozenRightEdge === true;
+  // editable/editValue — InCell Editing (Bentas DS "Data Table › InCell
+  // Editing", pages-web.js gridCellHtml'den birebir; sadece TextBox editKind'ı
+  // taşındı). editable hücre hem view (.bt-grid__content) hem edit
+  // (.bt-grid__cell-edit) markup'ını AYNI ANDA taşır, hangisinin görüneceğini
+  // CSS (.bt-grid__cell--editing) belirler. Çift tıklama edit'e geçirir; tek
+  // tıklama satırın seçimine (btGridRowToggle) bubble'lamaz.
+  const editable = o.editable === true;
+  // editKind: 'textbox' (varsayılan) | 'lookup' (Select LookUp, editLookup = sol ikon JS'i)
+  const editValue = o.editValue != null ? o.editValue : contentText;
+  const field = o.field;
+  // align:'right' — sayısal kolonlar (Figma'da metin sağa yaslı)
+  const alignRight = o.align === 'right';
+  // placeholder — hücre boşken (Default state) muted renkte gösterilen metin
+  // (Figma'da boş hücreler kolon adını --bt-text-primary-muted ile taşıyor).
+  // Değer değil: sort/filter (data-sort-value) ve edit input'u boş kalır.
+  const placeholder = o.placeholder;
+  const showPlaceholder = (contentText === '' || contentText == null) && !!placeholder;
 
   const cls = [
     'bt-grid__cell',
     `bt-grid__cell--${position}`,
     frozenEdge ? 'bt-grid__cell--frozen-edge' : '',
     frozenRightEdge ? 'bt-grid__cell--frozen-right-edge' : '',
+    editable ? 'bt-grid__cell--editable' : '',
   ].filter(Boolean).join(' ');
+  const editTriggerAttrs = editable ? ` onclick="event.stopPropagation()" ondblclick="btGridCellEditStart(event,this)"` : '';
+  const fieldAttr = (field ? ` data-field="${field}"` : '') + (placeholder ? ` data-placeholder="${String(placeholder).replace(/"/g, '&quot;')}"` : '');
   const sortValueAttr = sortValue != null ? ` data-sort-value="${String(sortValue).replace(/&/g, '&amp;').replace(/"/g, '&quot;')}"` : '';
   const stickyStyle = sticky != null
     ? `position:sticky;left:${sticky}px;z-index:5;`
@@ -406,12 +455,104 @@ function gridCellHtml(opts) {
   const onClickAttr = o.onClick ? ` onclick="event.stopPropagation();${o.onClick}"` : '';
 
   const leadingHtml  = gridLeadingHtml(leading, o.leadingOpts);
-  const contentHtml  = showContent ? `<span class="bt-grid__content${contentLink ? ' bt-grid__content--link' : ''}"${onClickAttr}>${contentText}</span>` : '';
+  // contentLink — hover'da metnin yanında "dışarıda aç" ikonu (Lucide
+  // square-arrow-out-up-right, lucide-static 0.460.0). Wrapper svg boyutunu
+  // zorlamıyor, boyut svg'nin kendi attribute'unda (14×14).
+  const linkIconHtml = contentLink ? `<span class="bt-grid__link-icon" aria-hidden="true">${_gridIconLinkOut}</span>` : '';
+  const contentHtml  = showContent ? `<span class="bt-grid__content${contentLink ? ' bt-grid__content--link' : ''}${alignRight ? ' bt-grid__content--right' : ''}${showPlaceholder ? ' bt-grid__content--placeholder' : ''}"${onClickAttr}>${showPlaceholder ? placeholder : contentText}${linkIconHtml}</span>` : '';
   const trailingHtml = gridTrailingHtml(trailing, o.trailingOpts);
+  const editInner = o.editKind === 'lookup' ? _gridEditLookupHtml(editValue, o.editLookup) : _gridEditTextboxHtml(editValue);
+  const editHtml = editable ? `<span class="bt-grid__cell-edit" onclick="event.stopPropagation()">${editInner}</span>` : '';
 
   const widthStyleC = fillWidth ? `flex:1;min-width:${width}px;` : `width:${width}px;`;
-  return `<div class="${cls}" style="${widthStyleC}box-sizing:border-box;${stickyStyle}"${sortValueAttr}>${leadingHtml}${contentHtml}${trailingHtml}</div>`;
+  return `<div class="${cls}" style="${widthStyleC}box-sizing:border-box;${stickyStyle}"${editTriggerAttrs}${fieldAttr}${sortValueAttr}>${leadingHtml}${contentHtml}${trailingHtml}${editHtml}</div>`;
 }
+
+/* ── InCell Editing — pages-web.js'teki _gridEditTextboxHtml /
+   _btGridSyncEditView / btGridCellEditStart / -Keydown / -Blur ve dışarı
+   tıklama listener'ından birebir. Tek ek: commit sonrası hücreden bubble
+   eden 'btgridcelledit' event'i ({ rowIndex, field, value }) — sayfa kendi
+   veri modelini (rows[]) güncelleyebilsin diye (docs demo'sunda veri modeli
+   yoktu, sadece DOM güncelleniyordu). */
+function _gridEditTextboxHtml(value) {
+  const v = (value == null ? '' : String(value)).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  return `<div class="bt-input bt-input--sm" style="gap:0;width:100%;"><div class="bt-tbx__input"><div class="bt-tbx__field"><input class="bt-tbx__text" type="text" value="${v}" onkeydown="btGridCellEditKeydown(event,this)" onblur="btGridCellEditBlur(event,this)" /></div></div></div>`;
+}
+/* editKind:'lookup' — Bentas DS "Select LookUp" (pages-web.js _slkInputInner:
+   .bt-tbx__control--left + artı ikonu + .bt-tbx__field) hücre içinde. Sol
+   ikona tıklama `onLookup` JS'ini çalıştırır (`this` = ikon) — genelde bir
+   seçim penceresi açar, seçilen değer btGridCellSetValue ile hücreye yazılır.
+   onmousedown preventDefault: ikona basınca input blur olup edit kapanmasın. */
+const _slkIconPlus = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
+function _gridEditLookupHtml(value, onLookup) {
+  const v = (value == null ? '' : String(value)).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  return `<div class="bt-input bt-input--sm" style="gap:0;width:100%;"><div class="bt-tbx__input">
+    <div class="bt-tbx__control bt-tbx__control--left"><span class="bt-tbx__icon" role="button" aria-label="Listeden seç" style="cursor:pointer;" onmousedown="event.preventDefault()" onclick="event.stopPropagation();${onLookup || ''}">${_slkIconPlus}</span></div>
+    <div class="bt-tbx__field"><input class="bt-tbx__text" type="text" value="${v}" onkeydown="btGridCellEditKeydown(event,this)" onblur="btGridCellEditBlur(event,this)" /></div>
+  </div></div>`;
+}
+/* Bir hücreye dışarıdan (ör. lookup penceresinden) değer yazar — edit
+   input'unu günceller ve aynı commit yolundan (_btGridSyncEditView →
+   'btgridcelledit') geçirir, hücre editing modundaysa kapatır. */
+function btGridCellSetValue(cell, value) {
+  const input = cell && cell.querySelector('.bt-grid__cell-edit input.bt-tbx__text');
+  if (!input) return;
+  input.value = value;
+  _btGridSyncEditView(cell);
+  cell.classList.remove('bt-grid__cell--editing');
+}
+function _btGridSyncEditView(cell) {
+  const input = cell.querySelector('.bt-grid__cell-edit input.bt-tbx__text');
+  const view  = cell.querySelector('.bt-grid__content');
+  if (!input || !view) return;
+  const changed = input.value !== input.defaultValue;
+  // Boş bırakılırsa Default state'e (placeholder) geri döner.
+  const ph = cell.dataset.placeholder;
+  view.textContent = input.value || ph || '';
+  view.classList.toggle('bt-grid__content--placeholder', !input.value && !!ph);
+  input.defaultValue = input.value;
+  const row = cell.closest('.bt-grid__row');
+  if (changed && cell.dataset.field && row && row.dataset.rowIndex != null) {
+    cell.dispatchEvent(new CustomEvent('btgridcelledit', { bubbles: true, detail: { rowIndex: Number(row.dataset.rowIndex), field: cell.dataset.field, value: input.value } }));
+  }
+}
+window.btGridCellEditStart = function (event, el) {
+  event.stopPropagation();
+  const cell = el.closest('.bt-grid__cell');
+  if (!cell || !cell.classList.contains('bt-grid__cell--editable')) return;
+  cell.classList.add('bt-grid__cell--editing');
+  const input = cell.querySelector('.bt-grid__cell-edit input.bt-tbx__text');
+  if (input) { input.focus(); input.select(); }
+};
+window.btGridCellEditKeydown = function (event, input) {
+  const cell = input.closest('.bt-grid__cell');
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    _btGridSyncEditView(cell);
+    cell.classList.remove('bt-grid__cell--editing');
+  } else if (event.key === 'Escape') {
+    event.preventDefault();
+    input.value = input.defaultValue;
+    cell.classList.remove('bt-grid__cell--editing');
+  }
+};
+window.btGridCellEditBlur = function (event, input) {
+  const cell = input.closest('.bt-grid__cell');
+  if (cell && cell.classList.contains('bt-grid__cell--editing')) {
+    _btGridSyncEditView(cell);
+    cell.classList.remove('bt-grid__cell--editing');
+  }
+};
+document.addEventListener('click', function (e) {
+  document.querySelectorAll('.bt-grid__cell--editing').forEach(cell => {
+    if (!cell.contains(e.target)) {
+      _btGridSyncEditView(cell);
+      cell.classList.remove('bt-grid__cell--editing');
+    }
+  });
+});
+
+const _gridIconLinkOut = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6"/><path d="m21 3-9 9"/><path d="M15 3h6v6"/></svg>`;
 
 function gridNoRecordHtml(width, text) {
   return `<div class="bt-grid__no-record" style="width:${width}px;box-sizing:border-box;"><span class="bt-grid__no-record-text">${text || 'Kayıt bulunamadı'}</span></div>`;
@@ -772,6 +913,13 @@ function renderDataTable(columns, rows, opts) {
         contentLink: !!c.contentLink,
         onClick: c.onClick ? c.onClick(row, idx) : undefined,
         sortValue: c.field ? row[c.field] : undefined,
+        field: c.field,
+        editable: !!c.editable,
+        editKind: c.editKind,
+        editLookup: c.editLookup ? c.editLookup(row, idx) : undefined,
+        align: c.align,
+        // placeholder: true → kolon adı; string → o metin
+        placeholder: c.placeholder === true ? c.headerText : c.placeholder,
       })).join('')}</div>`).join('');
 
   return `<div class="bt-grid-scroll-x"><div class="bt-grid">
@@ -879,12 +1027,16 @@ function renderWindow(opts) {
    önizleme sistemi değil. */
 
 // ── TextBox — zaten var olan tbxBaseInput/tbxBaseClear'ı kullanır ──
-function winFieldHtml(label, value, id) {
-  const esc = String(value == null ? '' : value).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
-  return `<div class="bt-input bt-textbox bt-input--md">
+// opts: { size:'sm'|'md' (varsayılan md), placeholder, readonly } — readonly
+// gerçek TextBox'ın "Read Only" state'i (.bt-input__box--readonly, Disabled DEĞİL).
+function winFieldHtml(label, value, id, opts) {
+  const o = opts || {};
+  const size = o.size || 'md';
+  const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+  return `<div class="bt-input bt-textbox bt-input--${size}">
     <div class="bt-input__label-value"><span class="bt-input__label">${label}</span></div>
-    <div class="bt-input__box bt-input__box--md">
-      <div class="bt-input__content"><input class="bt-input__value"${id ? ` id="${id}"` : ''} type="text" value="${esc}" oninput="tbxBaseInput(this)" /></div>
+    <div class="bt-input__box bt-input__box--${size}${o.readonly ? ' bt-input__box--readonly' : ''}">
+      <div class="bt-input__content"><input class="bt-input__value"${id ? ` id="${id}"` : ''} type="text" value="${esc(value)}"${o.placeholder ? ` placeholder="${esc(o.placeholder)}"` : ''}${o.readonly ? ' readonly' : ' oninput="tbxBaseInput(this)"'} /></div>
     </div>
   </div>`;
 }
@@ -900,11 +1052,15 @@ function winReadonlyFieldHtml(label, value, id) {
 }
 // ── Textarea — gerçek .bt-txa sistemi (Base Input'a henüz taşınmamış,
 // Bentas DS'teki kendi bağımsız mimarisi — bkz. pages-web.js txaPreview). ──
-function winTextareaHtml(label, value, id) {
+// opts: { size:'sm'|'md' (varsayılan md), placeholder, readonly } — readonly
+// .bt-txa--readonly (Textarea'nın kendi Read Only state'i).
+function winTextareaHtml(label, value, id, opts) {
+  const o = opts || {};
   const esc = String(value == null ? '' : value).replace(/&/g, '&amp;').replace(/</g, '&lt;');
-  return `<div class="bt-txa bt-txa--md">
+  const ph = o.placeholder ? ` placeholder="${String(o.placeholder).replace(/"/g, '&quot;')}"` : '';
+  return `<div class="bt-txa bt-txa--${o.size || 'md'}${o.readonly ? ' bt-txa--readonly' : ''}">
     <div class="bt-txa__meta"><span class="bt-txa__label">${label}</span></div>
-    <div class="bt-txa__input"><textarea class="bt-txa__text"${id ? ` id="${id}"` : ''}>${esc}</textarea></div>
+    <div class="bt-txa__input"><textarea class="bt-txa__text"${id ? ` id="${id}"` : ''}${ph}${o.readonly ? ' readonly' : ''}>${esc}</textarea></div>
   </div>`;
 }
 
@@ -948,16 +1104,18 @@ document.addEventListener('click', function (e) {
     });
   }
 });
-/** opts: { id, label, value, options:[string] } — id gerçek .bt-input__box'a konur. */
+/** opts: { id, label, value, options:[string], size:'sm'|'md', placeholder }
+ * — id gerçek .bt-input__box'a konur. */
 function winDropdownHtml(opts) {
   const o = opts || {};
+  const size = o.size || 'md';
   const hasValue = !!o.value;
   const valueColor = hasValue ? 'var(--bt-text-primary-default,#1a1a1a)' : 'var(--bt-text-primary-muted,#a3a3a3)';
-  return `<div class="bt-input bt-dropdown bt-input--md">
+  return `<div class="bt-input bt-dropdown bt-input--${size}">
     <div class="bt-input__label-value"><span class="bt-input__label">${o.label || ''}</span></div>
     <div class="bt-input__anchor">
-      <div class="bt-input__box bt-input__box--md"${o.id ? ` id="${o.id}"` : ''} onclick="ddBaseToggle(this)" style="cursor:pointer;">
-        <div class="bt-input__content"><span class="bt-input__value" style="color:${valueColor};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${o.value || 'Seçin…'}</span></div>
+      <div class="bt-input__box bt-input__box--${size}"${o.id ? ` id="${o.id}"` : ''} onclick="ddBaseToggle(this)" style="cursor:pointer;">
+        <div class="bt-input__content"><span class="bt-input__value" style="color:${valueColor};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${o.value || o.placeholder || 'Seçin…'}</span></div>
         <div class="bt-input__controls"><div class="bt-input__button"><span class="bt-icon">${_ddIconChevronDown}</span></div></div>
       </div>
       <div class="bt-dropdown-list" style="display:none;">
@@ -1166,12 +1324,13 @@ function winDateHtml(opts) {
   const initState = parsed
     ? { view: 'day', year: parsed.y, month: parsed.m, selected: _calIso(parsed.y, parsed.m, parsed.d) }
     : { view: 'day', year: now.getFullYear(), month: now.getMonth(), selected: '' };
-  return `<div class="bt-input bt-datepicker bt-input--md">
+  const size = o.size || 'md';
+  return `<div class="bt-input bt-datepicker bt-input--${size}">
     <div class="bt-input__label-value"><span class="bt-input__label">${o.label || ''}</span></div>
     <div class="bt-input__anchor">
-      <div class="bt-input__box bt-input__box--md">
+      <div class="bt-input__box bt-input__box--${size}">
         <div class="bt-input__controls"><button type="button" class="bt-input__button" onclick="dpBaseToggle(this)" aria-label="Tarih seç"><span class="bt-icon">${_dpIconCalendar}</span></button></div>
-        <div class="bt-input__content"><input class="bt-input__value"${o.id ? ` id="${o.id}"` : ''} type="text" inputmode="numeric" maxlength="10" placeholder="gg/aa/yyyy" value="${value}" oninput="dpBaseInput(this)" /></div>
+        <div class="bt-input__content"><input class="bt-input__value"${o.id ? ` id="${o.id}"` : ''} type="text" inputmode="numeric" maxlength="10" placeholder="01/01/2026" value="${value}" oninput="dpBaseInput(this)" /></div>
       </div>
       ${_calPanelHtml(initState, true)}
     </div>
@@ -1194,4 +1353,154 @@ function winSectionHtml(title, innerHtml) {
 function winSectionHtml(title, innerHtml) {
   const titleHtml = title ? `<div style="font:var(--bt-title-md-regular,400 16px/24px var(--font));color:var(--bt-text-primary-default);margin-bottom:var(--bt-space-md,8px);">${title}</div>` : '';
   return `<div class="bt-window__panel" style="flex:none;">${titleHtml}${innerHtml}</div>`;
+}
+
+/* ============================================================
+   TAB (.bt-tab-list / .bt-tab) — Bentas DS "Tab" component'i
+   (pages-web.js tabItemHtml/tabListHtml/_tabCls/btTabSelect'ten, sadece
+   Label content'i). fill: 'line'|'bordered'|'segmented', size: 'sm'|'md'|'lg'.
+   Proje eki: tab'a `panel` (element id) verilirse btTabSelect seçilen tab'ın
+   panelini gösterir, aynı listedeki diğer tab'ların panellerini gizler.
+   ============================================================ */
+function renderTabList(tabs, opts) {
+  const o = opts || {};
+  const fill = o.fill || 'line';
+  const size = o.size || 'sm';
+  const items = (tabs || []).map(t => {
+    const cls = ['bt-tab', `bt-tab--${size}`, t.selected ? 'bt-tab--selected' : ''].filter(Boolean).join(' ');
+    return `<button type="button" class="${cls}" role="tab"${t.panel ? ` data-tab-panel="${t.panel}"` : ''} onclick="btTabSelect(this)"><span class="bt-tab__label">${t.label}</span></button>`;
+  }).join('');
+  return `<div class="bt-tab-list bt-tab-list--${fill}" role="tablist">${items}</div>`;
+}
+window.btTabSelect = function (el) {
+  const list = el.closest('.bt-tab-list');
+  if (!list) return;
+  list.querySelectorAll('.bt-tab').forEach(t => {
+    t.classList.toggle('bt-tab--selected', t === el);
+    const panel = t.dataset.tabPanel && document.getElementById(t.dataset.tabPanel);
+    if (panel) panel.hidden = t !== el;
+  });
+};
+
+/* ============================================================
+   OVERFLOW MENU (.bt-ovf-menu) — Bentas DS "Overflow Menu" component'i.
+   pages-web.js'teki btOvfMenuToggle / btOvfMenuClose / btOvfMenuHide /
+   _btOvfCloseAll + açılış-kapanış animasyonu (_btOvfAnimateOpen/Close) ve
+   dışarı tıklama / scroll kapatma listener'larından birebir — Submenu,
+   Toggle (checkbox/radio/switch) varyantları taşınmadı (Basic + Icons).
+   Liste açılınca document.body'ye portal'lanır, kapanınca geri döner.
+   ============================================================ */
+const _ovfIconMore = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>`;
+const OVF_ANIM_MS = 140;
+const _btOvfHideTimers = new WeakMap();
+function _btOvfReducedMotion() {
+  return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+function _btOvfAnimateOpen(list) {
+  const pending = _btOvfHideTimers.get(list);
+  if (pending) { clearTimeout(pending); _btOvfHideTimers.delete(list); }
+  list.classList.remove('bt-ovf-menu__list--closing');
+  void list.offsetWidth;   // reflow — kapalı state'i commit et ki transition tetiklensin
+  requestAnimationFrame(() => list.classList.add('bt-ovf-menu__list--visible'));
+}
+function _btOvfAnimateClose(list, onDone) {
+  const pending = _btOvfHideTimers.get(list);
+  if (pending) clearTimeout(pending);
+  list.classList.remove('bt-ovf-menu__list--visible');
+  list.classList.add('bt-ovf-menu__list--closing');
+  const t = setTimeout(() => {
+    _btOvfHideTimers.delete(list);
+    list.classList.remove('bt-ovf-menu__list--closing');
+    onDone();
+  }, _btOvfReducedMotion() ? 0 : OVF_ANIM_MS);
+  _btOvfHideTimers.set(list, t);
+}
+function btOvfMenuHide(list) {
+  _btOvfAnimateClose(list, () => {
+    list.style.display = 'none';
+    list.removeAttribute('data-bt-ovf-portal');
+    if (list._btOvfHome) list._btOvfHome.appendChild(list);
+  });
+}
+function _btOvfCloseAll() {
+  document.querySelectorAll('.bt-ovf-menu__list[data-bt-ovf-portal="1"]').forEach(btOvfMenuHide);
+}
+window.btOvfMenuToggle = function (event, btn) {
+  event.stopPropagation();
+  const menu = btn.closest('.bt-ovf-menu');
+  if (!menu) return;
+  const list = menu.querySelector('.bt-ovf-menu__list') || document.querySelector('.bt-ovf-menu__list[data-bt-ovf-portal="1"]');
+  const wasOpen = list && list.getAttribute('data-bt-ovf-portal') === '1';
+  _btOvfCloseAll();
+  if (!wasOpen && list) {
+    const r = btn.getBoundingClientRect();
+    list.style.top     = (r.bottom + 2) + 'px';
+    list.style.left    = '-9999px';
+    list.style.right   = 'auto';
+    list.style.display = 'block';
+    list.setAttribute('data-bt-ovf-portal', '1');
+    list._btOvfHome = menu;
+    document.body.appendChild(list);
+    const w = list.offsetWidth;
+    if (r.left + w <= window.innerWidth) {
+      list.style.left  = r.left + 'px';
+    } else {
+      list.style.left  = 'auto';
+      list.style.right = (window.innerWidth - r.right) + 'px';
+    }
+    _btOvfAnimateOpen(list);
+  }
+};
+window.btOvfMenuClose = function (event, item) {
+  event.stopPropagation();
+  _btOvfCloseAll();
+};
+document.addEventListener('click', function (e) {
+  if (!e.target.closest('.bt-ovf-menu') && !e.target.closest('.bt-ovf-menu__list')) _btOvfCloseAll();
+});
+document.addEventListener('scroll', function () { _btOvfCloseAll(); }, true);
+
+/**
+ * renderOverflowMenu — "More" (⋯) tetikleyicili Overflow Menu.
+ * items: [{ key, label, icon, onClick }] — icon verilirse 32×32 Left Control
+ * slotunda (.bt-icon, svg boyutu CSS'ten), onClick item tıklanınca çalışacak
+ * JS string'i. key, item'a data-ovf-key olarak yazılır.
+ */
+function renderOverflowMenu(items, opts) {
+  const o = opts || {};
+  const itemHtml = (items || []).map(it => `<div class="bt-ovf-menu__item" role="menuitem" data-ovf-key="${it.key || ''}" onclick="btOvfMenuClose(event,this);${it.onClick || ''}">
+      <div class="bt-ovf-menu__item-row">${it.icon ? `<span class="bt-ovf-menu__ctrl" aria-hidden="true"><span class="bt-icon">${it.icon}</span></span>` : ''}<span class="bt-ovf-menu__label"><span class="bt-ovf-menu__label-text">${it.label}</span></span></div>
+    </div>`).join('');
+  return `<div class="bt-ovf-menu${o.className ? ' ' + o.className : ''}">
+    <button type="button" class="bt-btn bt-btn--sm bt-btn--base-flat bt-btn--icon" aria-label="${o.label || 'Diğer'}" aria-haspopup="true" onclick="btOvfMenuToggle(event,this)">${_ovfIconMore}</button>
+    <div class="bt-ovf-menu__list" role="menu"><div class="bt-ovf-menu__section" role="group">${itemHtml}</div></div>
+  </div>`;
+}
+
+/* ── Taşan toolbar → Overflow Menu (proje eki) ──────────────────────
+   Toolbar'daki .bt-btn[data-ovf-key] butonları sığmadığında SONDAN başlayarak
+   gizlenir, aynı key'li Overflow Menu item'ları görünür olur; hiçbiri taşmıyorsa
+   "More" tetikleyicisi de gizlenir. ResizeObserver ile toolbar her boyut
+   değiştiğinde (window resize, minimize/maximize, ilk görünür oluş) yeniden
+   hesaplanır. Toolbar'ın kendisi overflow:hidden olmalı. */
+function btToolbarFitOverflow(toolbar) {
+  const btns = [...toolbar.querySelectorAll(':scope > .bt-btn[data-ovf-key]')];
+  const menu = toolbar.querySelector(':scope > .bt-ovf-menu');
+  if (!menu || !btns.length) return;
+  _btOvfCloseAll();
+  btns.forEach(b => { b.hidden = false; });
+  menu.hidden = true;
+  if (toolbar.scrollWidth > toolbar.clientWidth) {
+    menu.hidden = false;
+    for (let i = btns.length - 1; i >= 0 && toolbar.scrollWidth > toolbar.clientWidth; i--) btns[i].hidden = true;
+  }
+  const hiddenKeys = new Set(btns.filter(b => b.hidden).map(b => b.dataset.ovfKey));
+  const list = menu.querySelector('.bt-ovf-menu__list');
+  list.querySelectorAll('.bt-ovf-menu__item[data-ovf-key]').forEach(it => {
+    it.style.display = hiddenKeys.has(it.dataset.ovfKey) ? '' : 'none';
+  });
+}
+function btToolbarObserveOverflow(toolbar) {
+  if (!window.ResizeObserver) return;
+  new ResizeObserver(() => btToolbarFitOverflow(toolbar)).observe(toolbar);
 }
