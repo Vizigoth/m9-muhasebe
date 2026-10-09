@@ -4,11 +4,11 @@
    M9_SCREENS[route] = { title, render(toolbar, body) } olarak kendini
    kaydeder; kabuk (sidebar + page header) sabit kalır, sadece header
    başlığı, toolbar ve body değişir. Aktif ekran URL hash'inde tutulur
-   (#/yevmiye-fis-listesi) — yenileme/geri tuşu aynı ekranı korur.
+   (#/yevmiye-fis-listesi-ly1) — yenileme/geri tuşu aynı ekranı korur.
    Script sırası: components.js → router.js → screens/*.js → app.js
    ============================================================ */
 const M9_SCREENS = {};
-const M9_DEFAULT_ROUTE = 'yevmiye-fis-listesi';
+const M9_DEFAULT_ROUTE = 'yevmiye-fis-listesi-ly1';
 
 function m9CurrentRoute() {
   return location.hash.replace(/^#\/?/, '') || M9_DEFAULT_ROUTE;

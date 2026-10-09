@@ -441,7 +441,10 @@ function gridCellHtml(opts) {
     editable ? 'bt-grid__cell--editable' : '',
   ].filter(Boolean).join(' ');
   const editTriggerAttrs = editable ? ` onclick="event.stopPropagation()" ondblclick="btGridCellEditStart(event,this)"` : '';
-  const fieldAttr = (field ? ` data-field="${field}"` : '') + (placeholder ? ` data-placeholder="${String(placeholder).replace(/"/g, '&quot;')}"` : '');
+  const _attrEsc = s => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+  const fieldAttr = (field ? ` data-field="${field}"` : '') + (placeholder ? ` data-placeholder="${_attrEsc(placeholder)}"` : '')
+    + (editable && o.editKind ? ` data-edit-kind="${o.editKind}"` : '')
+    + (editable && o.editOptions ? ` data-edit-options="${_attrEsc(JSON.stringify(o.editOptions))}"` : '');
   const sortValueAttr = sortValue != null ? ` data-sort-value="${String(sortValue).replace(/&/g, '&amp;').replace(/"/g, '&quot;')}"` : '';
   const stickyStyle = sticky != null
     ? `position:sticky;left:${sticky}px;z-index:5;`
@@ -461,7 +464,10 @@ function gridCellHtml(opts) {
   const linkIconHtml = contentLink ? `<span class="bt-grid__link-icon" aria-hidden="true">${_gridIconLinkOut}</span>` : '';
   const contentHtml  = showContent ? `<span class="bt-grid__content${contentLink ? ' bt-grid__content--link' : ''}${alignRight ? ' bt-grid__content--right' : ''}${showPlaceholder ? ' bt-grid__content--placeholder' : ''}"${onClickAttr}>${showPlaceholder ? placeholder : contentText}${linkIconHtml}</span>` : '';
   const trailingHtml = gridTrailingHtml(trailing, o.trailingOpts);
-  const editInner = o.editKind === 'lookup' ? _gridEditLookupHtml(editValue, o.editLookup) : _gridEditTextboxHtml(editValue);
+  const editInner = o.editKind === 'lookup' ? _gridEditLookupHtml(editValue, o.editLookup)
+    : o.editKind === 'dropdown' ? _gridEditDropdownHtml(editValue)
+    : o.editKind === 'date' ? _gridEditDateHtml(editValue)
+    : _gridEditTextboxHtml(editValue, o.inputType);
   const editHtml = editable ? `<span class="bt-grid__cell-edit" onclick="event.stopPropagation()">${editInner}</span>` : '';
 
   const widthStyleC = fillWidth ? `flex:1;min-width:${width}px;` : `width:${width}px;`;
@@ -474,10 +480,35 @@ function gridCellHtml(opts) {
    eden 'btgridcelledit' event'i ({ rowIndex, field, value }) — sayfa kendi
    veri modelini (rows[]) güncelleyebilsin diye (docs demo'sunda veri modeli
    yoktu, sadece DOM güncelleniyordu). */
-function _gridEditTextboxHtml(value) {
+/* inputType (proje eki): 'decimal' | 'integer' — sayısal kolonlarda sadece
+   rakam (decimal'de + tek ondalık ayırıcı) kabul edilir, bkz. btGridNumericInput.
+   Verilmezse serbest metin (DS'in kendi davranışı). */
+function _gridEditTextboxHtml(value, inputType) {
   const v = (value == null ? '' : String(value)).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
-  return `<div class="bt-input bt-input--sm" style="gap:0;width:100%;"><div class="bt-tbx__input"><div class="bt-tbx__field"><input class="bt-tbx__text" type="text" value="${v}" onkeydown="btGridCellEditKeydown(event,this)" onblur="btGridCellEditBlur(event,this)" /></div></div></div>`;
+  const numAttrs = (inputType === 'decimal' || inputType === 'integer')
+    ? ` inputmode="${inputType === 'decimal' ? 'decimal' : 'numeric'}" oninput="btGridNumericInput(this,'${inputType}')"`
+    : '';
+  return `<div class="bt-input bt-input--sm" style="gap:0;width:100%;"><div class="bt-tbx__input"><div class="bt-tbx__field"><input class="bt-tbx__text" type="text" value="${v}"${numAttrs} onkeydown="btGridCellEditKeydown(event,this)" onblur="btGridCellEditBlur(event,this)" /></div></div></div>`;
 }
+/* Sayısal hücre girişi — yazma VE yapıştırmada geçersiz karakterleri anında
+   ayıklar (keydown engellemek yapıştırmayı kaçırırdı). integer: sadece rakam.
+   decimal: rakam + TEK ondalık ayırıcı; virgül noktaya çevrilir (veri modeli
+   '308.57' biçiminde). İmleç, silinen karakter sayısı kadar geri alınır. */
+window.btGridNumericInput = function (el, kind) {
+  const before = el.value;
+  let v;
+  if (kind === 'integer') {
+    v = before.replace(/\D/g, '');
+  } else {
+    v = before.replace(/,/g, '.').replace(/[^\d.]/g, '');
+    const i = v.indexOf('.');
+    if (i >= 0) v = v.slice(0, i + 1) + v.slice(i + 1).replace(/\./g, '');
+  }
+  if (v === before) return;
+  const pos = Math.max(0, (el.selectionStart || 0) - (before.length - v.length));
+  el.value = v;
+  el.setSelectionRange(pos, pos);
+};
 /* editKind:'lookup' — Bentas DS "Select LookUp" (pages-web.js _slkInputInner:
    .bt-tbx__control--left + artı ikonu + .bt-tbx__field) hücre içinde. Sol
    ikona tıklama `onLookup` JS'ini çalıştırır (`this` = ikon) — genelde bir
@@ -494,6 +525,129 @@ function _gridEditLookupHtml(value, onLookup) {
 /* Bir hücreye dışarıdan (ör. lookup penceresinden) değer yazar — edit
    input'unu günceller ve aynı commit yolundan (_btGridSyncEditView →
    'btgridcelledit') geçirir, hücre editing modundaysa kapatır. */
+/* editKind:'dropdown' — DS InCell Editing'in Dropdown edit'i (pages-web.js
+   _gridEditDropdownHtml: .bt-tbx__input + sağda chevron). Değer görünmez bir
+   text input'ta tutulur (commit yolu TextBox ile aynı — type="hidden" DEĞİL:
+   hidden input'ta value/defaultValue bağlı olduğu için değişiklik algılanmıyordu); seçenek listesi hücre
+   altında açılan popover'da (btGridPopoverOpen) — grid'in overflow'u
+   kesmesin diye body'ye portal'lanır. Seçenekler hücrenin data-edit-options'ında. */
+// .bt-tbx__icon svg boyutunu ZORLAMIYOR → boyut svg'nin kendisinde (16×16,
+// Select LookUp'ın artı ikonu ile aynı). Kaynak ikon sabitleri boyutsuz.
+const _gridSvg16 = svg => svg.replace('<svg ', '<svg width="16" height="16" ');
+/* DS InCell Dropdown'ın chevron'u — Base Input Dropdown'ın 16px Lucide ikonu
+   DEĞİL, pages-web.js'teki _ddIconChevron / btDdToggle'ın 12×7 ikonu; açıkken
+   yukarı döner. */
+const _gridDdChevronDown = `<svg width="12" height="7" viewBox="0 0 12 7" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 1l5 5 5-5"/></svg>`;
+const _gridDdChevronUp   = `<svg width="12" height="7" viewBox="0 0 12 7" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 6l5-5 5 5"/></svg>`;
+/* Açık/kapalı (Active) state — DS btDdToggle ile aynı: kök .bt-input'a
+   bt-input--active (brand border + focus halkası, styles.css) + chevron yönü. */
+function _gridDdSetActive(cell, active) {
+  const root = cell && cell.querySelector('.bt-grid__cell-edit .bt-input');
+  if (!root) return;
+  root.classList.toggle('bt-input--active', active);
+  const icon = root.querySelector('.bt-tbx__control--right .bt-tbx__icon');
+  if (icon) icon.innerHTML = active ? _gridDdChevronUp : _gridDdChevronDown;
+}
+function _gridEditDropdownHtml(value) {
+  const v = value == null ? '' : String(value);
+  const esc = x => x.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+  return `<div class="bt-input bt-input--sm" style="gap:0;width:100%;"><div class="bt-tbx__input" style="cursor:pointer;" onclick="btGridPopoverOpen(this.closest('.bt-grid__cell'))">
+    <div class="bt-tbx__field"><span class="bt-tbx__text" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(v)}</span><input class="bt-tbx__text" type="text" style="display:none;" tabindex="-1" value="${esc(v)}" /></div>
+    <div class="bt-tbx__control bt-tbx__control--right"><span class="bt-tbx__icon">${_gridDdChevronDown}</span></div>
+  </div></div>`;
+}
+/* editKind:'date' — DatePicker görünümü: solda takvim butonu (Date Picker'ın
+   Input Controls'ü) + gg/aa/yyyy maskeli input (Date Input'un _dtiFormatDateMask'ı).
+   Takvim popover'da açılır, seçilen gün hücreye yazılır; elle de yazılabilir. */
+function _gridDateToInput(v) { return String(v == null ? '' : v).replace(/\s+/g, ''); }
+function _gridDateToDisplay(v) {
+  const m = String(v || '').match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  return m ? `${m[1]} / ${m[2]} / ${m[3]}` : String(v || '');
+}
+function _gridEditDateHtml(value) {
+  const v = _gridDateToInput(value).replace(/"/g, '&quot;');
+  return `<div class="bt-input bt-input--sm" style="gap:0;width:100%;"><div class="bt-tbx__input">
+    <div class="bt-tbx__control bt-tbx__control--left"><span class="bt-tbx__icon" role="button" aria-label="Tarih seç" style="cursor:pointer;" onmousedown="event.preventDefault()" onclick="event.stopPropagation();btGridPopoverOpen(this.closest('.bt-grid__cell'))">${_gridSvg16(_dpIconCalendar)}</span></div>
+    <div class="bt-tbx__field"><input class="bt-tbx__text" type="text" inputmode="numeric" maxlength="10" placeholder="01/01/2026" value="${v}" oninput="this.value=_dtiFormatDateMask(this.value)" onkeydown="btGridCellEditKeydown(event,this)" onblur="btGridCellEditBlur(event,this)" /></div>
+  </div></div>`;
+}
+/* Hücre popover'ı — dropdown listesi ya da takvim, hücrenin altında
+   position:fixed (sığmazsa üstte), body'ye portal'lı. Aynı anda tek popover.
+   mousedown preventDefault: popover'a tıklayınca hücre input'u odağını
+   kaybetmez (blur commit'i tetiklenmez). Kapanma: seçim, Enter/Esc, dışarı
+   tıklama; kaydırmada hücreyi takip eder, hücre görünmez olunca kapanır. */
+let _btGridPopover = null; // { el, cell }
+window.btGridPopoverOpen = function (cell) {
+  if (!cell) return;
+  if (_btGridPopover && _btGridPopover.cell === cell) return;
+  btGridPopoverClose();
+  const kind = cell.dataset.editKind;
+  const input = cell.querySelector('.bt-grid__cell-edit input.bt-tbx__text');
+  const pop = document.createElement('div');
+  pop.className = 'bt-grid-popover';
+  pop.addEventListener('mousedown', e => e.preventDefault());
+  if (kind === 'dropdown') {
+    const esc = x => String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+    const opts = JSON.parse(cell.dataset.editOptions || '[]');
+    pop.innerHTML = `<div class="bt-dropdown-list" role="listbox">${opts.map(o =>
+      `<div class="bt-dropdown-list-item${input && o === input.value ? ' bt-dropdown-list-item--selected' : ''}" role="option" data-value="${esc(o)}"><span class="bt-dropdown-list-item__text">${esc(o)}</span></div>`
+    ).join('')}</div>`;
+    pop.addEventListener('click', e => {
+      const it = e.target.closest('.bt-dropdown-list-item');
+      if (!it) return;
+      btGridPopoverClose();
+      btGridCellSetValue(cell, it.dataset.value);
+    });
+  } else if (kind === 'date') {
+    const parsed = input && _calParseDdMmYyyy(input.value);
+    const now = new Date();
+    pop.innerHTML = _calPanelHtml(parsed
+      ? { view: 'day', year: parsed.y, month: parsed.m, selected: _calIso(parsed.y, parsed.m, parsed.d) }
+      : { view: 'day', year: now.getFullYear(), month: now.getMonth(), selected: '' }, false);
+    pop.querySelector('.bt-calendar')._btOnSelect = val => { btGridPopoverClose(); btGridCellSetValue(cell, val); };
+  } else return;
+  _btGridRevealCell(cell); // (btGridCellEditStart zaten yaptı; popover tek başına açılırsa diye)
+  document.body.appendChild(pop);
+  if (kind === 'dropdown') pop.style.minWidth = cell.getBoundingClientRect().width + 'px';
+  _btGridPopover = { el: pop, cell };
+  if (kind === 'dropdown') _gridDdSetActive(cell, true);
+  _btGridPopoverPosition();
+};
+/* Popover'ı hücrenin altına (sığmazsa üstüne) konumlar. Hücre kendi yatay
+   scroll alanının görünür kısmından TAMAMEN çıkmışsa false döner. */
+function _btGridPopoverPosition() {
+  const { el: pop, cell } = _btGridPopover;
+  const r = cell.getBoundingClientRect();
+  const sx = cell.closest('.bt-grid-scroll-x');
+  if (sx) { const sr = sx.getBoundingClientRect(); if (r.right <= sr.left || r.left >= sr.right || r.bottom <= sr.top || r.top >= sr.bottom) return false; }
+  const w = pop.offsetWidth, h = pop.offsetHeight;
+  let top = r.bottom + 4;
+  if (top + h > window.innerHeight - 4) top = Math.max(4, r.top - h - 4);
+  let left = r.left;
+  if (left + w > window.innerWidth - 4) left = Math.max(4, window.innerWidth - w - 4);
+  pop.style.top = top + 'px';
+  pop.style.left = left + 'px';
+  return true;
+}
+function btGridPopoverClose() {
+  if (!_btGridPopover) return;
+  if (_btGridPopover.cell.dataset.editKind === 'dropdown') _gridDdSetActive(_btGridPopover.cell, false);
+  _btGridPopover.el.remove();
+  _btGridPopover = null;
+}
+document.addEventListener('scroll', function (e) {
+  // Kaydırmada kapanmaz, hücreyi takip eder; hücre görünür alandan tamamen
+  // çıktıysa kapanır (zamanlamaya bağlı değil — reveal/odak kaydırmaları da güvenli).
+  if (_btGridPopover && !_btGridPopover.el.contains(e.target) && !_btGridPopoverPosition()) btGridPopoverClose();
+}, true);
+window.addEventListener('resize', function () { if (_btGridPopover && !_btGridPopoverPosition()) btGridPopoverClose(); });
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape' && _btGridPopover) {
+    const cell = _btGridPopover.cell;
+    btGridPopoverClose();
+    if (cell.dataset.editKind === 'dropdown') cell.classList.remove('bt-grid__cell--editing');
+  }
+});
 function btGridCellSetValue(cell, value) {
   const input = cell && cell.querySelector('.bt-grid__cell-edit input.bt-tbx__text');
   if (!input) return;
@@ -506,26 +660,48 @@ function _btGridSyncEditView(cell) {
   const view  = cell.querySelector('.bt-grid__content');
   if (!input || !view) return;
   const changed = input.value !== input.defaultValue;
+  // Tarih hücresi: input "gg/aa/yyyy", grid/veri "gg / aa / yyyy" (mevcut biçim)
+  const value = cell.dataset.editKind === 'date' ? _gridDateToDisplay(input.value) : input.value;
   // Boş bırakılırsa Default state'e (placeholder) geri döner.
   const ph = cell.dataset.placeholder;
-  view.textContent = input.value || ph || '';
-  view.classList.toggle('bt-grid__content--placeholder', !input.value && !!ph);
+  view.textContent = value || ph || '';
+  view.classList.toggle('bt-grid__content--placeholder', !value && !!ph);
   input.defaultValue = input.value;
   const row = cell.closest('.bt-grid__row');
   if (changed && cell.dataset.field && row && row.dataset.rowIndex != null) {
-    cell.dispatchEvent(new CustomEvent('btgridcelledit', { bubbles: true, detail: { rowIndex: Number(row.dataset.rowIndex), field: cell.dataset.field, value: input.value } }));
+    cell.dispatchEvent(new CustomEvent('btgridcelledit', { bubbles: true, detail: { rowIndex: Number(row.dataset.rowIndex), field: cell.dataset.field, value } }));
   }
+}
+/* Düzenlenecek hücreyi yatay scroll alanında TAM görünür yapar — frozen
+   (position:sticky) kolonların altına gizlenmesin diye onların genişliği
+   kadar sol sınır hesaba katılır (scrollIntoView sticky kolonları bilmez).
+   Aksi halde input odağı tarayıcıya kendi kaydırmasını yaptırıp popover'ı
+   kapatıyor, hücre de yarısı frozen kolonun altında kalıyordu. */
+function _btGridRevealCell(cell) {
+  const sx = cell.closest('.bt-grid-scroll-x');
+  const row = cell.closest('.bt-grid__row');
+  if (!sx || !row) return;
+  const frozenW = [...row.children].filter(c => c !== cell && c.style.position === 'sticky').reduce((w, c) => w + c.offsetWidth, 0);
+  const sr = sx.getBoundingClientRect(), cr = cell.getBoundingClientRect();
+  const leftLimit = sr.left + frozenW;
+  if (cr.left < leftLimit) sx.scrollLeft -= (leftLimit - cr.left);
+  else if (cr.right > sr.right) sx.scrollLeft += Math.min(cr.right - sr.right, cr.left - leftLimit);
 }
 window.btGridCellEditStart = function (event, el) {
   event.stopPropagation();
   const cell = el.closest('.bt-grid__cell');
   if (!cell || !cell.classList.contains('bt-grid__cell--editable')) return;
+  _btGridRevealCell(cell);
   cell.classList.add('bt-grid__cell--editing');
+  const kind = cell.dataset.editKind;
+  if (kind === 'dropdown') { btGridPopoverOpen(cell); return; }
   const input = cell.querySelector('.bt-grid__cell-edit input.bt-tbx__text');
   if (input) { input.focus(); input.select(); }
+  if (kind === 'date') btGridPopoverOpen(cell);
 };
 window.btGridCellEditKeydown = function (event, input) {
   const cell = input.closest('.bt-grid__cell');
+  if (event.key === 'Enter' || event.key === 'Escape') btGridPopoverClose();
   if (event.key === 'Enter') {
     event.preventDefault();
     _btGridSyncEditView(cell);
@@ -538,12 +714,16 @@ window.btGridCellEditKeydown = function (event, input) {
 };
 window.btGridCellEditBlur = function (event, input) {
   const cell = input.closest('.bt-grid__cell');
+  if (_btGridPopover && _btGridPopover.cell === cell) btGridPopoverClose();
   if (cell && cell.classList.contains('bt-grid__cell--editing')) {
     _btGridSyncEditView(cell);
     cell.classList.remove('bt-grid__cell--editing');
   }
 };
 document.addEventListener('click', function (e) {
+  const inPopover = e.composedPath().some(n => n.classList && n.classList.contains('bt-grid-popover'));
+  if (inPopover) return;
+  if (_btGridPopover && !_btGridPopover.cell.contains(e.target)) btGridPopoverClose();
   document.querySelectorAll('.bt-grid__cell--editing').forEach(cell => {
     if (!cell.contains(e.target)) {
       _btGridSyncEditView(cell);
@@ -917,6 +1097,8 @@ function renderDataTable(columns, rows, opts) {
         editable: !!c.editable,
         editKind: c.editKind,
         editLookup: c.editLookup ? c.editLookup(row, idx) : undefined,
+        inputType: c.inputType,
+        editOptions: c.editOptions,
         align: c.align,
         // placeholder: true → kolon adı; string → o metin
         placeholder: c.placeholder === true ? c.headerText : c.placeholder,
@@ -1253,6 +1435,13 @@ window.calToday = function (el) {
 };
 function calCommitSelection(panel, state) {
   _calRerender(panel, state);
+  // Proje eki: DatePicker kutusuna bağlı OLMAYAN bir takvim (ör. grid hücresi
+  // popover'ı, bkz. btGridPopoverOpen) seçimi kendi callback'iyle alır.
+  if (typeof panel._btOnSelect === 'function') {
+    const [y, m, d] = state.selected.split('-');
+    panel._btOnSelect(`${d}/${m}/${y}`);
+    return;
+  }
   const anchor = panel.closest('.bt-input__anchor');
   const box = anchor && anchor.querySelector('.bt-input__box');
   const input = box && box.querySelector('.bt-input__value');

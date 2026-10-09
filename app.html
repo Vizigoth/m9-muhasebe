@@ -68,16 +68,16 @@
   .m9-fis-toolbar > .bt-btn,
   .m9-fis-toolbar > .bt-ovf-menu { flex-shrink: 0; }
   .m9-fis-toolbar > [hidden] { display: none; }
-  /* Ünvan LookUp (sm window) — Fiş Detayı (xl) window'unun ÜSTÜNDE açılan ikinci
+  /* Select LookUp penceresi (sm window, m9OpenLookup) — Fiş Detayı (xl) window'unun ÜSTÜNDE açılan ikinci
      pencere. DS'te overlay 999 / window 1000 — tek pencere için; iç içe açılınca
      ikinci overlay xl window'un altında kalıp karartmıyor/dışarı tıklamayı
      yakalamıyordu, bu yüzden bir kat yukarı alınıyor. */
-  #m9UnvanLookupOv { z-index: 1001; }
-  #m9UnvanLookup { z-index: 1002; }
+  #m9LookupOv { z-index: 1001; }
+  #m9Lookup { z-index: 1002; }
   /* arama tam genişlik, grid kalan yüksekliği doldurur */
-  #m9UnvanLookup .bt-window__panel { min-height: 0; overflow: hidden; }
-  #m9UnvanLookup .bt-searchbox { flex-shrink: 0; width: 100%; }
-  #m9UnvanLookupGrid { flex: 1; min-height: 0; border-radius: var(--bt-radius-sm, 4px); }
+  #m9Lookup .bt-window__panel { min-height: 0; overflow: hidden; }
+  #m9Lookup .bt-searchbox { flex-shrink: 0; width: 100%; }
+  #m9LookupGrid { flex: 1; min-height: 0; border-radius: var(--bt-radius-sm, 4px); }
   /* Overflow Menu listesi açılınca body'ye portal'lanıyor ve DS'teki z-index'i
      200 — .bt-window (1000) içinden açıldığında pencerenin ARKASINDA kalıyordu. */
   body > .bt-ovf-menu__list[data-bt-ovf-portal="1"] { z-index: 1010; }
@@ -115,7 +115,8 @@
     border-bottom: 1px solid var(--bt-border-primary-default);
     flex-shrink: 0;
   }
-  .m9-fis-moves__title { font: var(--bt-title-md-medium, 500 16px/24px var(--font)); color: var(--bt-text-primary-default); }
+  /* Container başlığı — Title/sm/Medium (kullanıcı isteği; Figma'da md/Medium idi) */
+  .m9-fis-moves__title { font: var(--bt-title-sm-medium, 500 14px/16px var(--font)); color: var(--bt-text-primary-default); }
   .m9-fis-moves__subtitle { font: var(--bt-subtitle-xs-regular, 400 12px/16px var(--font)); color: var(--bt-text-primary-emphasis); }
   .m9-fis-moves__toolbar {
     display: flex; align-items: center; gap: 10px; /* Figma: sabit 10px, token'a bağlı değil */
@@ -150,6 +151,39 @@
   .m9-grid-summary__value { font: var(--bt-text-xs-regular, 400 12px/16px var(--font)); color: var(--bt-text-primary-default); font-variant-numeric: tabular-nums; }
   .m9-grid-summary__value--empty { color: var(--bt-text-primary-muted); }
   .m9-grid-summary__sep { width: 1px; height: 40px; flex-shrink: 0; background: var(--bt-border-primary-default); }
+  /* ── Fiş Detayı Ly2 (Figma 1752:165085) — dikey yığın: daraltılabilir
+     Fiş Bilgileri + E-Defter kartları, altta kalan yüksekliği dolduran
+     Hareketler. Figma'da TEK Panel (padding 2xl) içinde kartlar arası gap 2xl. */
+  #m9RecordWindow .bt-window__body.m9-ly2 { flex-direction: column; overflow-y: auto; padding: var(--bt-space-2xl); gap: var(--bt-space-2xl); }
+  .m9-ly2-panel { flex-shrink: 0; }
+  .m9-ly2-panel--fill { flex: 1 0 auto; min-height: 320px; /* Figma 1080px window'a iki form kartı açıkken sığar */ display: flex; flex-direction: column; }
+  .m9-ly2-panel--fill > .m9-fis-moves__card { flex: 1; }
+  .m9-ly2-card {
+    background: var(--bt-surface-primary-default);
+    border: 1px solid var(--bt-border-primary-default);
+    border-radius: var(--bt-radius-sm);
+  }
+  .m9-ly2-card__header {
+    display: flex; align-items: center; justify-content: space-between; gap: var(--bt-space-2xs);
+    padding: var(--bt-space-xs) var(--bt-space-2xl);
+    border-bottom: 1px solid var(--bt-border-primary-default);
+    cursor: pointer; user-select: none;
+    transition: border-color 220ms ease;
+  }
+  .m9-ly2-card.is-collapsed .m9-ly2-card__header { border-bottom-color: transparent; }
+  .m9-ly2-card__toggle svg { transition: transform 180ms ease; }
+  .m9-ly2-card.is-collapsed .m9-ly2-card__toggle svg { transform: rotate(-90deg); }
+  /* Aç/kapa — grid-rows 0fr↔1fr (sabit yükseklik gerektirmeyen yumuşak geçiş) */
+  .m9-ly2-card__collapse { display: grid; grid-template-rows: 1fr; transition: grid-template-rows 220ms ease; }
+  .m9-ly2-card.is-collapsed .m9-ly2-card__collapse { grid-template-rows: 0fr; }
+  .m9-ly2-card__inner { min-height: 0; overflow: hidden; }
+  /* Figma: Header ile Content arası gap-xl (12px) + Content padding 2xl (16px) */
+  .m9-ly2-card__content { margin-top: var(--bt-space-xl); padding: var(--bt-space-2xl); container-type: inline-size; }
+  .m9-ly2-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--bt-space-2xl); }
+  .m9-ly2-grid__full { grid-column: 1 / -1; }
+  /* Window küçültülünce (50vw) 4 kolon sıkışmasın */
+  @container (max-width: 900px) { .m9-ly2-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .m9-ly2 .m9-grid-summary__value--error { color: var(--bt-text-error-default); }
   /* bkz. #m9Grid notu — .bt-grid-actions-container'a radius ayrıca verilir */
   #m9DetailGrid { border-radius: var(--bt-radius-sm, 4px); }
   /* Sıra kolonu frozen — #m9Grid ile AYNI sebep/ödün: .bt-grid__body'nin

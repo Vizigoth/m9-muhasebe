@@ -7204,28 +7204,17 @@ pre.code-block.line-numbers {
 /* Boş hücre (Default state) — placeholder metni, input placeholder'ıyla aynı renk */
 .bt-grid__cell .bt-grid__content--placeholder { color: var(--bt-text-primary-muted, #a3a3a3); }
 
-/* — InCell Editing — Bentas DS styles.css'ten birebir (sadece hücre seviyesi;
-   satır seviyesi Inline Editing bu projede henüz kullanılmıyor). Editable
-   hücre hem view (.bt-grid__content) hem edit (.bt-grid__cell-edit)
-   markup'ını taşır, görünürlüğü SADECE .bt-grid__cell--editing belirler. */
-.bt-grid__cell-edit {
-  display: none;
-  flex: 1 1 auto;
-  min-width: 0;
-  align-items: center;
-  padding: var(--bt-space-md, 8px);
-  box-sizing: border-box;
-}
-.bt-grid__cell--editable.bt-grid__cell--editing > .bt-grid__content,
-.bt-grid__cell--editable.bt-grid__cell--editing > .bt-grid__control {
-  display: none;
-}
-.bt-grid__cell--editable.bt-grid__cell--editing > .bt-grid__cell-edit {
-  display: flex;
-}
-.bt-grid__cell--editable.bt-grid__cell--editing {
-  background: var(--bt-surface-brand-subtle, #e2edfc);
-}
+/* InCell Editing'in kendi kuralları aşağıda, DS'ten taşınan "Inline Editing /
+   InCell Editing" bloğunda (.bt-grid__cell-edit). */
+/* Hücre popover'ı (proje eki) — Dropdown listesi / takvim, body'ye portal'lı
+   ve hücreye göre position:fixed konumlanır (btGridPopoverOpen). İçerdiği
+   gerçek .bt-dropdown-list / .bt-calendar normalde anchor'ına göre absolute;
+   burada popover'ın kendisi konumlandığı için statik akışa alınır.
+   z-index: bt-window (1000) ve iç içe pencerelerin (1002) üstünde. */
+.bt-grid-popover { position: fixed; z-index: 1010; }
+.bt-grid-popover .bt-dropdown-list,
+.bt-grid-popover .bt-calendar { position: static; margin-top: 0; }
+.bt-grid-popover .bt-dropdown-list { max-height: 240px; overflow-y: auto; }
 
 /* — Hyperlink stili ID / kayıt numarası kolonları için — */
 .bt-grid__cell .bt-grid__content--link {

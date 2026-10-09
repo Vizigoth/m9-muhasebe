@@ -109,7 +109,30 @@ Bu, kullanıcının sözlü anlattığı, Figma node yapısından/metadata'sınd
 - Ekranlar hash route'larıyla açılıyor (`js/router.js`): her drawer yaprak item'ının `id`'si
   bir route, ekranlar `js/screens/*.js` içinde `M9_SCREENS[route] = { title, render(toolbar, body) }`
   olarak kaydoluyor ve `app.html`'e script olarak ekleniyor. Şu an sadece
-  `yevmiye-fis-listesi` (Fiş Listesi) yazıldı; diğerleri "henüz hazırlanmadı" placeholder'ı.
+  Fiş Listesi yazıldı — iki route'tan açılıyor: `yevmiye-fis-listesi-ly1` / `-ly2` (aynı liste
+  ve veri, kayıt window'unun iki layout denemesi; `M9_FIS_WINDOW_LAYOUTS` ile seçiliyor).
+  Diğerleri "henüz hazırlanmadı" placeholder'ı.
+  - **Ly1** (Figma 1738:135102): solda Segmented Tab'lı form (Fiş / E-Defter), sağda Hareketler.
+  - **Ly2** (Figma 1752:165085): dikey — daraltılabilir Fiş Bilgileri + E-Defter kartları
+    (başlığın tamamı tıklanır, kapalıyken alt başlık özet gösterir, durum localStorage'da),
+    altta Hareketler. Ly2'ye özel: Toplam Bakiye ≠ 0 kırmızı.
+  - Ortak: window toolbar (sığmayan butonlar Overflow Menu'ye), Hareketler kartı
+    (`_m9HareketlerCardHtml`), summary şeridi (formüller VARSAYIM, bkz. `M9_HAREKET_SUMMARY`).
+  - Kart başlıkları kullanıcı isteğiyle Title/sm/Medium (Figma'da md/Medium).
+- **Hareketler grid'i InCell editKind'ları** (`js/components.js` gridCellHtml, kolona `editable`
+  + `editKind`): TextBox (varsayılan; `inputType: 'decimal'|'integer'` ile sadece rakam),
+  `lookup` (Select LookUp → sm window, `M9_LOOKUPS`: Ünvan / Hesap Kodu+Ad / Maliyet Merkezi;
+  satıra TEK tıklama = seçim, Seç butonu yok), `dropdown` ve `date` (liste/takvim body'ye
+  portal'lı `.bt-grid-popover`'da; dropdown açıkken DS'teki `bt-input--active` + 12×7 chevron).
+  İç içe window z-index: lookup overlay 1001 / window 1002, popover + overflow menü 1010.
+- **Açık noktalar / varsayımlar (kullanıcı onayı bekliyor):** Kur ve Evrak Tipi dropdown
+  seçenekleri, E-Defter Ödeme/Evrak Türü listeleri, lookup örnek listeleri (veritabanı yok),
+  summary formülleri, window toolbar butonlarının işlevi (stub), Açıklama alanlarının salt-okunur
+  olması. Önerilmiş ama yapılmamış: kaydetmeden kapatma koruması, grid'de klavye gezinmesi,
+  ondalık basamak sınırı / binlik ayırıcı, DatePicker hücresine de Active state.
+- **Bilinen ödün:** frozen kolonlu grid'lerde (`#m9Grid`, `#m9DetailGrid`) `.bt-grid__body`
+  overflow visible — çok satırda dikey scroll yok. DS'e sonradan gelen "bt-grid-container çift
+  scrollbar" düzeltmesi (c6669e5) bunu çözüyor olabilir, incelenmedi.
 - Drawer'ın alt (Drawer Buttom) öğesi Figma'da henüz "Drawer Item Label" placeholder'ı —
   "Ayarlar" varsayıldı, kesinleşmedi.
 - Drawer item ikonları Figma'da henüz atanmamış (hepsi aynı bracket/scan placeholder) —
@@ -117,8 +140,7 @@ Bu, kullanıcının sözlü anlattığı, Figma node yapısından/metadata'sınd
 - Data table engine (`js/components.js`'teki grid fonksiyonları) Bentas DS'in gerçek,
   çalışan sort/filter/resize/satır-seçim mantığını taşıyor — docs-demo'nun sahte verisi yok,
   `renderDataTable(columns, rows, opts)` gerçek veriyle çağrılmak üzere genelleştirildi.
-  InCell Editing (sadece TextBox editKind'ı) taşındı — kolona `editable: true` ver, commit
-  sonrası hücreden `btgridcelledit` event'i ({ rowIndex, field, value }) bubble eder, sayfa
-  kendi `rows[]`'unu oradan günceller. Inline (satır) Editing, Dropdown editKind'ı ve
-  Switch/Dropdown trailing-leading kind'ları hâlâ kapsam dışı (gerektiğinde aynı yöntemle
-  `pages-web.js`'ten taşınabilir).
+  InCell Editing taşındı (editKind'lar yukarıda) — commit sonrası hücreden `btgridcelledit`
+  event'i ({ rowIndex, field, value }) bubble eder, sayfa kendi `rows[]`'unu oradan günceller.
+  Inline (satır) Editing ve Switch/Dropdown trailing-leading kind'ları hâlâ kapsam dışı
+  (gerektiğinde aynı yöntemle `pages-web.js`'ten taşınabilir).
