@@ -41,10 +41,26 @@
      .bt-grid__body yapıp sticky'yi tamamen kırıyor (Data Table "Frozen
      Column" sayfasının kendi geçmişinde bulunmuş bir bug, bkz. styles.css
      .bt-grid__body yorumu). Bu yüzden SADECE frozen kolon kullanan bu
-     sayfada overflow visible'a geri döndürülüyor — bilinen ödün: çok
-     satır olursa dikey scroll güvenlik ağı kalmıyor (Bentas DS'in kendi
-     .bt-grid-frozen-container'ı da aynı ödünü kabul ediyor). */
-  #m9Grid .bt-grid__body { overflow: visible; }
+     sayfada overflow visible'a geri döndürülüyor.
+     2026-10-09 düzeltmesi: visible yapılınca DS'in "body kendi içinde
+     dikey kayar, header sabit" çözümü (c6669e5) devre dışı kalıyordu —
+     dikey kaydırma dış .bt-grid-scroll-x'e geçiyor ve HEADER DA satırlarla
+     birlikte kayıp gidiyordu. Çözüm: iki eksendeki TEK scroll container
+     .bt-grid-scroll-x; header satırı onun üstüne sticky (top:0). Frozen
+     hücreler (sticky left) ve header (sticky top) aynı container'ı referans
+     alır, gövdenin ayrı scroll'u olmadığı için çift scrollbar da oluşmaz.
+     z-index 6: frozen gövde hücrelerinin (5) üstünde kalsın. */
+  #m9Grid .bt-grid__body,
+  #m9DetailGrid .bt-grid__body { overflow: visible; }
+  #m9Grid .bt-grid-scroll-x,
+  #m9DetailGrid .bt-grid-scroll-x { overflow: auto; }
+  #m9Grid .bt-grid > .bt-grid__row:first-child,
+  #m9DetailGrid .bt-grid > .bt-grid__row:first-child { position: sticky; top: 0; z-index: 6; }
+  /* Sticky öğe ebeveyninin dışına çıkamaz: DS'te .bt-grid flex:1 + min-height:0
+     ile görünür alan yüksekliğine sabit (body kendi içinde kayıyordu) — burada
+     içeriği kadar uzamalı, yoksa en alta kaydırınca header yine kaybolur. */
+  #m9Grid .bt-grid,
+  #m9DetailGrid .bt-grid { flex: 1 0 auto; }
   /* .bt-pl-toolbar'ın display:flex'i [hidden] attribute'unu eziyor — toolbar'ı
      olmayan ekranlar (bkz. router.js m9RenderPlaceholder) için geri veriliyor. */
   .bt-pl-toolbar[hidden] { display: none; }
@@ -186,10 +202,7 @@
   .m9-ly2 .m9-grid-summary__value--error { color: var(--bt-text-error-default); }
   /* bkz. #m9Grid notu — .bt-grid-actions-container'a radius ayrıca verilir */
   #m9DetailGrid { border-radius: var(--bt-radius-sm, 4px); }
-  /* Sıra kolonu frozen — #m9Grid ile AYNI sebep/ödün: .bt-grid__body'nin
-     overflow-y:auto'su sticky hücrelerin referansını bozuyor, visible'a
-     dönülüyor (çok satırda dikey scroll güvenlik ağı kalmaz). */
-  #m9DetailGrid .bt-grid__body { overflow: visible; }
+  /* Sıra kolonu frozen — scroll kuralları #m9Grid ile ortak (yukarıda). */
 </style>
 </head>
 <body>

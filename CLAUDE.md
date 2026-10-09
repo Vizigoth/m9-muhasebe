@@ -130,9 +130,13 @@ Bu, kullanıcının sözlü anlattığı, Figma node yapısından/metadata'sınd
   summary formülleri, window toolbar butonlarının işlevi (stub), Açıklama alanlarının salt-okunur
   olması. Önerilmiş ama yapılmamış: kaydetmeden kapatma koruması, grid'de klavye gezinmesi,
   ondalık basamak sınırı / binlik ayırıcı, DatePicker hücresine de Active state.
-- **Bilinen ödün:** frozen kolonlu grid'lerde (`#m9Grid`, `#m9DetailGrid`) `.bt-grid__body`
-  overflow visible — çok satırda dikey scroll yok. DS'e sonradan gelen "bt-grid-container çift
-  scrollbar" düzeltmesi (c6669e5) bunu çözüyor olabilir, incelenmedi.
+- **Frozen kolonlu grid'lerde scroll** (`#m9Grid`, `#m9DetailGrid`, app.html): sticky hücreler
+  için `.bt-grid__body` overflow visible olmak ZORUNDA — bu, DS'in "body kendi içinde dikey kayar"
+  düzeltmesini (c6669e5) devre dışı bırakıp header'ı satırlarla birlikte kaydırıyordu (2026-10-09'da
+  fark edildi). Çözüm: iki eksende TEK scroll container `.bt-grid-scroll-x` (overflow:auto), header
+  satırı `position:sticky; top:0; z-index:6`, `.bt-grid` `flex:1 0 auto` (içeriği kadar uzar —
+  sticky ebeveyninden çıkamadığı için, yoksa en alta kaydırınca header kaybolur). Yeni bir frozen
+  grid eklerken bu üç kuralı ona da ver.
 - Drawer'ın alt (Drawer Buttom) öğesi Figma'da henüz "Drawer Item Label" placeholder'ı —
   "Ayarlar" varsayıldı, kesinleşmedi.
 - Drawer item ikonları Figma'da henüz atanmamış (hepsi aynı bracket/scan placeholder) —
