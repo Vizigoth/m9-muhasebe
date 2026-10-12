@@ -134,7 +134,8 @@ Bu, kullanıcının sözlü anlattığı, Figma node yapısından/metadata'sınd
     altta Hareketler + summary. Ly3'e özel: Toplam Bakiye ≠ 0 kırmızı. Kullanıcı Ly3'ü revize edecek.
   - Ortak: window toolbar (sığmayan butonlar Overflow Menu'ye), Hareketler kartı
     (`_m9HareketlerCardHtml`), summary şeridi (formüller VARSAYIM, bkz. `M9_HAREKET_SUMMARY`).
-  - Overflow Menu (`renderOverflowMenu`) artık switch/checkbox toggle item'ı (`toggle`, `on`;
+  - Overflow Menu (`renderOverflowMenu`) artık switch/checkbox toggle item'ı (`toggle`, `on`,
+    `desc`, `disabled`; `{ group: 'Başlık' }` ile yeni section + Group Label;
     DS `btOvfToggle`, menü açık kalır) ve metinli tetikleyici (`triggerLabel`/`triggerIcon`) destekliyor.
     Dikkat: `btToolbarFitOverflow` (window toolbar ResizeObserver) AÇIK TÜM overflow menüleri
     kapatır — headless screenshot'ta menü bu yüzden görünmez, testte `_btOvfCloseAll`'ı etkisizleştir.
