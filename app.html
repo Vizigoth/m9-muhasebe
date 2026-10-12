@@ -226,9 +226,9 @@
   .m9-ly3-row > .m9-ly3-panel { display: flex; flex-direction: column; }
   .m9-ly3-row .m9-ly3-card { flex: 1; }
   @container (max-width: 1360px) { .m9-ly3-row { grid-template-columns: minmax(0, 1fr); } }
-  /* Ly4 — aynı kartlar her genişlikte alt alta */
+  /* Ly5 — aynı kartlar her genişlikte alt alta */
   .m9-ly3-row--stacked { grid-template-columns: minmax(0, 1fr); }
-  /* Ly4 — kartlar alt alta yer kapladığı için Hareketler en az 640px; sığmazsa gövde kayar */
+  /* Ly5 — kartlar alt alta yer kapladığı için Hareketler en az 640px; sığmazsa gövde kayar */
   .m9-ly3-row--stacked ~ .m9-ly3-panel--fill { min-height: 640px; }
   .m9-ly3-panel--fill { flex: 1 0 auto; min-height: 320px; /* Figma 1080px window'a iki form kartı açıkken sığar */ display: flex; flex-direction: column; }
   .m9-ly3-panel--fill > .m9-fis-moves__card { flex: 1; }

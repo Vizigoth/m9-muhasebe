@@ -1,7 +1,7 @@
 /* ============================================================
    M9 MUHASEBE — Ekran: Fiş Listesi
-   Nav: Bilgi Girişi › Yevmiye Fiş Listesi Ly1 / Ly2 / Ly3 / Ly4
-   (route: yevmiye-fis-listesi-ly1 / -ly2 / -ly3 / -ly4 — aynı liste, farklı window
+   Nav: Bilgi Girişi › Yevmiye Fiş Listesi Ly1 … Ly5
+   (route: yevmiye-fis-listesi-ly1 … -ly5 — aynı liste, farklı window
    layout; bkz. M9_FIS_WINDOW_LAYOUTS)
    Figma "M9 Design" › Main Page 1 (1697:25814): Toolbar + Data Table +
    Kayıt Detayı paneli (bt-window XL). Kabuk (sidebar/header) ve ekran
@@ -656,7 +656,7 @@ function m9UpdateDetailSummary() {
    layout başına ayrı (localStorage, kişisel tercih). */
 const M9_TOTALS = {
   footer: {
-    store: () => `m9.${m9FisLayout}.footer`, masterLabel: 'Toplam Satırı', // Ly1/Ly4 ayrı tercih
+    store: () => `m9.${m9FisLayout}.footer`, masterLabel: 'Toplam Satırı', // Ly1/Ly5 ayrı tercih
     // Kolon sırasıyla her footer aggregate'i — key 'field:aggregate'
     items: () => _m9AggItems().map(a => ({ key: a.key, label: a.menuLabel, icon: a.aggregate })),
     applyMaster: visible => { const f = document.querySelector('#m9DetailGrid .bt-grid__footer'); if (f) f.hidden = !visible; },
@@ -806,7 +806,7 @@ function _m9HareketlerCardHtml() {
       </div>`;
 }
 function _m9AfterBodyRender(detailRows) {
-  // Layout'a özel gövde stilleri (app.html'de .m9-ly3 altında) — Ly3 ve Ly4 (dikey kart düzeni)
+  // Layout'a özel gövde stilleri (app.html'de .m9-ly3 altında) — Ly3/Ly4/Ly5 (dikey kart düzeni)
   document.getElementById('m9RecordWindow-body').classList.toggle('m9-ly3', M9_FIS_WINDOW_LAYOUTS[m9FisLayout].render === _m9RenderWindowBodyLy3);
   m9DetailRows = detailRows;
   _m9ResetDetailSearch();
@@ -943,9 +943,9 @@ function _m9RenderWindowBodyLy3(row, detailRows) {
     <div class="m9-ly3-grid__full">${winTextareaHtml('Açıklama', row.aciklama, 'm9f_aciklama', { ...sm, readonly: true })}</div>
   </div>`;
 
-  // Ly4: kartlar alt alta (tam genişlik) — aynı alanlar, düzen farkı.
+  // Ly5: kartlar alt alta (tam genişlik) — aynı alanlar, düzen farkı.
   const stacked = !!M9_FIS_WINDOW_LAYOUTS[m9FisLayout].stacked;
-  // E-Defter — yan yana (Ly3) 2 kolon; alt alta (Ly4) 4 kolon — 4 alan kart genişliğini
+  // E-Defter — yan yana (Ly3/Ly4) 2 kolon; alt alta (Ly5) 4 kolon — 4 alan kart genişliğini
   // doldurur. Açıklama Figma'da Default (düzenlenebilir).
   const eDefterBilgileri = `<div class="m9-ly3-grid${stacked ? "" : " m9-ly3-grid--2"}">
     ${winDropdownHtml({ ...sm, id: 'm9f_edOdemeTuru', label: 'Ödeme Türü', value: row.eDefterOdemeTuru, placeholder: 'Ödeme Türü', options: M9_ED_ODEME_TURU_OPTS })}
@@ -955,7 +955,7 @@ function _m9RenderWindowBodyLy3(row, detailRows) {
     <div class="m9-ly3-grid__full">${winTextareaHtml('Açıklama', row.eDefterAciklama, 'm9f_edAciklama', { ...sm, placeholder: 'Açıklama' })}</div>
   </div>`;
 
-  // Fiş + E-Defter sabit kartlar — Ly3 yan yana, Ly4 alt alta (daraltılabilir versiyon
+  // Fiş + E-Defter sabit kartlar — Ly3/Ly4 yan yana, Ly5 alt alta (daraltılabilir versiyon
   // ayrıca denenecek — _m9Ly3CardHtml'e collapsed değeri verilince aç/kapa geri gelir).
   body.innerHTML =
     `<div class="m9-ly3-row${stacked ? " m9-ly3-row--stacked" : ""}">` +
@@ -972,13 +972,15 @@ function _m9RenderWindowBodyLy3(row, detailRows) {
            Hareketler toolbar'ında Toplamlar menüsü summary'yi yönetir
      ly3 — Fiş + E-Defter kartları yan yana, altta Hareketler + summary (Figma 1782:281034);
            Toplamlar menüsü Ly2 gibi summary'yi yönetir (tercihler ayrı)
-     ly4 — ly3'ün kartları alt alta (E-Defter 4 kolon, kartı doldurur); toplamlar Ly1 gibi
+     ly4 — ly3'ün birebir kopyası (yeni bir layout denemesinin başlangıç noktası)
+     ly5 — ly3'ün kartları alt alta (E-Defter 4 kolon, kartı doldurur); toplamlar Ly1 gibi
            grid footer'ında (summary yok), Toplamlar menüsü footer'ı yönetir */
 const M9_FIS_WINDOW_LAYOUTS = {
   ly1: { render: _m9RenderWindowBody, footer: true, totals: 'footer' },
   ly2: { render: _m9RenderWindowBody, summary: true, totals: 'summary' },
   ly3: { render: _m9RenderWindowBodyLy3, summary: true, totals: 'summary' },
-  ly4: { render: _m9RenderWindowBodyLy3, footer: true, totals: 'footer', stacked: true },
+  ly4: { render: _m9RenderWindowBodyLy3, summary: true, totals: 'summary' },
+  ly5: { render: _m9RenderWindowBodyLy3, footer: true, totals: 'footer', stacked: true },
 };
 
 function m9OpenRecordWindow(idx) {
@@ -1074,3 +1076,4 @@ M9_SCREENS['yevmiye-fis-listesi-ly1'] = m9FisListesiScreen('ly1');
 M9_SCREENS['yevmiye-fis-listesi-ly2'] = m9FisListesiScreen('ly2');
 M9_SCREENS['yevmiye-fis-listesi-ly3'] = m9FisListesiScreen('ly3');
 M9_SCREENS['yevmiye-fis-listesi-ly4'] = m9FisListesiScreen('ly4');
+M9_SCREENS['yevmiye-fis-listesi-ly5'] = m9FisListesiScreen('ly5');

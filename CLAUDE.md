@@ -109,8 +109,8 @@ Bu, kullanıcının sözlü anlattığı, Figma node yapısından/metadata'sınd
 - Ekranlar hash route'larıyla açılıyor (`js/router.js`): her drawer yaprak item'ının `id`'si
   bir route, ekranlar `js/screens/*.js` içinde `M9_SCREENS[route] = { title, render(toolbar, body) }`
   olarak kaydoluyor ve `app.html`'e script olarak ekleniyor. Şu an sadece
-  Fiş Listesi yazıldı — dört route'tan açılıyor: `yevmiye-fis-listesi-ly1` / `-ly2` / `-ly3` / `-ly4` (aynı
-  liste ve veri, kayıt window'unun dört layout denemesi; `M9_FIS_WINDOW_LAYOUTS` ile seçiliyor —
+  Fiş Listesi yazıldı — beş route'tan açılıyor: `yevmiye-fis-listesi-ly1` … `-ly5` (aynı
+  liste ve veri, kayıt window'unun beş layout denemesi; `M9_FIS_WINDOW_LAYOUTS` ile seçiliyor —
   her layout `{ render, footer?, summary? }`). Diğerleri "henüz hazırlanmadı" placeholder'ı.
   (2026-10-12'de yeniden numaralandı: eski Ly1 → Ly2, eski Ly2 → Ly3, yeni Ly1 eklendi.)
   - **Ly1**: Ly2 ile aynı gövde ama summary şeridi YOK — toplamlar grid footer'ında.
@@ -139,7 +139,7 @@ Bu, kullanıcının sözlü anlattığı, Figma node yapısından/metadata'sınd
     ortak). Bir kere tüm kolon toplamları summary'ye taşındı, kullanıcı düzeltti: kolon özeti
     Ly1'deki grid footer'ının işi. Gizlenen item'ın ayracı da kalkar, hiç item kalmazsa şerit
     gizlenir. Ortak yapı: `M9_TOTALS` (footer / summary hedefi, layout'un `totals` alanı),
-    tercihler layout başına ayrı localStorage (`m9.ly1.footer*` / `m9.ly4.footer*` / `m9.ly2.summary*` /
+    tercihler layout başına ayrı localStorage (`m9.ly1.footer*` / `m9.ly5.footer*` / `m9.ly2.summary*` /
     `m9.ly3.summary*`). Ly3'te de aynı Toplamlar menüsü summary'yi yönetir (Ly2'yle aynı
     davranış, ayrı tercih). Kayıt (count) aggregate'inin etiketi her yerde
     "Kayıt Sayısı" (`_GRID_AGG_LABELS.count`).
@@ -149,12 +149,14 @@ Bu, kullanıcının sözlü anlattığı, Figma node yapısından/metadata'sınd
     eşit yükseklik; gövde <1360px'te alt alta), altta Hareketler + summary. Kartlar sabit (aç/kapa
     yok). Eski daraltılabilir kart kodu (Figma 1752:165085 — başlık tıklanır, kapalıyken özet,
     localStorage) duruyor: `_m9Ly3CardHtml`'e `collapsed` verilince geri gelir; kullanıcı
-    daraltılabilir versiyonu ayrıca deneyecek. Ly3/Ly4'e özel: Toplam Bakiye ≠ 0 kırmızı.
-  - **Ly4**: Ly3'ün aynısı (`_m9RenderWindowBodyLy3`, layout `stacked: true`) — Fiş ve E-Defter
+    daraltılabilir versiyonu ayrıca deneyecek. Ly3/Ly4/Ly5'e özel: Toplam Bakiye ≠ 0 kırmızı.
+  - **Ly4**: Ly3'ün birebir kopyası — kullanıcı yeni bir layout kullanımını bunun üzerinde
+    deneyecek (henüz farkı yok).
+  - **Ly5** (eski Ly4, 2026-10-12'de yeniden numaralandı): Ly3'ün aynısı (`_m9RenderWindowBodyLy3`, layout `stacked: true`) — Fiş ve E-Defter
     kartları her genişlikte alt alta (`.m9-ly3-row--stacked`); E-Defter'in 4 alanı 4 kolonda
     kartı doldurur. Hareketler min-height 640px (Ly3'te 320); sığmazsa gövde kayar.
     Toplamlar Ly1 gibi grid footer'ında (summary yok); Toplamlar menüsü footer'ı yönetir,
-    tercih ayrı (`m9.ly4.footer*`).
+    tercih ayrı (`m9.ly5.footer*`).
   - Ortak: window toolbar (sığmayan butonlar Overflow Menu'ye), Hareketler kartı
     (`_m9HareketlerCardHtml`), summary şeridi (formüller VARSAYIM, bkz. `M9_HAREKET_SUMMARY`).
   - Pencere yığını (drawer gibi, DS'te yok — `_winStack`/`_winRestack`, components.js):

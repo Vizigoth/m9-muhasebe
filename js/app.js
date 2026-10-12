@@ -18,11 +18,12 @@ const M9_NAV_ITEMS = [
   {
     label: 'Bilgi Girişi',
     children: [
-      // Ly1–Ly4 — aynı Fiş Listesi, kayıt window'unun dört farklı layout denemesi
+      // Ly1–Ly5 — aynı Fiş Listesi, kayıt window'unun beş farklı layout denemesi
       { id: 'yevmiye-fis-listesi-ly1',      label: 'Yevmiye Fiş Listesi Ly1' },
       { id: 'yevmiye-fis-listesi-ly2',      label: 'Yevmiye Fiş Listesi Ly2' },
       { id: 'yevmiye-fis-listesi-ly3',      label: 'Yevmiye Fiş Listesi Ly3' },
       { id: 'yevmiye-fis-listesi-ly4',      label: 'Yevmiye Fiş Listesi Ly4' },
+      { id: 'yevmiye-fis-listesi-ly5',      label: 'Yevmiye Fiş Listesi Ly5' },
       { id: 'hesap-plani-listesi',          label: 'Hesap Planı Listesi' },
       { id: 'gunluk-kur-bilgisi',           label: 'Günlük Kur Bilgisi' },
       { id: 'hesap-plani-maliyet-merkezi',  label: 'Hesap Planı Maliyet Merkezi' },
