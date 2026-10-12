@@ -1,7 +1,7 @@
 /* ============================================================
    M9 MUHASEBE — Ekran: Fiş Listesi
-   Nav: Bilgi Girişi › Yevmiye Fiş Listesi Ly1 / Ly2 / Ly3
-   (route: yevmiye-fis-listesi-ly1 / -ly2 / -ly3 — aynı liste, farklı window
+   Nav: Bilgi Girişi › Yevmiye Fiş Listesi Ly1 / Ly2 / Ly3 / Ly4
+   (route: yevmiye-fis-listesi-ly1 / -ly2 / -ly3 / -ly4 — aynı liste, farklı window
    layout; bkz. M9_FIS_WINDOW_LAYOUTS)
    Figma "M9 Design" › Main Page 1 (1697:25814): Toolbar + Data Table +
    Kayıt Detayı paneli (bt-window XL). Kabuk (sidebar/header) ve ekran
@@ -806,8 +806,8 @@ function _m9HareketlerCardHtml() {
       </div>`;
 }
 function _m9AfterBodyRender(detailRows) {
-  // Layout'a özel gövde stilleri (app.html'de .m9-ly3 altında)
-  document.getElementById('m9RecordWindow-body').classList.toggle('m9-ly3', m9FisLayout === 'ly3');
+  // Layout'a özel gövde stilleri (app.html'de .m9-ly3 altında) — Ly3 ve Ly4 (dikey kart düzeni)
+  document.getElementById('m9RecordWindow-body').classList.toggle('m9-ly3', M9_FIS_WINDOW_LAYOUTS[m9FisLayout].render === _m9RenderWindowBodyLy3);
   m9DetailRows = detailRows;
   _m9ResetDetailSearch();
   m9RenderDetailGrid();
@@ -943,8 +943,11 @@ function _m9RenderWindowBodyLy3(row, detailRows) {
     <div class="m9-ly3-grid__full">${winTextareaHtml('Açıklama', row.aciklama, 'm9f_aciklama', { ...sm, readonly: true })}</div>
   </div>`;
 
-  // E-Defter — 2 kolon; Açıklama Figma'da Default (düzenlenebilir).
-  const eDefterBilgileri = `<div class="m9-ly3-grid m9-ly3-grid--2">
+  // Ly4: kartlar alt alta (tam genişlik) — aynı alanlar, düzen farkı.
+  const stacked = !!M9_FIS_WINDOW_LAYOUTS[m9FisLayout].stacked;
+  // E-Defter — yan yana (Ly3) 2 kolon; alt alta (Ly4) Fiş'in 5 kolon ızgarası
+  // (alanlar Fiş'in kolonlarıyla hizalı). Açıklama Figma'da Default (düzenlenebilir).
+  const eDefterBilgileri = `<div class="m9-ly3-grid m9-ly3-grid--${stacked ? 5 : 2}">
     ${winDropdownHtml({ ...sm, id: 'm9f_edOdemeTuru', label: 'Ödeme Türü', value: row.eDefterOdemeTuru, placeholder: 'Ödeme Türü', options: M9_ED_ODEME_TURU_OPTS })}
     ${winDropdownHtml({ ...sm, id: 'm9f_edEvrakTuru', label: 'Evrak Türü', value: row.eDefterEvrakTuru, placeholder: 'Evrak Türü', options: M9_ED_EVRAK_TURU_OPTS })}
     ${winFieldHtml('Evrak Numarası', row.eDefterEvrakNo, 'm9f_edEvrakNo', { ...sm, placeholder: 'Evrak Numarası' })}
@@ -952,10 +955,10 @@ function _m9RenderWindowBodyLy3(row, detailRows) {
     <div class="m9-ly3-grid__full">${winTextareaHtml('Açıklama', row.eDefterAciklama, 'm9f_edAciklama', { ...sm, placeholder: 'Açıklama' })}</div>
   </div>`;
 
-  // Fiş + E-Defter yan yana sabit kartlar (daraltılabilir versiyon ayrıca denenecek —
-  // _m9Ly3CardHtml'e collapsed değeri verilince aç/kapa geri gelir).
+  // Fiş + E-Defter sabit kartlar — Ly3 yan yana, Ly4 alt alta (daraltılabilir versiyon
+  // ayrıca denenecek — _m9Ly3CardHtml'e collapsed değeri verilince aç/kapa geri gelir).
   body.innerHTML =
-    `<div class="m9-ly3-row">` +
+    `<div class="m9-ly3-row${stacked ? " m9-ly3-row--stacked" : ""}">` +
     _m9Ly3CardHtml('fis', 'Fiş Bilgileri', 'Fişin türü, tarihleri ve açıklaması', fisBilgileri) +
     _m9Ly3CardHtml('edefter', 'E-Defter Bilgileri', 'E-Defter ödeme ve evrak bilgileri', eDefterBilgileri) +
     `</div>` +
@@ -968,11 +971,13 @@ function _m9RenderWindowBodyLy3(row, detailRows) {
      ly2 — ly1'in summary şeritli versiyonu (Figma 1738:135102 + 1748:158681);
            Hareketler toolbar'ında Toplamlar menüsü summary'yi yönetir
      ly3 — Fiş + E-Defter kartları yan yana, altta Hareketler + summary (Figma 1782:281034);
-           Toplamlar menüsü Ly2 gibi summary'yi yönetir (tercihler ayrı) */
+           Toplamlar menüsü Ly2 gibi summary'yi yönetir (tercihler ayrı)
+     ly4 — ly3'ün aynısı, Fiş ve E-Defter kartları alt alta (E-Defter Fiş'in 5 kolonuyla hizalı) */
 const M9_FIS_WINDOW_LAYOUTS = {
   ly1: { render: _m9RenderWindowBody, footer: true, totals: 'footer' },
   ly2: { render: _m9RenderWindowBody, summary: true, totals: 'summary' },
   ly3: { render: _m9RenderWindowBodyLy3, summary: true, totals: 'summary' },
+  ly4: { render: _m9RenderWindowBodyLy3, summary: true, totals: 'summary', stacked: true },
 };
 
 function m9OpenRecordWindow(idx) {
@@ -1067,3 +1072,4 @@ function m9FisListesiScreen(layout) { return {
 M9_SCREENS['yevmiye-fis-listesi-ly1'] = m9FisListesiScreen('ly1');
 M9_SCREENS['yevmiye-fis-listesi-ly2'] = m9FisListesiScreen('ly2');
 M9_SCREENS['yevmiye-fis-listesi-ly3'] = m9FisListesiScreen('ly3');
+M9_SCREENS['yevmiye-fis-listesi-ly4'] = m9FisListesiScreen('ly4');

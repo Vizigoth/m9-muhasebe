@@ -109,8 +109,8 @@ Bu, kullanıcının sözlü anlattığı, Figma node yapısından/metadata'sınd
 - Ekranlar hash route'larıyla açılıyor (`js/router.js`): her drawer yaprak item'ının `id`'si
   bir route, ekranlar `js/screens/*.js` içinde `M9_SCREENS[route] = { title, render(toolbar, body) }`
   olarak kaydoluyor ve `app.html`'e script olarak ekleniyor. Şu an sadece
-  Fiş Listesi yazıldı — üç route'tan açılıyor: `yevmiye-fis-listesi-ly1` / `-ly2` / `-ly3` (aynı
-  liste ve veri, kayıt window'unun üç layout denemesi; `M9_FIS_WINDOW_LAYOUTS` ile seçiliyor —
+  Fiş Listesi yazıldı — dört route'tan açılıyor: `yevmiye-fis-listesi-ly1` / `-ly2` / `-ly3` / `-ly4` (aynı
+  liste ve veri, kayıt window'unun dört layout denemesi; `M9_FIS_WINDOW_LAYOUTS` ile seçiliyor —
   her layout `{ render, footer?, summary? }`). Diğerleri "henüz hazırlanmadı" placeholder'ı.
   (2026-10-12'de yeniden numaralandı: eski Ly1 → Ly2, eski Ly2 → Ly3, yeni Ly1 eklendi.)
   - **Ly1**: Ly2 ile aynı gövde ama summary şeridi YOK — toplamlar grid footer'ında.
@@ -149,7 +149,10 @@ Bu, kullanıcının sözlü anlattığı, Figma node yapısından/metadata'sınd
     eşit yükseklik; gövde <1360px'te alt alta), altta Hareketler + summary. Kartlar sabit (aç/kapa
     yok). Eski daraltılabilir kart kodu (Figma 1752:165085 — başlık tıklanır, kapalıyken özet,
     localStorage) duruyor: `_m9Ly3CardHtml`'e `collapsed` verilince geri gelir; kullanıcı
-    daraltılabilir versiyonu ayrıca deneyecek. Ly3'e özel: Toplam Bakiye ≠ 0 kırmızı.
+    daraltılabilir versiyonu ayrıca deneyecek. Ly3/Ly4'e özel: Toplam Bakiye ≠ 0 kırmızı.
+  - **Ly4**: Ly3'ün aynısı (`_m9RenderWindowBodyLy3`, layout `stacked: true`) — Fiş ve E-Defter
+    kartları her genişlikte alt alta (`.m9-ly3-row--stacked`); E-Defter alanları Fiş'in 5 kolon
+    ızgarasında (kolonlar hizalı). Toplamlar tercihi ayrı (`m9.ly4.summary*`).
   - Ortak: window toolbar (sığmayan butonlar Overflow Menu'ye), Hareketler kartı
     (`_m9HareketlerCardHtml`), summary şeridi (formüller VARSAYIM, bkz. `M9_HAREKET_SUMMARY`).
   - Hareketler araması (3 layout ortak): SearchBox metni tüm alanlarda "içerir" (hızlı arama);
