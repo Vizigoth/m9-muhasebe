@@ -820,9 +820,12 @@ function _m9RenderWindowBodyLy3(row, detailRows) {
     <div class="m9-ly3-grid__full">${winTextareaHtml('Açıklama', row.eDefterAciklama, 'm9f_edAciklama', { ...sm, placeholder: 'Açıklama', readonly: true })}</div>
   </div>`;
 
+  // Fiş + E-Defter kartları yan yana (geniş window'da); dar window'da alt alta.
   body.innerHTML =
+    `<div class="m9-ly3-row">` +
     _m9Ly3CardHtml('fis', 'Fiş Bilgileri', 'Fişin türü, tarihleri ve açıklaması', fisBilgileri, collapsed.fis) +
     _m9Ly3CardHtml('edefter', 'E-Defter Bilgileri', 'E-Defter evrak bilgileri', eDefterBilgileri, collapsed.edefter) +
+    `</div>` +
     `<section class="m9-ly3-panel m9-ly3-panel--fill">${_m9HareketlerCardHtml()}</section>`;
   body.querySelectorAll('.m9-ly3-card.is-collapsed').forEach(_m9Ly3UpdateSubtitle);
 
