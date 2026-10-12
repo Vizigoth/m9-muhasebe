@@ -522,7 +522,7 @@ function _m9ViewMenuHtml() {
         toggle: 'switch', on: !_m9FooterHiddenAggs().includes(key), disabled: !_m9FooterVisible(),
         onClick: `m9SetFooterAgg('${key}', this.getAttribute('aria-checked')==='true')` };
     }) : []),
-  ], { triggerLabel: 'Görünüm', triggerIcon: _m9IcoView });
+  ], { triggerLabel: 'Görünüm', triggerIcon: _m9IcoView, listClassName: 'm9-view-menu' });
 }
 
 // Sıra her render'da satır sırasından yeniden üretilir (001, 002, …).

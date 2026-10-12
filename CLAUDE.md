@@ -118,7 +118,8 @@ Bu, kullanıcının sözlü anlattığı, Figma node yapısından/metadata'sınd
     (footer'ı gizler/gösterir, localStorage `m9.ly1.footer`), altında "Hesaplanan Alanlar" bölümünde
     her footer aggregate'i için ayrı switch (etiket = kolon adı, açıklama = aggregate türü;
     `btGridFooterSetAgg`, gizlenenler localStorage `m9.ly1.footerHidden`). Ana switch kapalıyken
-    alan switch'leri DS Disabled state'inde, kendi durumlarını korur.
+    alan switch'leri DS Disabled state'inde, kendi durumlarını korur. Menü 240px, açıklama aynı
+    satırda sağda, tüm metinler default text rengi (app.html `.m9-view-menu`, kullanıcı isteği).
     Grid footer DS'te YOK, bu projede tasarlandı — Telerik Grid'in GridAggregates/FooterTemplate
     modelinden uyarlandı (kullanıcı referans olarak paylaştı, birebir değil): kolon tanımında
     `footer: { aggregate: 'sum'|'avg'|'min'|'max'|'count', label?, decimals? }` (dizi = alt alta

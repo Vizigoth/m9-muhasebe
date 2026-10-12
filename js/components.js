@@ -1758,6 +1758,8 @@ document.addEventListener('scroll', function () { _btOvfCloseAll(); }, true);
  * aria-disabled, switch track--disabled; btOvfToggle tıklamayı yok sayar.
  * { group: 'Başlık' } → yeni bir .bt-ovf-menu__section başlatır (DS bölümler
  * arası divider'ı CSS'ten gelir); başlık verilirse Group Label olarak basılır.
+ * opts.listClassName → listeye ek class (liste body'ye portal'landığı için
+ * sayfaya özel stil wrapper'dan değil buradan verilir).
  * opts.triggerLabel (+ triggerIcon) → ⋯ yerine metinli tetikleyici buton
  * (DS "Example"'daki kısa metinli tetikleyici; varyant opts.triggerVariant,
  * varsayılan base-flat — toolbar komşularıyla aynı).
@@ -1794,7 +1796,7 @@ function renderOverflowMenu(items, opts) {
     : `<button type="button" class="bt-btn bt-btn--sm bt-btn--base-flat bt-btn--icon" aria-label="${o.label || 'Diğer'}" aria-haspopup="true" onclick="btOvfMenuToggle(event,this)">${_ovfIconMore}</button>`;
   return `<div class="bt-ovf-menu${o.className ? ' ' + o.className : ''}">
     ${trigger}
-    <div class="bt-ovf-menu__list" role="menu">${sectionsHtml}</div>
+    <div class="bt-ovf-menu__list${o.listClassName ? ' ' + o.listClassName : ''}" role="menu">${sectionsHtml}</div>
   </div>`;
 }
 
