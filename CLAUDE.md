@@ -139,7 +139,7 @@ Bu, kullanıcının sözlü anlattığı, Figma node yapısından/metadata'sınd
     ortak). Bir kere tüm kolon toplamları summary'ye taşındı, kullanıcı düzeltti: kolon özeti
     Ly1'deki grid footer'ının işi. Gizlenen item'ın ayracı da kalkar, hiç item kalmazsa şerit
     gizlenir. Ortak yapı: `M9_TOTALS` (footer / summary hedefi, layout'un `totals` alanı),
-    tercihler layout başına ayrı localStorage (`m9.ly1.footer*` / `m9.ly2.summary*` /
+    tercihler layout başına ayrı localStorage (`m9.ly1.footer*` / `m9.ly4.footer*` / `m9.ly2.summary*` /
     `m9.ly3.summary*`). Ly3'te de aynı Toplamlar menüsü summary'yi yönetir (Ly2'yle aynı
     davranış, ayrı tercih). Kayıt (count) aggregate'inin etiketi her yerde
     "Kayıt Sayısı" (`_GRID_AGG_LABELS.count`).
@@ -153,7 +153,8 @@ Bu, kullanıcının sözlü anlattığı, Figma node yapısından/metadata'sınd
   - **Ly4**: Ly3'ün aynısı (`_m9RenderWindowBodyLy3`, layout `stacked: true`) — Fiş ve E-Defter
     kartları her genişlikte alt alta (`.m9-ly3-row--stacked`); E-Defter'in 4 alanı 4 kolonda
     kartı doldurur. Hareketler min-height 640px (Ly3'te 320); sığmazsa gövde kayar.
-    Toplamlar tercihi ayrı (`m9.ly4.summary*`).
+    Toplamlar Ly1 gibi grid footer'ında (summary yok); Toplamlar menüsü footer'ı yönetir,
+    tercih ayrı (`m9.ly4.footer*`).
   - Ortak: window toolbar (sığmayan butonlar Overflow Menu'ye), Hareketler kartı
     (`_m9HareketlerCardHtml`), summary şeridi (formüller VARSAYIM, bkz. `M9_HAREKET_SUMMARY`).
   - Hareketler araması (3 layout ortak): SearchBox metni tüm alanlarda "içerir" (hızlı arama);

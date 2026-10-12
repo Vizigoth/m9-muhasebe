@@ -656,7 +656,7 @@ function m9UpdateDetailSummary() {
    layout başına ayrı (localStorage, kişisel tercih). */
 const M9_TOTALS = {
   footer: {
-    store: () => 'm9.ly1.footer', masterLabel: 'Toplam Satırı',
+    store: () => `m9.${m9FisLayout}.footer`, masterLabel: 'Toplam Satırı', // Ly1/Ly4 ayrı tercih
     // Kolon sırasıyla her footer aggregate'i — key 'field:aggregate'
     items: () => _m9AggItems().map(a => ({ key: a.key, label: a.menuLabel, icon: a.aggregate })),
     applyMaster: visible => { const f = document.querySelector('#m9DetailGrid .bt-grid__footer'); if (f) f.hidden = !visible; },
@@ -972,12 +972,13 @@ function _m9RenderWindowBodyLy3(row, detailRows) {
            Hareketler toolbar'ında Toplamlar menüsü summary'yi yönetir
      ly3 — Fiş + E-Defter kartları yan yana, altta Hareketler + summary (Figma 1782:281034);
            Toplamlar menüsü Ly2 gibi summary'yi yönetir (tercihler ayrı)
-     ly4 — ly3'ün aynısı, Fiş ve E-Defter kartları alt alta (E-Defter 4 kolon, kartı doldurur) */
+     ly4 — ly3'ün kartları alt alta (E-Defter 4 kolon, kartı doldurur); toplamlar Ly1 gibi
+           grid footer'ında (summary yok), Toplamlar menüsü footer'ı yönetir */
 const M9_FIS_WINDOW_LAYOUTS = {
   ly1: { render: _m9RenderWindowBody, footer: true, totals: 'footer' },
   ly2: { render: _m9RenderWindowBody, summary: true, totals: 'summary' },
   ly3: { render: _m9RenderWindowBodyLy3, summary: true, totals: 'summary' },
-  ly4: { render: _m9RenderWindowBodyLy3, summary: true, totals: 'summary', stacked: true },
+  ly4: { render: _m9RenderWindowBodyLy3, footer: true, totals: 'footer', stacked: true },
 };
 
 function m9OpenRecordWindow(idx) {
