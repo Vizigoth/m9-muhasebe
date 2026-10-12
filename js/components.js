@@ -138,6 +138,8 @@ function sbxSearchClear(el) {
   box.classList.remove('bt-input__box--filled');
   el.remove();
   input.focus();
+  // Proje eki: arama kutusunu dinleyen ekran temizlemeyi de 'input' olarak alsın
+  input.dispatchEvent(new Event('input', { bubbles: true }));
 }
 function sbxFilterToggle(el) {
   el.closest('.bt-input__box').classList.toggle('bt-input__box--filter-open');
@@ -148,16 +150,17 @@ window.sbxFilterToggle = sbxFilterToggle;
 
 /**
  * renderSearchBox — gerçek SearchBox markup'ı.
- * opts: { size: 'sm'|'md'|'lg', advanced: boolean, placeholder }
+ * opts: { size: 'sm'|'md'|'lg', advanced: boolean, placeholder, id,
+ *         onFilter: Filter butonunun onclick'i (proje eki — verilmezse DS'in toggle'ı) }
  */
 function renderSearchBox(opts) {
   const o = opts || {};
   const size = o.size || 'sm';
   const placeholder = o.placeholder || 'Ara...';
-  const filterHtml = o.advanced ? `<div class="bt-input__filter-button" onclick="sbxFilterToggle(this)"><span class="bt-icon">${icoSlidersHorizontal}</span></div>` : '';
+  const filterHtml = o.advanced ? `<div class="bt-input__filter-button" role="button" aria-label="Detaylı arama" onclick="${o.onFilter || 'sbxFilterToggle(this)'}"><span class="bt-icon">${icoSlidersHorizontal}</span></div>` : '';
   return `<div class="bt-input__box bt-searchbox bt-input__box--${size}">
     <div class="bt-input__controls"><span class="bt-icon">${icoSearch}</span></div>
-    <div class="bt-input__content"><input class="bt-input__value" type="text" placeholder="${placeholder}" oninput="sbxSearchInput(this)" /></div>
+    <div class="bt-input__content"><input class="bt-input__value"${o.id ? ` id="${o.id}"` : ''} type="text" placeholder="${placeholder}" oninput="sbxSearchInput(this)" /></div>
     ${filterHtml}
   </div>`;
 }
@@ -874,13 +877,16 @@ window.btGridApplyFilters = function (grid) {
   if (!body) return;
   const activeHeaders = Array.from(grid.querySelectorAll('.bt-grid__header-cell[data-filter-active="true"]'));
   const rows = Array.from(body.children).filter(r => r.classList.contains('bt-grid__row'));
-  if (!activeHeaders.length) { rows.forEach(r => { r.style.display = ''; }); btGridFooterUpdate(grid); return; }
+  // Proje eki: grid'i taşıyan container'a ekranın verdiği ek satır filtresi
+  // (ör. arama) — kolon filtreleriyle VE'lenir. host._btRowFilter(rowEl) → bool
+  const host = grid.closest('.bt-grid-actions-container');
+  const rowFilter = host && typeof host._btRowFilter === 'function' ? host._btRowFilter : null;
   const filters = activeHeaders.map(h => ({
     nth: Array.from(h.parentElement.children).indexOf(h) + 1,
     values: new Set(JSON.parse(h.dataset.filterValues || '[]')),
   }));
   rows.forEach(row => {
-    const visible = filters.every(f => {
+    const visible = (!rowFilter || rowFilter(row)) && filters.every(f => {
       const cell = row.children[f.nth - 1];
       const val = cell ? cell.getAttribute('data-sort-value') : null;
       return val != null && f.values.has(val);
@@ -1607,7 +1613,7 @@ function winDateHtml(opts) {
     <div class="bt-input__anchor">
       <div class="bt-input__box bt-input__box--${size}${o.readonly ? ' bt-input__box--readonly' : ''}">
         <div class="bt-input__controls"><button type="button" class="bt-input__button"${o.readonly ? '' : ' onclick="dpBaseToggle(this)"'} aria-label="Tarih seç"><span class="bt-icon">${_dpIconCalendar}</span></button></div>
-        <div class="bt-input__content"><input class="bt-input__value"${o.id ? ` id="${o.id}"` : ''} type="text" inputmode="numeric" maxlength="10" placeholder="01/01/2026" value="${value}"${o.readonly ? ' readonly' : ' oninput="dpBaseInput(this)"'} /></div>
+        <div class="bt-input__content"><input class="bt-input__value"${o.id ? ` id="${o.id}"` : ''} type="text" inputmode="numeric" maxlength="10" placeholder="${o.placeholder || '01/01/2026'}" value="${value}"${o.readonly ? ' readonly' : ' oninput="dpBaseInput(this)"'} /></div>
       </div>
       ${_calPanelHtml(initState, true)}
     </div>
