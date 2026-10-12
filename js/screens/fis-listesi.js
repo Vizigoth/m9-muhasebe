@@ -479,8 +479,8 @@ function m9ApplyDetailSearch() {
    açıklama) ya da 2 alan (birbirini tamamlayan çift: kod–ad, borç–alacak,
    başlangıç–bitiş…). Listede olmayan bir kolon olursa sona tek başına eklenir. */
 const M9_DETAIL_SEARCH_LAYOUT = [
-  ['cariNo', 'unvan'], ['tarihBazliUnvan'],
-  ['hesapKodu', 'ad'], ['tarihBazliAd'],
+  ['cariNo'], ['unvan'], ['tarihBazliUnvan'],
+  ['hesapKodu'], ['ad', 'tarihBazliAd'],
   ['izahat'],
   ['borc', 'alacak'], ['kur', 'kurFiyati'], ['borcluAdet', 'alacakAdet'],
   ['miktar', 'birim'], ['birimFiyati', 'kdvTutari'],
