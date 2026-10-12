@@ -139,8 +139,9 @@ Bu, kullanıcının sözlü anlattığı, Figma node yapısından/metadata'sınd
     ortak). Bir kere tüm kolon toplamları summary'ye taşındı, kullanıcı düzeltti: kolon özeti
     Ly1'deki grid footer'ının işi. Gizlenen item'ın ayracı da kalkar, hiç item kalmazsa şerit
     gizlenir. Ortak yapı: `M9_TOTALS` (footer / summary hedefi, layout'un `totals` alanı),
-    tercihler layout başına ayrı localStorage (`m9.ly1.footer*` / `m9.ly2.summary*`).
-    Ly3'te menü yok, summary hep 4 alan. Kayıt (count) aggregate'inin etiketi her yerde
+    tercihler layout başına ayrı localStorage (`m9.ly1.footer*` / `m9.ly2.summary*` /
+    `m9.ly3.summary*`). Ly3'te de aynı Toplamlar menüsü summary'yi yönetir (Ly2'yle aynı
+    davranış, ayrı tercih). Kayıt (count) aggregate'inin etiketi her yerde
     "Kayıt Sayısı" (`_GRID_AGG_LABELS.count`).
   - **Ly3** (Figma 1782:281034, 2026-10-12 revizyonu): üstte Fiş Bilgileri (5 kolon × 2 satır +
     tam genişlik Açıklama; Kullanıcı alanı yok, Giriş/Son Güncelleme DatePicker Read Only) ile

@@ -530,14 +530,14 @@ function m9UpdateDetailSummary() {
    layout başına ayrı (localStorage, kişisel tercih). */
 const M9_TOTALS = {
   footer: {
-    store: 'm9.ly1.footer', masterLabel: 'Toplam Satırı',
+    store: () => 'm9.ly1.footer', masterLabel: 'Toplam Satırı',
     // Kolon sırasıyla her footer aggregate'i — key 'field:aggregate'
     items: () => _m9AggItems().map(a => ({ key: a.key, label: a.menuLabel, icon: a.aggregate })),
     applyMaster: visible => { const f = document.querySelector('#m9DetailGrid .bt-grid__footer'); if (f) f.hidden = !visible; },
     applyItem: (key, visible) => btGridFooterSetAgg(document.getElementById('m9DetailGrid'), key, visible),
   },
   summary: {
-    store: 'm9.ly2.summary', masterLabel: 'Toplam Alanı',
+    store: () => `m9.${m9FisLayout}.summary`, masterLabel: 'Toplam Alanı', // Ly2/Ly3 ayrı tercih
     // Summary'nin 4 hesaplaması (kolon özeti değil)
     items: () => M9_HAREKET_SUMMARY.map(s => ({ key: s.key, label: s.label, icon: s.icon })),
     applyMaster: () => _m9RenderSummary(),
@@ -546,14 +546,14 @@ const M9_TOTALS = {
 };
 const _m9TotalsMode = () => M9_FIS_WINDOW_LAYOUTS[m9FisLayout].totals;
 function _m9TotalsVisible() {
-  try { return localStorage.getItem(M9_TOTALS[_m9TotalsMode()].store) !== '0'; } catch (e) { return true; }
+  try { return localStorage.getItem(M9_TOTALS[_m9TotalsMode()].store()) !== '0'; } catch (e) { return true; }
 }
 function _m9TotalsHidden() {
-  try { return JSON.parse(localStorage.getItem(M9_TOTALS[_m9TotalsMode()].store + 'Hidden') || '[]'); } catch (e) { return []; }
+  try { return JSON.parse(localStorage.getItem(M9_TOTALS[_m9TotalsMode()].store() + 'Hidden') || '[]'); } catch (e) { return []; }
 }
 function m9SetTotalsMaster(visible) {
   const cfg = M9_TOTALS[_m9TotalsMode()];
-  try { localStorage.setItem(cfg.store, visible ? '1' : '0'); } catch (e) {}
+  try { localStorage.setItem(cfg.store(), visible ? '1' : '0'); } catch (e) {}
   cfg.applyMaster(visible);
   const hidden = _m9TotalsHidden();
   document.querySelectorAll('.bt-ovf-menu__item[data-ovf-key^="tot:"]').forEach(it => {
@@ -570,7 +570,7 @@ function m9SetTotalsItem(key, visible) {
   const cfg = M9_TOTALS[_m9TotalsMode()];
   const hidden = new Set(_m9TotalsHidden());
   if (visible) hidden.delete(key); else hidden.add(key);
-  try { localStorage.setItem(cfg.store + 'Hidden', JSON.stringify([...hidden])); } catch (e) {}
+  try { localStorage.setItem(cfg.store() + 'Hidden', JSON.stringify([...hidden])); } catch (e) {}
   cfg.applyItem(key, visible);
 }
 // Toplamlar butonu ikonu — Lucide sigma (menüdeki Σ toplam ikonuyla aynı). Button
@@ -835,12 +835,12 @@ function _m9RenderWindowBodyLy3(row, detailRows) {
            footer'ında, Hareketler toolbar'ında Toplamlar menüsü (summary yok)
      ly2 — ly1'in summary şeritli versiyonu (Figma 1738:135102 + 1748:158681);
            Hareketler toolbar'ında Toplamlar menüsü summary'yi yönetir
-     ly3 — dikey, daraltılabilir kartlar + summary (Figma 1752:165085);
-           revize edilecek */
+     ly3 — Fiş + E-Defter kartları yan yana, altta Hareketler + summary (Figma 1782:281034);
+           Toplamlar menüsü Ly2 gibi summary'yi yönetir (tercihler ayrı) */
 const M9_FIS_WINDOW_LAYOUTS = {
   ly1: { render: _m9RenderWindowBody, footer: true, totals: 'footer' },
   ly2: { render: _m9RenderWindowBody, summary: true, totals: 'summary' },
-  ly3: { render: _m9RenderWindowBodyLy3, summary: true },
+  ly3: { render: _m9RenderWindowBodyLy3, summary: true, totals: 'summary' },
 };
 
 function m9OpenRecordWindow(idx) {
