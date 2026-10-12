@@ -244,6 +244,8 @@
   .m9-ly3-card__collapse { display: grid; grid-template-rows: 1fr; transition: grid-template-rows 220ms ease; }
   .m9-ly3-card.is-collapsed .m9-ly3-card__collapse { grid-template-rows: 0fr; }
   .m9-ly3-card__inner { min-height: 0; overflow: hidden; }
+  /* Açık ve durağan kartta kırpma yok — Date Picker takvimi / Dropdown listesi kartın dışına taşabilsin */
+  .m9-ly3-card:not(.is-collapsed):not(.is-animating) .m9-ly3-card__inner { overflow: visible; }
   /* Header ile ilk alan arası yalnızca Content padding'i (2xl). Figma'daki Container gap-xl
      (12px) + Content padding-top üst üste bindiği için hata — uygulanmıyor. */
   .m9-ly3-card__content { padding: var(--bt-space-2xl); container-type: inline-size; }

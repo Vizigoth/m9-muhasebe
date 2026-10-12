@@ -767,6 +767,7 @@ function _m9Ly3UpdateSubtitle(card) {
 }
 function m9Ly3ToggleCard(header) {
   const card = header.closest('.m9-ly3-card');
+  card.classList.add('is-animating'); // geçiş boyunca içerik kırpılır (bkz. app.html)
   const collapsed = card.classList.toggle('is-collapsed');
   header.querySelector('button').setAttribute('aria-expanded', String(!collapsed));
   _m9Ly3UpdateSubtitle(card);
@@ -785,9 +786,11 @@ function _m9Ly3CardHtml(key, title, subtitle, contentHtml, collapsed) {
           </div>
           ${collapsible ? `<button type="button" class="bt-btn bt-btn--sm bt-btn--base-flat bt-btn--icon m9-ly3-card__toggle" aria-label="${title} panelini aç/kapat" aria-expanded="${!collapsed}">${_m9Ly3Chevron}</button>` : ''}
         </div>
-        <div class="m9-ly3-card__collapse"><div class="m9-ly3-card__inner">
+        ${collapsible
+          ? `<div class="m9-ly3-card__collapse" ontransitionend="this.closest('.m9-ly3-card').classList.remove('is-animating')"><div class="m9-ly3-card__inner">
           <div class="m9-ly3-card__content">${contentHtml}</div>
-        </div></div>
+        </div></div>`
+          : `<div class="m9-ly3-card__content">${contentHtml}</div>`}
       </div>
     </section>`;
 }
