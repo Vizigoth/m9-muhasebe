@@ -868,19 +868,13 @@ function btGridFilterCloseAll() {
     panel.remove();
   });
 }
-/* Filtre sonrası: footer yeniden hesaplanır, grid dışındaki özet alanları
-   (ör. summary şeridi) için bubbling 'btgridfilterchange' olayı yayınlanır. */
-function _btGridAfterFilter(grid) {
-  btGridFooterUpdate(grid);
-  grid.dispatchEvent(new CustomEvent('btgridfilterchange', { bubbles: true }));
-}
 window.btGridApplyFilters = function (grid) {
   if (!grid) return;
   const body = grid.querySelector('.bt-grid__body');
   if (!body) return;
   const activeHeaders = Array.from(grid.querySelectorAll('.bt-grid__header-cell[data-filter-active="true"]'));
   const rows = Array.from(body.children).filter(r => r.classList.contains('bt-grid__row'));
-  if (!activeHeaders.length) { rows.forEach(r => { r.style.display = ''; }); _btGridAfterFilter(grid); return; }
+  if (!activeHeaders.length) { rows.forEach(r => { r.style.display = ''; }); btGridFooterUpdate(grid); return; }
   const filters = activeHeaders.map(h => ({
     nth: Array.from(h.parentElement.children).indexOf(h) + 1,
     values: new Set(JSON.parse(h.dataset.filterValues || '[]')),
@@ -893,7 +887,7 @@ window.btGridApplyFilters = function (grid) {
     });
     row.style.display = visible ? '' : 'none';
   });
-  _btGridAfterFilter(grid);
+  btGridFooterUpdate(grid);
 };
 function btGridFilterUpdateTriggerStyle(headerEl) {
   const btn = headerEl.querySelector('.bt-grid__filter-btn');
@@ -1080,8 +1074,8 @@ document.addEventListener('click', function (e) {
    dışındaki herhangi bir eleman. */
 const _GRID_AGG_LABELS = { sum: 'Toplam', avg: 'Ortalama', min: 'En Az', max: 'En Çok', count: 'Kayıt Sayısı' };
 const _btGridOf = el => el && (el.classList.contains('bt-grid') ? el : (el.closest('.bt-grid') || el.querySelector('.bt-grid')));
-/* Tek bir aggregate'in değeri — footer'ın ve grid DIŞINDAKİ özet alanlarının
-   (ör. summary şeridi) ORTAK hesabı, böylece ikisi her zaman aynı sonucu verir.
+/* Tek bir aggregate'in değeri (footer'ın hesabı; grid dışından da çağrılabilir).
+   Görünen (filtrelenmiş) satırların hücre değerlerinden.
    field: kolonun data-field'ı; kind: sum|avg|min|max|count. Değer yoksa null. */
 window.btGridAggregate = function (el, field, kind) {
   const grid = _btGridOf(el);

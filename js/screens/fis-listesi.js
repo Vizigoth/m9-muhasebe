@@ -437,63 +437,37 @@ function m9ApplyLookup(idx) {
 }
 
 /* ── DataTable Summary (Figma 1748:158681) — grid'in altındaki toplam şeridi.
-   Grid render'ı, hücre düzenleme, satır seçimi ve filtre değişince yeniden
-   hesaplanır (m9UpdateDetailSummary).
-     Ly2 — Ly1 footer'ıyla AYNI aggregate'ler (kolonların footer tanımı,
-           _m9AggItems) ve AYNI hesap (btGridAggregate — görünen/filtrelenmiş
-           satırlar); etiket "Toplam Borç", "Ortalama Kur Fiyatı", "Kayıt Sayısı".
-     Ly3 — eski 4 sabit başlık (aşağıda), revize edilecek. FORMÜLLER VARSAYIM:
-       Hesap Bakiyesi — SEÇİLİ satırın Hesap Kodu'na ait hareketlerin
-                        Σ Borç − Σ Alacak'ı (bu fiş içinde; gerçek hesap bakiyesi
-                        veritabanından gelecek). Seçim yoksa 0.00.
-       Toplam Kur     — Σ Kur Fiyatı
-       Toplam Tutar   — Σ Borç
-       Toplam Bakiye  — Σ Borç − Σ Alacak (dengeli fişte 0.00) */
-const M9_HAREKET_SUMMARY_LY3 = [
-  { key: 'hesapBakiyesi', label: 'Hesap Bakiyesi' },
-  { key: 'toplamKur',     label: 'Toplam Kur' },
-  { key: 'toplamTutar',   label: 'Toplam Tutar' },
-  { key: 'toplamBakiye',  label: 'Toplam Bakiye' },
+   Kolonların özeti DEĞİL (o Ly1'deki grid footer'ının işi) — yalnızca belirli
+   fiş hesaplamalarının özeti (kullanıcı kararı). Ly2 ve Ly3 aynı 4 alanı
+   kullanır; Ly2'de Toplamlar menüsüyle tek tek açılıp kapanır. Grid render'ı,
+   hücre düzenleme ve satır seçimi değişince yeniden hesaplanır
+   (m9UpdateDetailSummary). FORMÜLLER VARSAYIM — kesinleşene kadar:
+     Hesap Bakiyesi — SEÇİLİ satırın Hesap Kodu'na ait hareketlerin
+                      Σ Borç − Σ Alacak'ı (bu fiş içinde; gerçek hesap bakiyesi
+                      veritabanından gelecek). Seçim yoksa 0.00.
+     Toplam Kur     — Σ Kur Fiyatı
+     Toplam Tutar   — Σ Borç
+     Toplam Bakiye  — Σ Borç − Σ Alacak (dengeli fişte 0.00) */
+// icon — Toplamlar menüsündeki (Ly2) sol ikon: toplamlar Σ, bakiyeler terazi.
+const M9_HAREKET_SUMMARY = [
+  { key: 'hesapBakiyesi', label: 'Hesap Bakiyesi', icon: 'balance' },
+  { key: 'toplamKur',     label: 'Toplam Kur',     icon: 'sum' },
+  { key: 'toplamTutar',   label: 'Toplam Tutar',   icon: 'sum' },
+  { key: 'toplamBakiye',  label: 'Toplam Bakiye',  icon: 'balance' },
 ];
-// Kolonların footer tanımından aggregate listesi — Ly1 footer'ı, Ly2 summary'si
-// ve iki Toplamlar menüsü bu TEK listeyi kullanır (kolon sırasıyla).
+// Kolonların footer tanımından aggregate listesi — Ly1 footer'ı ve Toplamlar
+// menüsü (Ly1) bu listeyi kullanır (kolon sırasıyla).
 function _m9AggItems() {
   return M9_HAREKET_COLUMNS.flatMap(c => c.footer ? [].concat(c.footer).map(a => ({
-    key: `${c.field}:${a.aggregate}`, field: c.field, aggregate: a.aggregate,
-    decimals: a.decimals != null ? a.decimals : (a.aggregate === 'count' ? 0 : 2),
+    key: `${c.field}:${a.aggregate}`, aggregate: a.aggregate,
     // Menüde: kolon adı (türü ikon gösterir); kayıt sayısı kendi adıyla
     menuLabel: a.aggregate === 'count' ? _GRID_AGG_LABELS.count : c.headerText,
-    // Summary'de: tür + kolon adı
-    summaryLabel: a.aggregate === 'count' ? _GRID_AGG_LABELS.count : `${_GRID_AGG_LABELS[a.aggregate]} ${c.headerText}`,
   })) : []);
 }
-/* Ly2 summary'sinin ÖZEL alanları — grid kolonu toplamı olmayan, türetilmiş
-   değerler (kullanıcı isteğiyle eski summary'den geri eklendi). Şeridin sonunda.
-     Toplam Bakiye  — Toplam Borç − Toplam Alacak; diğer toplamlar gibi GÖRÜNEN
-                      (filtrelenmiş) satırlardan (fiş dengedeyse 0.00).
-     Hesap Bakiyesi — SEÇİLİ satırın Hesap Kodu'na ait, bu fişteki TÜM
-                      hareketlerin Σ Borç − Σ Alacak'ı (hesap bakiyesi filtreye
-                      göre değişmemeli). Seçim yoksa 0.00. VARSAYIM — gerçek
-                      hesap bakiyesi veritabanından gelecek. */
-const M9_SUMMARY_CUSTOM = [
-  { key: 'custom:toplamBakiye', label: 'Toplam Bakiye',
-    calc: grid => (btGridAggregate(grid, 'borc', 'sum') || 0) - (btGridAggregate(grid, 'alacak', 'sum') || 0) },
-  { key: 'custom:hesapBakiyesi', label: 'Hesap Bakiyesi',
-    calc: () => {
-      const sel = m9SelectedDetailIndexes();
-      const hesapKodu = sel.length ? (m9DetailRows[sel[0]] || {}).hesapKodu : null;
-      const rows = hesapKodu ? m9DetailRows.filter(r => r.hesapKodu === hesapKodu) : [];
-      return _m9Sum(rows, 'borc') - _m9Sum(rows, 'alacak');
-    } },
-];
-// Summary şeridinin item'ları — Ly2'de menüde gizlenenler hariç.
+// Summary şeridinin item'ları — Ly2'de menüde gizlenenler hariç (Ly3'te menü yok).
 function _m9SummaryDefs() {
-  if (_m9TotalsMode() !== 'summary') return M9_HAREKET_SUMMARY_LY3;
-  const hidden = _m9TotalsHidden();
-  return [
-    ..._m9AggItems().map(a => ({ key: a.key, label: a.summaryLabel })),
-    ...M9_SUMMARY_CUSTOM.map(c => ({ key: c.key, label: c.label })),
-  ].filter(s => !hidden.includes(s.key));
+  const hidden = _m9TotalsMode() === 'summary' ? _m9TotalsHidden() : [];
+  return M9_HAREKET_SUMMARY.filter(s => !hidden.includes(s.key));
 }
 // Ayraç yalnızca GÖRÜNEN item'lar arasına girer.
 function _m9SummaryItemsHtml() {
@@ -518,19 +492,6 @@ const _m9Sum = (rows, f) => rows.reduce((s, r) => s + _m9Num(r[f]), 0);
 function m9UpdateDetailSummary() {
   const box = document.getElementById('m9DetailSummary');
   if (!box) return;
-  if (_m9TotalsMode() === 'summary') {
-    const grid = document.getElementById('m9DetailGrid');
-    const defs = Object.fromEntries(_m9AggItems().map(a => [a.key, a]));
-    const custom = Object.fromEntries(M9_SUMMARY_CUSTOM.map(c => [c.key, c]));
-    box.querySelectorAll('[data-summary]').forEach(el => {
-      const key = el.dataset.summary;
-      const a = defs[key];
-      const v = a ? btGridAggregate(grid, a.field, a.aggregate) : custom[key].calc(grid);
-      el.textContent = v == null ? '—' : v.toFixed(a ? a.decimals : 2);
-      el.classList.toggle('m9-grid-summary__value--empty', v == null || Math.abs(v) < 0.005);
-    });
-    return;
-  }
   const sel = m9SelectedDetailIndexes();
   const hesapKodu = sel.length ? (m9DetailRows[sel[0]] || {}).hesapKodu : null;
   const hesapRows = hesapKodu ? m9DetailRows.filter(r => r.hesapKodu === hesapKodu) : [];
@@ -577,11 +538,8 @@ const M9_TOTALS = {
   },
   summary: {
     store: 'm9.ly2.summary', masterLabel: 'Toplam Alanı',
-    // Ly1 footer'ıyla AYNI aggregate listesi + özel alanlar (bakiyeler — terazi ikonu)
-    items: () => [
-      ..._m9AggItems().map(a => ({ key: a.key, label: a.menuLabel, icon: a.aggregate })),
-      ...M9_SUMMARY_CUSTOM.map(c => ({ key: c.key, label: c.label, icon: 'balance' })),
-    ],
+    // Summary'nin 4 hesaplaması (kolon özeti değil)
+    items: () => M9_HAREKET_SUMMARY.map(s => ({ key: s.key, label: s.label, icon: s.icon })),
     applyMaster: () => _m9RenderSummary(),
     applyItem: () => _m9RenderSummary(),
   },
@@ -727,8 +685,6 @@ function _m9AfterBodyRender(detailRows) {
   // Satır seçimi / checkbox değişince Sil'i güncelle (satırın kendi onclick'i
   // önce çalışır, bu delege listener bubble'da sonra).
   document.getElementById('m9DetailGrid').addEventListener('click', m9SyncDetailToolbar);
-  // Filtre görünen satırları değiştirince summary de yeniden hesaplanır (footer'ı grid kendisi günceller)
-  document.getElementById('m9DetailGrid').addEventListener('btgridfilterchange', m9UpdateDetailSummary);
   document.getElementById('m9SaveBtn').disabled = true; // her açılışta sıfırlanır
 }
 

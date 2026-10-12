@@ -133,19 +133,15 @@ Bu, kullanıcının sözlü anlattığı, Figma node yapısından/metadata'sınd
     onayından sonra DS'e taşınmaya aday.
   - **Ly2** (Figma 1738:135102): solda Segmented Tab'lı form (Fiş / E-Defter), sağda Hareketler,
     altta summary şeridi. Hareketler toolbar'ında Ly1 ile AYNI Toplamlar menüsü: ana switch
-    "Toplam Alanı" (şeridin tamamı), "Hesaplanan Alanlar"da Ly1 footer'ıyla AYNI aggregate'ler.
-    Ly2 summary'si artık eski 4 sabit başlık DEĞİL (kullanıcı kararı): grid'deki tüm toplamlar,
-    `_m9AggItems()` (kolonların footer tanımı — Ly1 footer'ı, Ly2 summary'si ve iki menü TEK liste)
-    + `btGridAggregate` (footer'la aynı hesap, görünen/filtrelenmiş satırlar; filtrede grid
-    `btgridfilterchange` yayınlar). Etiketler "Kayıt Sayısı", "Toplam Borç", "Ortalama Kur Fiyatı".
-    Sonda 2 ÖZEL alan (`M9_SUMMARY_CUSTOM`, menüde terazi ikonu): Toplam Bakiye (Toplam Borç −
-    Toplam Alacak, görünen satırlar) ve Hesap Bakiyesi (seçili satırın hesabının bu fişteki TÜM
-    hareketleri, filtreden bağımsız — VARSAYIM, gerçeği veritabanından gelecek).
-    Gizlenen item'ın ayracı da kalkar, hiç item kalmazsa şerit gizlenir; item'lar sığmazsa şerit
-    kendi içinde yatay kayar. Ortak yapı: `M9_TOTALS` (footer / summary hedefi, layout'un `totals`
-    alanı), tercihler layout başına ayrı localStorage (`m9.ly1.footer*` / `m9.ly2.summary*`).
-    Ly3'te menü yok, summary eski 4 başlıkla (`M9_HAREKET_SUMMARY_LY3`) kalıyor.
-    Kayıt (count) aggregate'inin etiketi her yerde "Kayıt Sayısı" (`_GRID_AGG_LABELS.count`).
+    "Toplam Alanı" (şeridin tamamı), "Hesaplanan Alanlar"da summary'nin 4 alanı (Σ toplamlar,
+    terazi bakiyeler). **Summary kolon özeti DEĞİL** — yalnızca belirli fiş hesaplamaları:
+    Hesap Bakiyesi / Toplam Kur / Toplam Tutar / Toplam Bakiye (`M9_HAREKET_SUMMARY`, Ly2 ve Ly3
+    ortak). Bir kere tüm kolon toplamları summary'ye taşındı, kullanıcı düzeltti: kolon özeti
+    Ly1'deki grid footer'ının işi. Gizlenen item'ın ayracı da kalkar, hiç item kalmazsa şerit
+    gizlenir. Ortak yapı: `M9_TOTALS` (footer / summary hedefi, layout'un `totals` alanı),
+    tercihler layout başına ayrı localStorage (`m9.ly1.footer*` / `m9.ly2.summary*`).
+    Ly3'te menü yok, summary hep 4 alan. Kayıt (count) aggregate'inin etiketi her yerde
+    "Kayıt Sayısı" (`_GRID_AGG_LABELS.count`).
   - **Ly3** (Figma 1752:165085): dikey — daraltılabilir Fiş Bilgileri + E-Defter kartları
     (başlığın tamamı tıklanır, kapalıyken alt başlık özet gösterir, durum localStorage'da),
     altta Hareketler + summary. Ly3'e özel: Toplam Bakiye ≠ 0 kırmızı. Kullanıcı Ly3'ü revize edecek.
