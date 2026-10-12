@@ -153,7 +153,7 @@ Bu, kullanıcının sözlü anlattığı, Figma node yapısından/metadata'sınd
   - Ortak: window toolbar (sığmayan butonlar Overflow Menu'ye), Hareketler kartı
     (`_m9HareketlerCardHtml`), summary şeridi (formüller VARSAYIM, bkz. `M9_HAREKET_SUMMARY`).
   - Hareketler araması (3 layout ortak): SearchBox metni tüm alanlarda "içerir" (hızlı arama);
-    Filter butonu → "Detaylı Arama" bt-window (md, `m9OpenDetailSearch`) — grid'in 41 alanı
+    Filter butonu → "Detaylı Arama" bt-window (sm, `m9OpenDetailSearch`) — grid'in 41 alanı
     input (metin/sayı içerir, tarih dd/mm/yyyy içerir, dropdown birebir, "Tümü" = yok), yazdıkça
     canlı filtreler, eşleşme sayısı gösterir, Temizle/Tamam. Tutarlar virgülle de aranır.
     Grid motoruna `host._btRowFilter` kancası eklendi (btGridApplyFilters kolon filtreleriyle

@@ -438,8 +438,8 @@ function m9ApplyLookup(idx) {
 
 /* ── Hareketler araması ───────────────────────────────────────────────────
    • SearchBox'a yazılan metin (hızlı arama) — satırın TÜM alanlarında "içerir".
-   • SearchBox'ın Filter butonu — "Detaylı Arama" bt-window'u (md): grid'in her
-     alanı için bir input; doldurulan her alan bir kriter (VE). Metin/sayı
+   • SearchBox'ın Filter butonu — "Detaylı Arama" bt-window'u (sm): grid'in her
+     alanı için bir input (sm window); doldurulan her alan bir kriter (VE). Metin/sayı
      alanları "içerir", tarih alanları dd/mm/yyyy "içerir" (yazarken daralır),
      dropdown alanları birebir eşit ("Tümü" = kriter yok). Yazdıkça grid canlı
      filtrelenir; pencerede kaç hareketin eşleştiği görünür.
@@ -510,7 +510,7 @@ function m9EnsureDetailSearchWindow() {
   if (document.getElementById('m9DetailSearch')) return;
   document.body.insertAdjacentHTML('beforeend', renderWindow({
     id: 'm9DetailSearch',
-    size: 'md',
+    size: 'sm',
     title: 'Detaylı Arama',
     headerActions: `<button type="button" class="bt-btn bt-btn--sm bt-btn--base-flat" onclick="m9ClearDetailSearch()">Temizle</button>
       <button type="button" class="bt-btn bt-btn--sm bt-btn--primary-solid" onclick="dexClosePanel('m9DetailSearch','m9DetailSearchOv')">Tamam</button>`,
