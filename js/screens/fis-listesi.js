@@ -772,16 +772,18 @@ function m9Ly3ToggleCard(header) {
   _m9Ly3UpdateSubtitle(card);
   _m9Ly3SaveCollapsed(card.dataset.card, collapsed);
 }
+// collapsed: true/false → daraltılabilir kart (aç/kapa); undefined → sabit kart (Figma 1782:281034).
 function _m9Ly3CardHtml(key, title, subtitle, contentHtml, collapsed) {
+  const collapsible = collapsed !== undefined;
   return `
     <section class="m9-ly3-panel">
-      <div class="m9-ly3-card${collapsed ? ' is-collapsed' : ''}" data-card="${key}">
-        <div class="m9-ly3-card__header" onclick="m9Ly3ToggleCard(this)">
+      <div class="m9-ly3-card${collapsible ? ' m9-ly3-card--collapsible' : ''}${collapsed ? ' is-collapsed' : ''}" data-card="${key}">
+        <div class="m9-ly3-card__header"${collapsible ? ' onclick="m9Ly3ToggleCard(this)"' : ''}>
           <div>
             <div class="m9-fis-moves__title">${title}</div>
             <div class="m9-fis-moves__subtitle m9-ly3-card__subtitle" data-default="${subtitle}">${subtitle}</div>
           </div>
-          <button type="button" class="bt-btn bt-btn--sm bt-btn--base-flat bt-btn--icon m9-ly3-card__toggle" aria-label="${title} panelini aç/kapat" aria-expanded="${!collapsed}">${_m9Ly3Chevron}</button>
+          ${collapsible ? `<button type="button" class="bt-btn bt-btn--sm bt-btn--base-flat bt-btn--icon m9-ly3-card__toggle" aria-label="${title} panelini aç/kapat" aria-expanded="${!collapsed}">${_m9Ly3Chevron}</button>` : ''}
         </div>
         <div class="m9-ly3-card__collapse"><div class="m9-ly3-card__inner">
           <div class="m9-ly3-card__content">${contentHtml}</div>
@@ -792,38 +794,40 @@ function _m9Ly3CardHtml(key, title, subtitle, contentHtml, collapsed) {
 function _m9RenderWindowBodyLy3(row, detailRows) {
   const body = document.getElementById('m9RecordWindow-body');
   const sm = { size: 'sm' };
-  const collapsed = _m9Ly3LoadCollapsed();
 
-  // Figma sırası: 4 kolonluk ızgara, Açıklama tam genişlik en altta.
-  const fisBilgileri = `<div class="m9-ly3-grid">
+  // Figma 1782:281034 — 5 kolon × 2 satır, Açıklama tam genişlik en altta.
+  // Kullanıcı alanı Figma'da yok; Giriş/Son Güncelleme Tarihi DatePicker "Read Only".
+  const fisBilgileri = `<div class="m9-ly3-grid m9-ly3-grid--5">
     ${winFieldHtml('Fiş Numarası', row.fisNo, 'm9f_fisNo', { ...sm, placeholder: 'Fiş Numarası' })}
     ${winDateHtml({ ...sm, id: 'm9f_fisTarihi', label: 'Fiş Tarihi', value: m9ParseDate(row.fisTarihi) })}
     ${winDropdownHtml({ ...sm, id: 'm9f_fisTipi', label: 'Fiş Tipi', value: row.fisTipi, placeholder: 'Fiş Tipi', options: M9_FIS_TIPI_OPTS })}
     ${winFieldHtml('Önceki Numarası', row.oncekiNo, 'm9f_oncekiNo', { ...sm, placeholder: 'Önceki Numarası' })}
     ${winFieldHtml('Madde Numarası', row.maddeNo, 'm9f_maddeNo', { ...sm, placeholder: 'Madde Numarası' })}
     ${winDateHtml({ ...sm, id: 'm9f_valorTarihi', label: 'Valör Tarihi', value: m9ParseDate(row.valorTarihi) })}
-    ${winFieldHtml('Kdv', row.kdv ? '%' + String(row.kdv).replace(/^%/, '') : '', 'm9f_kdv', { ...sm, readonly: true })}
     ${winDropdownHtml({ ...sm, id: 'm9f_islemTuru', label: 'İşlem Türü', value: row.islemTuru, placeholder: 'İşlem Türü', options: M9_ISLEM_TURU_OPTS })}
-    ${winDateHtml({ ...sm, id: 'm9f_girisTarihi', label: 'Giriş Tarihi', value: m9ParseDate(row.girisTarihi) })}
-    ${winDateHtml({ ...sm, id: 'm9f_sonGuncelleme', label: 'Son Güncelleme Tarihi', value: m9ParseDate(row.sonGuncelleme) })}
-    ${winFieldHtml('Kullanıcı', row.kullanici, 'm9f_kullanici', { ...sm, readonly: true })}
+    ${winFieldHtml('Kdv', row.kdv ? '%' + String(row.kdv).replace(/^%/, '') : '', 'm9f_kdv', { ...sm, readonly: true })}
+    ${winDateHtml({ ...sm, id: 'm9f_girisTarihi', label: 'Giriş Tarihi', value: m9ParseDate(row.girisTarihi), readonly: true })}
+    ${winDateHtml({ ...sm, id: 'm9f_sonGuncelleme', label: 'Son Güncelleme Tarihi', value: m9ParseDate(row.sonGuncelleme), readonly: true })}
     <div class="m9-ly3-grid__full">${winTextareaHtml('Açıklama', row.aciklama, 'm9f_aciklama', { ...sm, readonly: true })}</div>
   </div>`;
 
-  // E-Defter — Ly1'deki tab'ın alanları, aynı 4 kolon desenine yerleştirildi.
-  const eDefterBilgileri = `<div class="m9-ly3-grid">
+  // E-Defter — 2 kolon; Açıklama Figma'da Default (düzenlenebilir).
+  const eDefterBilgileri = `<div class="m9-ly3-grid m9-ly3-grid--2">
     ${winDropdownHtml({ ...sm, id: 'm9f_edOdemeTuru', label: 'Ödeme Türü', value: row.eDefterOdemeTuru, placeholder: 'Ödeme Türü', options: M9_ED_ODEME_TURU_OPTS })}
     ${winDropdownHtml({ ...sm, id: 'm9f_edEvrakTuru', label: 'Evrak Türü', value: row.eDefterEvrakTuru, placeholder: 'Evrak Türü', options: M9_ED_EVRAK_TURU_OPTS })}
     ${winFieldHtml('Evrak Numarası', row.eDefterEvrakNo, 'm9f_edEvrakNo', { ...sm, placeholder: 'Evrak Numarası' })}
     ${winDateHtml({ ...sm, id: 'm9f_edEvrakTarihi', label: 'Evrak Tarihi', value: m9ParseDate(row.eDefterEvrakTarihi) })}
-    <div class="m9-ly3-grid__full">${winTextareaHtml('Açıklama', row.eDefterAciklama, 'm9f_edAciklama', { ...sm, placeholder: 'Açıklama', readonly: true })}</div>
+    <div class="m9-ly3-grid__full">${winTextareaHtml('Açıklama', row.eDefterAciklama, 'm9f_edAciklama', { ...sm, placeholder: 'Açıklama' })}</div>
   </div>`;
 
+  // Fiş + E-Defter yan yana sabit kartlar (daraltılabilir versiyon ayrıca denenecek —
+  // _m9Ly3CardHtml'e collapsed değeri verilince aç/kapa geri gelir).
   body.innerHTML =
-    _m9Ly3CardHtml('fis', 'Fiş Bilgileri', 'Fişin türü, tarihleri ve açıklaması', fisBilgileri, collapsed.fis) +
-    _m9Ly3CardHtml('edefter', 'E-Defter Bilgileri', 'E-Defter evrak bilgileri', eDefterBilgileri, collapsed.edefter) +
+    `<div class="m9-ly3-row">` +
+    _m9Ly3CardHtml('fis', 'Fiş Bilgileri', 'Fişin türü, tarihleri ve açıklaması', fisBilgileri) +
+    _m9Ly3CardHtml('edefter', 'E-Defter Bilgileri', 'E-Defter evrak bilgileri', eDefterBilgileri) +
+    `</div>` +
     `<section class="m9-ly3-panel m9-ly3-panel--fill">${_m9HareketlerCardHtml()}</section>`;
-  body.querySelectorAll('.m9-ly3-card.is-collapsed').forEach(_m9Ly3UpdateSubtitle);
 
   _m9AfterBodyRender(detailRows);
 }

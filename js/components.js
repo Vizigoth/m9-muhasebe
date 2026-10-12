@@ -1605,9 +1605,9 @@ function winDateHtml(opts) {
   return `<div class="bt-input bt-datepicker bt-input--${size}">
     <div class="bt-input__label-value"><span class="bt-input__label">${o.label || ''}</span></div>
     <div class="bt-input__anchor">
-      <div class="bt-input__box bt-input__box--${size}">
-        <div class="bt-input__controls"><button type="button" class="bt-input__button" onclick="dpBaseToggle(this)" aria-label="Tarih seç"><span class="bt-icon">${_dpIconCalendar}</span></button></div>
-        <div class="bt-input__content"><input class="bt-input__value"${o.id ? ` id="${o.id}"` : ''} type="text" inputmode="numeric" maxlength="10" placeholder="01/01/2026" value="${value}" oninput="dpBaseInput(this)" /></div>
+      <div class="bt-input__box bt-input__box--${size}${o.readonly ? ' bt-input__box--readonly' : ''}">
+        <div class="bt-input__controls"><button type="button" class="bt-input__button"${o.readonly ? '' : ' onclick="dpBaseToggle(this)"'} aria-label="Tarih seç"><span class="bt-icon">${_dpIconCalendar}</span></button></div>
+        <div class="bt-input__content"><input class="bt-input__value"${o.id ? ` id="${o.id}"` : ''} type="text" inputmode="numeric" maxlength="10" placeholder="01/01/2026" value="${value}"${o.readonly ? ' readonly' : ' oninput="dpBaseInput(this)"'} /></div>
       </div>
       ${_calPanelHtml(initState, true)}
     </div>

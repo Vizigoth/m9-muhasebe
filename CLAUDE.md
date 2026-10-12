@@ -142,9 +142,13 @@ Bu, kullanıcının sözlü anlattığı, Figma node yapısından/metadata'sınd
     tercihler layout başına ayrı localStorage (`m9.ly1.footer*` / `m9.ly2.summary*`).
     Ly3'te menü yok, summary hep 4 alan. Kayıt (count) aggregate'inin etiketi her yerde
     "Kayıt Sayısı" (`_GRID_AGG_LABELS.count`).
-  - **Ly3** (Figma 1752:165085): dikey — daraltılabilir Fiş Bilgileri + E-Defter kartları
-    (başlığın tamamı tıklanır, kapalıyken alt başlık özet gösterir, durum localStorage'da),
-    altta Hareketler + summary. Ly3'e özel: Toplam Bakiye ≠ 0 kırmızı. Kullanıcı Ly3'ü revize edecek.
+  - **Ly3** (Figma 1782:281034, 2026-10-12 revizyonu): üstte Fiş Bilgileri (5 kolon × 2 satır +
+    tam genişlik Açıklama; Kullanıcı alanı yok, Giriş/Son Güncelleme DatePicker Read Only) ile
+    E-Defter (2 kolon, Açıklama düzenlenebilir) kartları yan yana (`.m9-ly3-row`, 1167fr/647fr,
+    eşit yükseklik; gövde <1360px'te alt alta), altta Hareketler + summary. Kartlar sabit (aç/kapa
+    yok). Eski daraltılabilir kart kodu (Figma 1752:165085 — başlık tıklanır, kapalıyken özet,
+    localStorage) duruyor: `_m9Ly3CardHtml`'e `collapsed` verilince geri gelir; kullanıcı
+    daraltılabilir versiyonu ayrıca deneyecek. Ly3'e özel: Toplam Bakiye ≠ 0 kırmızı.
   - Ortak: window toolbar (sığmayan butonlar Overflow Menu'ye), Hareketler kartı
     (`_m9HareketlerCardHtml`), summary şeridi (formüller VARSAYIM, bkz. `M9_HAREKET_SUMMARY`).
   - Overflow Menu (`renderOverflowMenu`) artık switch/checkbox toggle item'ı (`toggle`, `on`,
