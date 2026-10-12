@@ -173,7 +173,6 @@ function m9EnsureRecordWindow() {
     const { rowIndex, field, value } = e.detail;
     if (m9DetailRows[rowIndex]) m9DetailRows[rowIndex][field] = value;
     m9UpdateDetailSummary();
-    m9UpdateDetailFooter();
     markDirty();
   });
 }
@@ -212,6 +211,15 @@ const M9_HAREKET_NUMERIC = {
   borc: 'amount', alacak: 'amount', kurFiyati: 'amount', miktar: 'decimal',
   birimFiyati: 'amount', kdvTutari: 'amount', baBsMatrah: 'amount', baBsKdvTutari: 'amount',
   borcluAdet: 'integer', alacakAdet: 'integer', cariNo: 'integer', indeksNo: 'integer',
+};
+// Grid footer aggregate'leri — sadece Ly1'de çizilir (bkz. m9RenderDetailGrid,
+// "Grid Footer" notu). Dizi = aynı hücrede alt alta.
+const M9_HAREKET_FOOTER = {
+  sira: { aggregate: 'count' },
+  borc: { aggregate: 'sum' }, alacak: { aggregate: 'sum' }, kdvTutari: { aggregate: 'sum' },
+  baBsMatrah: { aggregate: 'sum' }, baBsKdvTutari: { aggregate: 'sum' },
+  kurFiyati: { aggregate: 'avg' },
+  birimFiyati: [{ aggregate: 'min' }, { aggregate: 'max' }],
 };
 const M9_HAREKET_COLUMNS = [
   // frozen — Fiş Listesi'ndeki Fiş Numarası ile aynı desen (position:sticky +
@@ -263,6 +271,7 @@ const M9_HAREKET_COLUMNS = [
   // Son kolon fillWidth — DS kuralı (bkz. Fiş Listesi'ndeki Kullanıcı notu)
   { field: 'belgeTuru',             headerText: 'Belge Türü',                   width: 160, fillWidth: true },
 ].map(c => ({ ...c, filter: true, editable: c.field !== 'sira', placeholder: c.field !== 'sira', inputType: M9_HAREKET_NUMERIC[c.field],
+  footer: M9_HAREKET_FOOTER[c.field],
   ...(M9_HAREKET_DROPDOWNS[c.field] ? { editKind: 'dropdown', editOptions: M9_HAREKET_DROPDOWNS[c.field] } : {}),
   ...(M9_HAREKET_DATES.includes(c.field) ? { editKind: 'date' } : {}) }));
 
@@ -466,13 +475,16 @@ function m9UpdateDetailSummary() {
   });
 }
 
-/* ── Grid Footer — Ly1 (summary yerine). Para tutarı kolonlarının toplamı
-   grid'in en altındaki sabit (sticky) satırda, ilgili kolonun altında.
-   Birim Fiyatı / Kur Fiyatı fiyat/oran olduğu için toplanmıyor (toplamı
-   anlamsız); Miktar farklı birimler içerebildiği için toplanmıyor.
+/* ── Grid Footer — Ly1 (summary yerine). Aggregate'ler kolon tanımında
+   (M9_HAREKET_FOOTER → kolonların footer'ı), hesaplamayı grid yapar
+   (btGridFooterUpdate — görünen/filtrelenmiş satırlar üzerinden).
+     Sıra          — Kayıt (satır sayısı)
+     Tutarlar      — Toplam (Borç, Alacak, KDV, Ba/Bs Matrah, Ba/Bs KDV)
+     Kur Fiyatı    — Ortalama (oran — toplamı anlamsız)
+     Birim Fiyatı  — En Az + En Çok (çok satırlı footer örneği)
+   Miktar farklı birimler içerebildiği için toplanmıyor.
    Görünüm menüsündeki "Toplam Satırı" switch'i ile gizlenip gösterilir,
    tercih tarayıcıda hatırlanır (localStorage, kişisel tercih). */
-const M9_HAREKET_FOOTER_SUM = ['borc', 'alacak', 'kdvTutari', 'baBsMatrah', 'baBsKdvTutari'];
 function _m9FooterVisible() {
   try { return localStorage.getItem('m9.ly1.footer') !== '0'; } catch (e) { return true; }
 }
@@ -480,13 +492,6 @@ function m9SetDetailFooter(visible) {
   try { localStorage.setItem('m9.ly1.footer', visible ? '1' : '0'); } catch (e) {}
   const footer = document.querySelector('#m9DetailGrid .bt-grid__footer');
   if (footer) footer.hidden = !visible;
-}
-function m9UpdateDetailFooter() {
-  document.querySelectorAll('#m9DetailGrid .bt-grid__footer-cell[data-field] .bt-grid__content').forEach(el => {
-    const v = _m9Sum(m9DetailRows, el.parentElement.dataset.field);
-    el.textContent = v.toFixed(2);
-    el.classList.toggle('bt-grid__content--muted', Math.abs(v) < 0.005); // 0.00 = boş state
-  });
 }
 const _m9IcoView = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><line x1="14" x2="14" y1="2" y2="6"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="16" x2="16" y1="18" y2="22"/></svg>`; // Lucide sliders-horizontal
 function _m9ViewMenuHtml() {
@@ -499,9 +504,12 @@ function _m9ViewMenuHtml() {
 // Sıra her render'da satır sırasından yeniden üretilir (001, 002, …).
 function m9RenderDetailGrid() {
   m9DetailRows.forEach((r, i) => { r.sira = String(i + 1).padStart(3, '0'); });
-  const footer = M9_FIS_WINDOW_LAYOUTS[m9FisLayout].footer
-    ? { label: 'Toplam', fields: M9_HAREKET_FOOTER_SUM, hidden: !_m9FooterVisible() } : null;
-  document.getElementById('m9DetailGrid').innerHTML = renderDataTable(M9_HAREKET_COLUMNS, m9DetailRows, { emptyText: 'Kayıt bulunamadı', footer });
+  // Footer'sız layout'larda (Ly2/Ly3) kolonların footer tanımı düşürülür.
+  const withFooter = M9_FIS_WINDOW_LAYOUTS[m9FisLayout].footer;
+  const cols = withFooter ? M9_HAREKET_COLUMNS : M9_HAREKET_COLUMNS.map(({ footer, ...c }) => c);
+  const grid = document.getElementById('m9DetailGrid');
+  grid.innerHTML = renderDataTable(cols, m9DetailRows, { emptyText: 'Kayıt bulunamadı', footer: { hidden: !_m9FooterVisible() } });
+  btGridFooterUpdate(grid);
   m9SyncDetailToolbar();
 }
 // Seçili satır: satıra tıklanarak (Sıra hücresi — editable hücreler tek
@@ -514,7 +522,6 @@ function m9SelectedDetailIndexes() {
 function m9SyncDetailToolbar() {
   document.getElementById('m9DetailDeleteBtn').disabled = m9SelectedDetailIndexes().length === 0;
   m9UpdateDetailSummary(); // seçim Hesap Bakiyesi'ni değiştirir
-  m9UpdateDetailFooter();
 }
 function m9AddDetailRow() {
   const empty = {};

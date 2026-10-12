@@ -63,7 +63,7 @@
   #m9DetailGrid .bt-grid { flex: 1 0 auto; }
   /* ── Grid Footer (proje eki — DS'te grid footer'ı henüz yok; renderDataTable
      opts.footer). Mevcut grid dilinden türetildi, yeni değer icat edilmedi:
-     header ile aynı 36px yükseklik ve xs-medium font (özet satırı = vurgulu),
+     header ile aynı (min) 36px yükseklik,
      body hücresiyle aynı 8px içerik padding'i (rakamlar üstteki hücrelerle
      aynı hizada), zemin summary şeridiyle aynı --bt-surface-primary-subtle
      (veri satırlarından ayrışsın), frozen kenar gölgesi/sol-sağ kenar
@@ -74,7 +74,7 @@
   .bt-grid__footer { display: flex; width: 100%; position: sticky; bottom: 0; z-index: 6; margin-top: -1px; }
   .bt-grid__footer[hidden] { display: none; }
   .bt-grid__footer-cell {
-    display: flex; align-items: center; flex-shrink: 0; height: 36px; box-sizing: border-box;
+    display: flex; align-items: center; flex-shrink: 0; min-height: 36px; box-sizing: border-box;
     background: var(--bt-surface-primary-subtle, #f5f5f5);
     border-top: 1px solid var(--bt-border-primary-default, #d4d4d4);
     border-bottom: 1px solid var(--bt-border-primary-default, #d4d4d4);
@@ -82,14 +82,25 @@
   .bt-grid__footer-cell--left  { border-left:  1px solid var(--bt-border-primary-default, #d4d4d4); }
   .bt-grid__footer-cell--right { border-right: 1px solid var(--bt-border-primary-default, #d4d4d4); }
   .bt-grid__footer-cell--frozen-edge { box-shadow: 2px 0 4px rgba(16,24,40,0.08); }
-  .bt-grid__footer-cell .bt-grid__content {
-    padding: var(--bt-space-md, 8px);
+  /* Aggregate satırları (Telerik FooterTemplate'teki "Sum: … / Average: …"
+     uyarlaması): her aggregate bir satır — solda etiket (Subtitle rengi,
+     regular), sağda değer (medium, tabular). Bir hücrede birden fazla
+     aggregate varsa alt alta dizilir, footer satırı en yüksek hücre kadar
+     uzar (min 36px). Değer 0 / yok → muted (summary'deki boş state ile aynı). */
+  .bt-grid__footer-aggs {
+    flex: 1; min-width: 0;
+    display: flex; flex-direction: column; gap: var(--bt-space-2xs, 2px);
+    padding: var(--bt-space-sm, 6px) var(--bt-space-md, 8px);
+  }
+  .bt-grid__footer-agg { display: flex; align-items: baseline; justify-content: space-between; gap: var(--bt-space-md, 8px); white-space: nowrap; }
+  .bt-grid__footer-label { font: var(--bt-text-xs-regular, 400 12px/16px var(--font)); color: var(--bt-text-primary-emphasis, #737373); }
+  .bt-grid__footer-value {
     font: var(--bt-text-xs-medium, 500 12px/16px var(--font));
     color: var(--bt-text-primary-default, #1a1a1a);
     font-variant-numeric: tabular-nums;
+    overflow: hidden; text-overflow: ellipsis;
   }
-  .bt-grid__footer-cell .bt-grid__content--right { text-align: right; }
-  .bt-grid__footer-cell .bt-grid__content--muted { color: var(--bt-text-primary-muted, #a3a3a3); }
+  .bt-grid__footer-agg--empty .bt-grid__footer-value { color: var(--bt-text-primary-muted, #a3a3a3); }
   /* .bt-pl-toolbar'ın display:flex'i [hidden] attribute'unu eziyor — toolbar'ı
      olmayan ekranlar (bkz. router.js m9RenderPlaceholder) için geri veriliyor. */
   .bt-pl-toolbar[hidden] { display: none; }

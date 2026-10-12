@@ -677,6 +677,7 @@ function _btGridSyncEditView(cell) {
   view.textContent = value || ph || '';
   view.classList.toggle('bt-grid__content--placeholder', !value && !!ph);
   input.defaultValue = input.value;
+  if (changed) btGridFooterUpdate(cell);
   const row = cell.closest('.bt-grid__row');
   if (changed && cell.dataset.field && row && row.dataset.rowIndex != null) {
     cell.dispatchEvent(new CustomEvent('btgridcelledit', { bubbles: true, detail: { rowIndex: Number(row.dataset.rowIndex), field: cell.dataset.field, value } }));
@@ -868,7 +869,7 @@ window.btGridApplyFilters = function (grid) {
   if (!body) return;
   const activeHeaders = Array.from(grid.querySelectorAll('.bt-grid__header-cell[data-filter-active="true"]'));
   const rows = Array.from(body.children).filter(r => r.classList.contains('bt-grid__row'));
-  if (!activeHeaders.length) { rows.forEach(r => { r.style.display = ''; }); return; }
+  if (!activeHeaders.length) { rows.forEach(r => { r.style.display = ''; }); btGridFooterUpdate(grid); return; }
   const filters = activeHeaders.map(h => ({
     nth: Array.from(h.parentElement.children).indexOf(h) + 1,
     values: new Set(JSON.parse(h.dataset.filterValues || '[]')),
@@ -881,6 +882,7 @@ window.btGridApplyFilters = function (grid) {
     });
     row.style.display = visible ? '' : 'none';
   });
+  btGridFooterUpdate(grid);
 };
 function btGridFilterUpdateTriggerStyle(headerEl) {
   const btn = headerEl.querySelector('.bt-grid__filter-btn');
@@ -1059,6 +1061,38 @@ document.addEventListener('click', function (e) {
  * offset'ler bu N kolonun genişlik toplamından, edge gölgesi son frozen
  * kolonun sağ kenarından otomatik hesaplanır.
  */
+/* Grid footer aggregate'leri (bkz. renderDataTable footer notu). Değerler
+   görünen satırların (filtrenin display:none yaptıkları hariç) hücre
+   metinlerinden hesaplanır — boş/placeholder hücreler sayılmaz. count = görünen
+   satır sayısı; avg/min/max'ta hiç değer yoksa "—". Grid render'ından sonra,
+   InCell commit'inde ve filtre uygulanınca çağrılır. el: grid'in içindeki/
+   dışındaki herhangi bir eleman. */
+const _GRID_AGG_LABELS = { sum: 'Toplam', avg: 'Ortalama', min: 'En Az', max: 'En Çok', count: 'Kayıt' };
+window.btGridFooterUpdate = function (el) {
+  const grid = el && (el.classList.contains('bt-grid') ? el : (el.closest('.bt-grid') || el.querySelector('.bt-grid')));
+  const footer = grid && grid.querySelector(':scope > .bt-grid__footer');
+  if (!footer) return;
+  const rows = [...grid.querySelectorAll(':scope > .bt-grid__body > .bt-grid__row')].filter(r => r.style.display !== 'none');
+  [...footer.children].forEach((cell, i) => {
+    cell.querySelectorAll('.bt-grid__footer-agg').forEach(aggEl => {
+      const kind = aggEl.dataset.agg;
+      const nums = kind === 'count' ? [] : rows.map(r => {
+        const c = r.children[i] && r.children[i].querySelector('.bt-grid__content');
+        if (!c || c.classList.contains('bt-grid__content--placeholder')) return NaN;
+        return parseFloat(c.textContent.replace(',', '.'));
+      }).filter(n => !isNaN(n));
+      let v;
+      if (kind === 'count') v = rows.length;
+      else if (kind === 'sum') v = nums.reduce((s, n) => s + n, 0);
+      else if (!nums.length) v = null;
+      else if (kind === 'avg') v = nums.reduce((s, n) => s + n, 0) / nums.length;
+      else v = Math[kind](...nums);
+      aggEl.querySelector('.bt-grid__footer-value').textContent = v == null ? '—' : v.toFixed(Number(aggEl.dataset.decimals));
+      aggEl.classList.toggle('bt-grid__footer-agg--empty', v == null || Math.abs(v) < 0.005);
+    });
+  });
+};
+
 function renderDataTable(columns, rows, opts) {
   const o = opts || {};
   const cols = columns || [];
@@ -1114,23 +1148,28 @@ function renderDataTable(columns, rows, opts) {
         placeholder: c.placeholder === true ? c.headerText : c.placeholder,
       })).join('')}</div>`).join('');
 
-  // Footer (proje eki — DS'te grid footer'ı yok): opts.footer = { label,
-  // fields: [field…], hidden }. İlk kolon label'ı taşır, fields'taki kolonların
-  // hücreleri data-field ile işaretlenir; değerleri sayfa doldurur (render
-  // sonrası ve her veri değişiminde). Satır header ile aynı kolon genişlik/frozen
-  // desenini kullanır, resize'da body hücreleriyle birlikte güncellenir.
-  const f = o.footer;
-  const footerHtml = f ? `<div class="bt-grid__footer"${f.hidden ? ' hidden' : ''}>${cols.map((c, i) => {
+  // Footer (proje eki — DS'te grid footer'ı yok; Telerik Grid'in GridAggregates
+  // + FooterTemplate modelinden uyarlandı). Kolon tanımında footer:
+  //   { aggregate: 'sum'|'avg'|'min'|'max'|'count', label?, decimals? }
+  //   veya bunların dizisi (aynı hücrede alt alta satırlar).
+  // Herhangi bir kolonda footer varsa satır çizilir; opts.footer = { hidden }
+  // başlangıçta gizler. Değerleri grid'in KENDİSİ hesaplar (btGridFooterUpdate)
+  // — görünen (filtrelenmiş) satırların hücre değerlerinden. Satır header ile
+  // aynı kolon genişlik/frozen desenini kullanır, resize'da birlikte güncellenir.
+  const hasFooter = cols.some(c => c.footer);
+  const footerHtml = hasFooter ? `<div class="bt-grid__footer"${o.footer && o.footer.hidden ? ' hidden' : ''}>${cols.map((c, i) => {
     const pos = posFor(i);
     const fz = frozenInfo[i];
-    const isSum = (f.fields || []).includes(c.field);
+    const aggs = c.footer ? [].concat(c.footer) : [];
     const cls = ['bt-grid__footer-cell', pos === 'left' ? 'bt-grid__footer-cell--left' : '', pos === 'right' ? 'bt-grid__footer-cell--right' : '',
       fz && fz.frozenEdge ? 'bt-grid__footer-cell--frozen-edge' : ''].filter(Boolean).join(' ');
     const w = c.width || 180;
     const style = (c.fillWidth ? `flex:1;min-width:${w}px;` : `width:${w}px;`) + (fz ? `position:sticky;left:${fz.sticky}px;z-index:5;` : '');
-    const content = i === 0 ? `<span class="bt-grid__content">${f.label || 'Toplam'}</span>`
-      : isSum ? `<span class="bt-grid__content${c.align === 'right' ? ' bt-grid__content--right' : ''}"></span>` : '';
-    return `<div class="${cls}" style="${style}"${isSum ? ` data-field="${c.field}"` : ''}>${content}</div>`;
+    const content = aggs.length ? `<div class="bt-grid__footer-aggs">${aggs.map(a => {
+      const dec = a.decimals != null ? a.decimals : (a.aggregate === 'count' ? 0 : 2);
+      return `<div class="bt-grid__footer-agg" data-agg="${a.aggregate}" data-decimals="${dec}"><span class="bt-grid__footer-label">${a.label || _GRID_AGG_LABELS[a.aggregate] || ''}</span><span class="bt-grid__footer-value"></span></div>`;
+    }).join('')}</div>` : '';
+    return `<div class="${cls}" style="${style}">${content}</div>`;
   }).join('')}</div>` : '';
 
   return `<div class="bt-grid-scroll-x"><div class="bt-grid">

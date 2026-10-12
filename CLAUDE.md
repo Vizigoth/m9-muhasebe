@@ -113,12 +113,17 @@ Bu, kullanıcının sözlü anlattığı, Figma node yapısından/metadata'sınd
   liste ve veri, kayıt window'unun üç layout denemesi; `M9_FIS_WINDOW_LAYOUTS` ile seçiliyor —
   her layout `{ render, footer?, summary? }`). Diğerleri "henüz hazırlanmadı" placeholder'ı.
   (2026-10-12'de yeniden numaralandı: eski Ly1 → Ly2, eski Ly2 → Ly3, yeni Ly1 eklendi.)
-  - **Ly1**: Ly2 ile aynı gövde ama summary şeridi YOK — toplamlar grid footer'ında
-    (`M9_HAREKET_FOOTER_SUM`: Borç, Alacak, KDV, Ba/Bs Matrah, Ba/Bs KDV; Birim/Kur Fiyatı ve
-    Miktar toplanmıyor). Hareketler toolbar'ında "Görünüm" butonu → Overflow Menu, içinde
-    "Toplam Satırı" switch'i (footer'ı gizler/gösterir, localStorage `m9.ly1.footer`).
-    Grid footer DS'te YOK, bu projede tasarlandı (renderDataTable `opts.footer`, CSS app.html
-    `.bt-grid__footer*`) — kullanıcı onayından sonra DS'e taşınmaya aday.
+  - **Ly1**: Ly2 ile aynı gövde ama summary şeridi YOK — toplamlar grid footer'ında.
+    Hareketler toolbar'ında "Görünüm" butonu → Overflow Menu, içinde "Toplam Satırı" switch'i
+    (footer'ı gizler/gösterir, localStorage `m9.ly1.footer`).
+    Grid footer DS'te YOK, bu projede tasarlandı — Telerik Grid'in GridAggregates/FooterTemplate
+    modelinden uyarlandı (kullanıcı referans olarak paylaştı, birebir değil): kolon tanımında
+    `footer: { aggregate: 'sum'|'avg'|'min'|'max'|'count', label?, decimals? }` (dizi = alt alta
+    satırlar), hesaplamayı grid yapar (`btGridFooterUpdate` — GÖRÜNEN/filtrelenmiş satırların
+    hücre değerleri; render, InCell commit ve filtre sonrası çağrılır). Hücrede solda etiket,
+    sağda değer. Hareketler'de `M9_HAREKET_FOOTER`: Sıra=count, tutarlar=sum, Kur Fiyatı=avg,
+    Birim Fiyatı=min+max (çok satır örneği). CSS app.html `.bt-grid__footer*`. Kullanıcı
+    onayından sonra DS'e taşınmaya aday.
   - **Ly2** (Figma 1738:135102): solda Segmented Tab'lı form (Fiş / E-Defter), sağda Hareketler,
     altta summary şeridi.
   - **Ly3** (Figma 1752:165085): dikey — daraltılabilir Fiş Bilgileri + E-Defter kartları
