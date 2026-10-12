@@ -241,8 +241,16 @@
   .m9-ly3-card__content { margin-top: var(--bt-space-xl); padding: var(--bt-space-2xl); container-type: inline-size; }
   .m9-ly3-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--bt-space-2xl); }
   .m9-ly3-grid__full { grid-column: 1 / -1; }
-  /* Window küçültülünce (50vw) 4 kolon sıkışmasın */
-  @container (max-width: 900px) { .m9-ly3-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  /* Fiş Bilgileri: alanlar solda, Açıklama sağda alanların yüksekliği boyunca uzar */
+  .m9-ly3-split { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 1fr); gap: var(--bt-space-2xl); }
+  .m9-ly3-split__aside { display: flex; }
+  .m9-ly3-split__aside .bt-txa__input { flex: 1; display: flex; }
+  .m9-ly3-split__aside .bt-txa__text { flex: 1; }
+  /* Window küçültülünce (50vw) 4 kolon sıkışmasın; Açıklama alta iner */
+  @container (max-width: 900px) {
+    .m9-ly3-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .m9-ly3-split { grid-template-columns: minmax(0, 1fr); }
+  }
   .m9-ly3 .m9-grid-summary__value--error { color: var(--bt-text-error-default); }
   /* bkz. #m9Grid notu — .bt-grid-actions-container'a radius ayrıca verilir */
   #m9DetailGrid { border-radius: var(--bt-radius-sm, 4px); }
