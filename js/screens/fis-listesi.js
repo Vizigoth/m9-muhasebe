@@ -442,7 +442,7 @@ function m9ApplyLookup(idx) {
      alanı için bir input (sm window); doldurulan her alan bir kriter (VE). Metin/sayı
      alanları "içerir", tarih alanları dd/mm/yyyy "içerir" (yazarken daralır),
      dropdown alanları birebir eşit ("Tümü" = kriter yok). Yazdıkça grid canlı
-     filtrelenir. Temizle header'daki more (⋯) Overflow Menu'de.
+     filtrelenir. Header: Uygula (kapatır) + sağında more (⋯) Overflow Menu'de Temizle.
    İkisi birlikte ve kolon filtreleriyle VE'lenir — grid motorunun ek satır
    filtresi kancası (#m9DetailGrid._btRowFilter, bkz. btGridApplyFilters).
    Aramadayken Ekle ile eklenen satır kriterlere uymasa da görünür kalır
@@ -527,8 +527,8 @@ function m9EnsureDetailSearchWindow() {
     id: 'm9DetailSearch',
     size: 'sm',
     title: 'Detaylı Arama',
-    headerActions: `${renderOverflowMenu([{ key: 'clear', label: 'Temizle', icon: _m9IcoEraser, onClick: 'm9ClearDetailSearch()' }], { label: 'Diğer işlemler' })}
-      <button type="button" class="bt-btn bt-btn--sm bt-btn--primary-solid" onclick="dexClosePanel('m9DetailSearch','m9DetailSearchOv')">Tamam</button>`,
+    headerActions: `<button type="button" class="bt-btn bt-btn--sm bt-btn--primary-solid" onclick="dexClosePanel('m9DetailSearch','m9DetailSearchOv')">Uygula</button>
+      ${renderOverflowMenu([{ key: 'clear', label: 'Temizle', icon: _m9IcoEraser, onClick: 'm9ClearDetailSearch()' }], { label: 'Diğer işlemler' })}`,
     bodyHtml: `<div class="m9-search-form" id="m9DetailSearchForm">${_m9DetailSearchFormHtml()}</div>`,
   }));
   // Canlı arama — TextBox 'input', Dropdown/DatePicker 'change' yayar

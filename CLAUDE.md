@@ -156,7 +156,7 @@ Bu, kullanıcının sözlü anlattığı, Figma node yapısından/metadata'sınd
     Filter butonu → "Detaylı Arama" bt-window (sm, `m9OpenDetailSearch`) — grid'in 41 alanı
     input (metin/sayı içerir, tarih dd/mm/yyyy içerir, dropdown birebir, "Tümü" = yok), yazdıkça
     canlı filtreler; 2 kolon, mantıksal sıra (`M9_DETAIL_SEARCH_LAYOUT`: çiftler yan yana, uzun
-    alanlar tam genişlik); Temizle header more (⋯) Overflow Menu'de + Tamam. Tutarlar virgülle de aranır.
+    alanlar tam genişlik); header'da Uygula + sağında more (⋯) Overflow Menu'de Temizle. Tutarlar virgülle de aranır.
     Grid motoruna `host._btRowFilter` kancası eklendi (btGridApplyFilters kolon filtreleriyle
     VE'ler). Aramadayken Ekle'yle gelen satır görünür kalır; Fiş Detayı her açılışta arama
     sıfırlanır. Ly1 footer'ı arama sonucunu toplar (summary hep tüm satırlar). Açık nokta:
