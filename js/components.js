@@ -1216,11 +1216,46 @@ function renderDataTable(columns, rows, opts) {
    is-open sırası (dexOpenPanel) ve transitionend sonrası hidden=true
    (dexClosePanel) kaynak koddaki AYNI desen.
    ============================================================ */
+/* Pencere yığını (proje eki — DS'te tanımlı değil): açık pencereler üst üste
+   gelen drawer'lar gibi davranır. Yeni pencere açılınca alttaki pencere(ler),
+   üstlerindekilerin toplam genişliği kadar SOLA kayar — ekrana sığdıkları
+   sürece (ör. Fiş Detayı minimize 50vw + sm 33vw). Sığmayan (xl / maximize)
+   pencere kaymaz, üstteki onun üzerine açılır (eski davranış). Yanda görünen
+   pencere, üstteki pencerenin overlay'inin üstüne alınır (karartılmaz,
+   etkileşimli kalır); overlay yalnızca yığının dışında kalan alanı karartır
+   ve oraya tıklamak en üstteki pencereyi kapatır. Z-index'ler yığın
+   sırasından verilir: seviye i → overlay 999+2i, pencere 1000+2i. */
+const _winStack = []; // { panelId, overlayId } — alttan üste
+function _winRestack() {
+  const vw = window.innerWidth;
+  let offset = 0, shifting = true;
+  for (let i = _winStack.length - 1; i >= 0; i--) {
+    const { panelId, overlayId } = _winStack[i];
+    const panel = document.getElementById(panelId);
+    const overlay = overlayId ? document.getElementById(overlayId) : null;
+    if (!panel) continue;
+    const isTop = i === _winStack.length - 1;
+    // width geçişi (minimize/maximize) sürerken hedef genişlik — inline width yok, CSS'ten
+    const w = panel.getBoundingClientRect().width;
+    const fits = shifting && offset + w <= vw + 1;
+    const shifted = !isTop && fits;
+    panel.style.transform = shifted ? `translateX(${-offset}px)` : '';
+    // Yanda görünen pencere en üst overlay'in üstünde; diğerleri kendi seviyesinde
+    panel.style.zIndex = shifted ? String(999 + 2 * (_winStack.length - 1) + 1) : String(1000 + 2 * i);
+    if (overlay) overlay.style.zIndex = String(999 + 2 * i);
+    if (fits) offset += w; else shifting = false;
+  }
+}
+window.addEventListener('resize', _winRestack);
 window.dexOpenPanel = function (panelId, overlayId) {
   const panel = document.getElementById(panelId);
   const overlay = overlayId ? document.getElementById(overlayId) : null;
+  const at = _winStack.findIndex(s => s.panelId === panelId);
+  if (at >= 0) _winStack.splice(at, 1);
+  _winStack.push({ panelId, overlayId });
   panel.hidden = false;
   panel.getBoundingClientRect(); // reflow — animasyon başlasın diye şart
+  _winRestack();
   panel.classList.add('is-open');
   if (overlay) overlay.classList.add('is-open');
 };
@@ -1229,17 +1264,31 @@ window.dexClosePanel = function (panelId, overlayId) {
   const overlay = overlayId ? document.getElementById(overlayId) : null;
   panel.classList.remove('is-open');
   if (overlay) overlay.classList.remove('is-open');
+  const at = _winStack.findIndex(s => s.panelId === panelId);
+  if (at >= 0) _winStack.splice(at, 1);
+  panel.style.transform = '';
+  _winRestack(); // alttaki pencere yerine geri kayar
   panel.addEventListener('transitionend', function hide() {
     panel.hidden = true;
     panel.removeEventListener('transitionend', hide);
   }, { once: true });
 };
+// Genişlik değişince (0.5s geçiş) yığın hem hemen hem geçiş bitince yeniden dizilir
+function _winRestackAfterResize(panel) {
+  _winRestack();
+  panel.addEventListener('transitionend', function done(e) {
+    if (e.propertyName !== 'width') return;
+    panel.removeEventListener('transitionend', done);
+    _winRestack();
+  });
+}
 window.dexToggleMaximize = function (panelId) {
   const panel = document.getElementById(panelId);
   const btn = document.getElementById(panelId + '-maxbtn');
   const isMax = panel.classList.toggle('is-maximized');
   btn.querySelector('.bt-maxbtn-max').style.display = isMax ? 'none' : '';
   btn.querySelector('.bt-maxbtn-min').style.display = isMax ? '' : 'none';
+  _winRestackAfterResize(panel);
 };
 window.dexToggleMinimize = function (panelId) {
   const panel = document.getElementById(panelId);
@@ -1247,6 +1296,7 @@ window.dexToggleMinimize = function (panelId) {
   const isMin = panel.classList.toggle('is-minimized');
   btn.querySelector('.bt-maxbtn-max').style.display = isMin ? '' : 'none';
   btn.querySelector('.bt-maxbtn-min').style.display = isMin ? 'none' : '';
+  _winRestackAfterResize(panel);
 };
 
 const _winIconClose = `<span class="bt-window__icon-slot">${icoClear}</span>`;

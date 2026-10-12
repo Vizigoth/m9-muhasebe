@@ -157,6 +157,12 @@ Bu, kullanıcının sözlü anlattığı, Figma node yapısından/metadata'sınd
     tercih ayrı (`m9.ly4.footer*`).
   - Ortak: window toolbar (sığmayan butonlar Overflow Menu'ye), Hareketler kartı
     (`_m9HareketlerCardHtml`), summary şeridi (formüller VARSAYIM, bkz. `M9_HAREKET_SUMMARY`).
+  - Pencere yığını (drawer gibi, DS'te yok — `_winStack`/`_winRestack`, components.js):
+    yeni pencere açılınca alttaki pencereler sığdıkları sürece üsttekilerin genişliği kadar
+    sola kayar (ör. Fiş Detayı minimize 50vw + Detaylı Arama/Lookup sm 33vw yan yana); sığmayan
+    (xl/maximize) kaymaz. Yanda kalan pencere üst overlay'in üstünde (etkileşimli), overlay
+    yalnızca kalan alanı karartır. Z-index yığın sırasından (overlay 999+2i, window 1000+2i).
+    Minimize/maximize ve resize'da yeniden dizilir.
   - Hareketler araması (3 layout ortak): SearchBox metni tüm alanlarda "içerir" (hızlı arama);
     Filter butonu → "Detaylı Arama" bt-window (sm, `m9OpenDetailSearch`) — grid'in 41 alanı
     input (metin/sayı içerir, tarih dd/mm/yyyy içerir, dropdown birebir, "Tümü" = yok), yazdıkça
