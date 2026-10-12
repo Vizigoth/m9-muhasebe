@@ -160,8 +160,8 @@ Bu, kullanıcının sözlü anlattığı, Figma node yapısından/metadata'sınd
   - Pencere yığını (drawer gibi, DS'te yok — `_winStack`/`_winRestack`, components.js):
     yeni pencere açılınca alttaki pencereler sığdıkları sürece üsttekilerin genişliği kadar
     sola kayar (ör. Fiş Detayı minimize 50vw + Detaylı Arama/Lookup sm 33vw yan yana); sığmayan
-    (xl/maximize) kaymaz. Yanda kalan pencere üst overlay'in üstünde (etkileşimli), overlay
-    yalnızca kalan alanı karartır. Z-index yığın sırasından (overlay 999+2i, window 1000+2i).
+    (xl/maximize) kaymaz. Üstteki pencerenin overlay'i (modal) yanda kalan alttaki pencereyi
+    de karartır (görünür, etkileşimsiz). Z-index yığın sırasından (overlay 999+2i, window 1000+2i).
     Minimize/maximize ve resize'da yeniden dizilir.
   - Hareketler araması (3 layout ortak): SearchBox metni tüm alanlarda "içerir" (hızlı arama);
     Filter butonu → "Detaylı Arama" bt-window (sm, `m9OpenDetailSearch`) — grid'in 41 alanı

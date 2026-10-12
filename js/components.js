@@ -1220,10 +1220,10 @@ function renderDataTable(columns, rows, opts) {
    gelen drawer'lar gibi davranır. Yeni pencere açılınca alttaki pencere(ler),
    üstlerindekilerin toplam genişliği kadar SOLA kayar — ekrana sığdıkları
    sürece (ör. Fiş Detayı minimize 50vw + sm 33vw). Sığmayan (xl / maximize)
-   pencere kaymaz, üstteki onun üzerine açılır (eski davranış). Yanda görünen
-   pencere, üstteki pencerenin overlay'inin üstüne alınır (karartılmaz,
-   etkileşimli kalır); overlay yalnızca yığının dışında kalan alanı karartır
-   ve oraya tıklamak en üstteki pencereyi kapatır. Z-index'ler yığın
+   pencere kaymaz, üstteki onun üzerine açılır (eski davranış). Üstteki
+   pencerenin overlay'i (modal) alttaki pencereyi — yanda görünse de — örter:
+   alttaki görünür ama karartılmış ve etkileşimsiz; overlay'e tıklamak en
+   üstteki pencereyi kapatır. Z-index'ler yığın
    sırasından verilir: seviye i → overlay 999+2i, pencere 1000+2i. */
 const _winStack = []; // { panelId, overlayId } — alttan üste
 function _winRestack() {
@@ -1240,8 +1240,9 @@ function _winRestack() {
     const fits = shifting && offset + w <= vw + 1;
     const shifted = !isTop && fits;
     panel.style.transform = shifted ? `translateX(${-offset}px)` : '';
-    // Yanda görünen pencere en üst overlay'in üstünde; diğerleri kendi seviyesinde
-    panel.style.zIndex = shifted ? String(999 + 2 * (_winStack.length - 1) + 1) : String(1000 + 2 * i);
+    // Her pencere kendi seviyesinde — üstteki pencerenin overlay'i (modal) yanda
+    // kalan alttaki pencereyi de karartır
+    panel.style.zIndex = String(1000 + 2 * i);
     if (overlay) overlay.style.zIndex = String(999 + 2 * i);
     if (fits) offset += w; else shifting = false;
   }
