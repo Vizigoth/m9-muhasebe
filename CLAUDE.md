@@ -151,8 +151,8 @@ Bu, kullanıcının sözlü anlattığı, Figma node yapısından/metadata'sınd
     localStorage) duruyor: `_m9Ly3CardHtml`'e `collapsed` verilince geri gelir; kullanıcı
     daraltılabilir versiyonu ayrıca deneyecek. Ly3/Ly4'e özel: Toplam Bakiye ≠ 0 kırmızı.
   - **Ly4**: Ly3'ün aynısı (`_m9RenderWindowBodyLy3`, layout `stacked: true`) — Fiş ve E-Defter
-    kartları her genişlikte alt alta (`.m9-ly3-row--stacked`); E-Defter alanları Fiş'in 5 kolon
-    ızgarasında (kolonlar hizalı). Toplamlar tercihi ayrı (`m9.ly4.summary*`).
+    kartları her genişlikte alt alta (`.m9-ly3-row--stacked`); E-Defter'in 4 alanı 4 kolonda
+    kartı doldurur. Toplamlar tercihi ayrı (`m9.ly4.summary*`).
   - Ortak: window toolbar (sığmayan butonlar Overflow Menu'ye), Hareketler kartı
     (`_m9HareketlerCardHtml`), summary şeridi (formüller VARSAYIM, bkz. `M9_HAREKET_SUMMARY`).
   - Hareketler araması (3 layout ortak): SearchBox metni tüm alanlarda "içerir" (hızlı arama);

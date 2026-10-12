@@ -945,9 +945,9 @@ function _m9RenderWindowBodyLy3(row, detailRows) {
 
   // Ly4: kartlar alt alta (tam genişlik) — aynı alanlar, düzen farkı.
   const stacked = !!M9_FIS_WINDOW_LAYOUTS[m9FisLayout].stacked;
-  // E-Defter — yan yana (Ly3) 2 kolon; alt alta (Ly4) Fiş'in 5 kolon ızgarası
-  // (alanlar Fiş'in kolonlarıyla hizalı). Açıklama Figma'da Default (düzenlenebilir).
-  const eDefterBilgileri = `<div class="m9-ly3-grid m9-ly3-grid--${stacked ? 5 : 2}">
+  // E-Defter — yan yana (Ly3) 2 kolon; alt alta (Ly4) 4 kolon — 4 alan kart genişliğini
+  // doldurur. Açıklama Figma'da Default (düzenlenebilir).
+  const eDefterBilgileri = `<div class="m9-ly3-grid${stacked ? "" : " m9-ly3-grid--2"}">
     ${winDropdownHtml({ ...sm, id: 'm9f_edOdemeTuru', label: 'Ödeme Türü', value: row.eDefterOdemeTuru, placeholder: 'Ödeme Türü', options: M9_ED_ODEME_TURU_OPTS })}
     ${winDropdownHtml({ ...sm, id: 'm9f_edEvrakTuru', label: 'Evrak Türü', value: row.eDefterEvrakTuru, placeholder: 'Evrak Türü', options: M9_ED_EVRAK_TURU_OPTS })}
     ${winFieldHtml('Evrak Numarası', row.eDefterEvrakNo, 'm9f_edEvrakNo', { ...sm, placeholder: 'Evrak Numarası' })}
@@ -972,7 +972,7 @@ function _m9RenderWindowBodyLy3(row, detailRows) {
            Hareketler toolbar'ında Toplamlar menüsü summary'yi yönetir
      ly3 — Fiş + E-Defter kartları yan yana, altta Hareketler + summary (Figma 1782:281034);
            Toplamlar menüsü Ly2 gibi summary'yi yönetir (tercihler ayrı)
-     ly4 — ly3'ün aynısı, Fiş ve E-Defter kartları alt alta (E-Defter Fiş'in 5 kolonuyla hizalı) */
+     ly4 — ly3'ün aynısı, Fiş ve E-Defter kartları alt alta (E-Defter 4 kolon, kartı doldurur) */
 const M9_FIS_WINDOW_LAYOUTS = {
   ly1: { render: _m9RenderWindowBody, footer: true, totals: 'footer' },
   ly2: { render: _m9RenderWindowBody, summary: true, totals: 'summary' },
