@@ -166,12 +166,14 @@ Bu, kullanıcının sözlü anlattığı, Figma node yapısından/metadata'sınd
     de karartır (görünür, etkileşimsiz). Z-index yığın sırasından (overlay 999+2i, window 1000+2i).
     Minimize/maximize ve resize'da yeniden dizilir.
   - **Satır Detayı** (sadece Ly1, layout `rowDetail: true`): Hareketler toolbar'ında Sil'in yanında;
-    seçili satır yokken disabled. Seçili hareketin 41 alanını sm bt-window (`m9OpenRowDetail`)
-    formunda düzenletir — düzen Detaylı Arama'yla ortak (`M9_HAREKET_FORM_LAYOUT`,
+    seçili satır yokken disabled. Seçili hareketin 41 alanını Fiş Detayı gövdesinin SAĞINDA açılan
+    bir bölümde (section `#m9RowDetail`, bt-window DEĞİL — kullanıcı kararı; 0→440px kayarak açılır,
+    Hareketler daralır; `m9OpenRowDetail`/`m9CloseRowDetail`) formda düzenletir — düzen Detaylı Arama'yla ortak (`M9_HAREKET_FORM_LAYOUT`,
     `_m9HareketFormHtml`), alan component'i grid'deki edit türüyle aynı (lookup → Select LookUp,
     + ikonu aynı lookup penceresini açar ve seçimi forma yazar; dropdown/tarih/sayı kısıtı).
     Uygula → satıra yazar (tutar 2 ondalık, tarih grid biçimi), grid/toplam yenilenir, satır seçili
-    kalır, Kaydet aktifleşir; × değişiklikleri bırakır. Aktif satır öncelikli, yoksa ilk işaretli.
+    kalır, Kaydet aktifleşir; × değişiklikleri bırakır (bölümde yazmak Uygula'ya kadar Kaydet'i
+    tetiklemez). Satır silinince bölüm kapanır. Aktif satır öncelikli, yoksa ilk işaretli.
     Lookup hedefi artık fonksiyon (`m9LookupTarget(values)`): hücre ya da form.
   - Hareketler araması (3 layout ortak): SearchBox metni tüm alanlarda "içerir" (hızlı arama);
     Filter butonu → "Detaylı Arama" bt-window (sm, `m9OpenDetailSearch`) — grid'in 41 alanı

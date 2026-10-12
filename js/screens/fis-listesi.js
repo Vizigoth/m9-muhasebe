@@ -167,8 +167,10 @@ function m9EnsureRecordWindow() {
   // grid'de hücre düzenleme / satır ekleme-silme) Kaydet'i aktifleştirir.
   const win = document.getElementById('m9RecordWindow');
   const markDirty = () => { document.getElementById('m9SaveBtn').disabled = false; };
-  win.addEventListener('input', e => { if (!e.target.closest('.bt-searchbox')) markDirty(); });
-  win.addEventListener('change', markDirty);
+  // Satır Detayı bölümündeki düzenleme Uygula'ya kadar fişi değiştirmez
+  const dirtyOk = e => !e.target.closest('.bt-searchbox, #m9RowDetail');
+  win.addEventListener('input', e => { if (dirtyOk(e)) markDirty(); });
+  win.addEventListener('change', e => { if (dirtyOk(e)) markDirty(); });
   win.addEventListener('btgridcelledit', function (e) {
     const { rowIndex, field, value } = e.detail;
     if (m9DetailRows[rowIndex]) m9DetailRows[rowIndex][field] = value;
@@ -572,13 +574,15 @@ function _m9ResetDetailSearch() {
 }
 
 /* ── Satır Detayı (Ly1) — seçili hareketin TÜM alanlarını InCell edit yerine
-   sm bt-window'daki bir formdan düzenleme. Form Detaylı Arama'yla aynı düzende
+   Fiş Detayı gövdesinin SAĞINDA açılan bir bölümdeki (section, bt-window değil)
+   formdan düzenleme. Form Detaylı Arama'yla aynı düzende
    (M9_HAREKET_FORM_LAYOUT); her alan grid'deki edit türüyle aynı component:
    lookup → Select LookUp (+ ikonu aynı lookup penceresini açar, seçim forma
    yazılır), dropdown → Dropdown, tarih → DatePicker, sayı → TextBox (grid'deki
    sayısal kısıtla), diğerleri TextBox. "Uygula" değerleri satıra yazar (tutarlar
    2 ondalık, tarih grid biçimi), grid/toplamlar yenilenir, Fiş Detayı'nın Kaydet'i
-   aktifleşir; × ile kapatmak değişiklikleri bırakır. Birden çok satır seçiliyse
+   aktifleşir; × ile kapatmak değişiklikleri bırakır (bölümdeki yazım Uygula'ya
+   kadar Kaydet'i tetiklemez). Birden çok satır seçiliyse
    aktif (tıklanan) satır, yoksa ilk işaretli satır açılır. */
 let m9RowDetailIndex = null;
 const _m9IcoRowDetail = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M15 3v18"/><path d="m10 15-3-3 3-3"/></svg>`; // Lucide panel-right-open
@@ -602,15 +606,29 @@ function _m9RowDetailFieldHtml(r, c) {
   if (c.editKind === 'date') return winDateHtml({ ...sm, id, label: c.headerText, value: m9ParseDate(v), placeholder: 'gg/aa/yyyy' });
   return winFieldHtml(c.headerText, v, id, { ...sm, placeholder: c.headerText });
 }
-function m9EnsureRowDetailWindow() {
-  if (document.getElementById('m9RowDetail')) return;
-  document.body.insertAdjacentHTML('beforeend', renderWindow({
-    id: 'm9RowDetail',
-    size: 'sm',
-    title: 'Satır Detayı',
-    headerActions: `<button type="button" class="bt-btn bt-btn--sm bt-btn--primary-solid" onclick="m9ApplyRowDetail()">Uygula</button>`,
-    bodyHtml: `<div class="m9-hareket-form" id="m9RowDetailForm"></div>`,
-  }));
+// Fiş Detayı gövdesinin sağındaki bölüm (Ly1) — kapalıyken genişliği 0, açılınca
+// sağdan kayarak genişler (app.html .m9-row-detail).
+function _m9RowDetailSectionHtml() {
+  return `<section class="m9-row-detail" id="m9RowDetail" aria-hidden="true"><div class="m9-row-detail__inner">
+    <div class="m9-row-detail__header">
+      <div>
+        <div class="m9-fis-moves__title">Satır Detayı</div>
+        <div class="m9-fis-moves__subtitle" id="m9RowDetailSubtitle"></div>
+      </div>
+      <div class="m9-row-detail__actions">
+        <button type="button" class="bt-btn bt-btn--sm bt-btn--primary-solid" onclick="m9ApplyRowDetail()">Uygula</button>
+        <button type="button" class="bt-btn bt-btn--sm bt-btn--base-flat bt-btn--icon" aria-label="Satır Detayı'nı kapat" onclick="m9CloseRowDetail()">${_winIconClose}</button>
+      </div>
+    </div>
+    <div class="m9-row-detail__body"><div class="m9-hareket-form" id="m9RowDetailForm"></div></div>
+  </div></section>`;
+}
+function m9CloseRowDetail() {
+  const sec = document.getElementById('m9RowDetail');
+  if (!sec) return;
+  sec.classList.remove('is-open');
+  sec.setAttribute('aria-hidden', 'true');
+  m9RowDetailIndex = null;
 }
 // Aktif (tıklanan) satır öncelikli, yoksa ilk işaretli satır
 function _m9RowDetailTarget() {
@@ -623,9 +641,8 @@ function m9OpenRowDetail() {
   const idx = _m9RowDetailTarget();
   if (idx == null || !m9DetailRows[idx]) return;
   m9RowDetailIndex = idx;
-  m9EnsureRowDetailWindow();
   const r = m9DetailRows[idx];
-  document.getElementById('m9RowDetail-title').textContent = `Satır Detayı · ${r.sira || String(idx + 1).padStart(3, '0')}`;
+  document.getElementById('m9RowDetailSubtitle').textContent = `Sıra ${r.sira || String(idx + 1).padStart(3, '0')} — ${r.unvan || r.hesapKodu || 'yeni hareket'}`;
   const form = document.getElementById('m9RowDetailForm');
   form.innerHTML = _m9HareketFormHtml(c => _m9RowDetailFieldHtml(r, c));
   // Sayısal alanlar — grid'deki InCell edit'le aynı kısıt (btGridNumericInput)
@@ -635,9 +652,12 @@ function m9OpenRowDetail() {
     input.inputMode = c.inputType === 'integer' ? 'numeric' : 'decimal';
     input.addEventListener('input', () => btGridNumericInput(input, c.inputType));
   });
-  dexOpenPanel('m9RowDetail', 'm9RowDetailOv');
+  const sec = document.getElementById('m9RowDetail');
+  sec.classList.add('is-open');
+  sec.removeAttribute('aria-hidden');
+  sec.querySelector('.m9-row-detail__body').scrollTop = 0;
   const first = form.querySelector('input:not([readonly])');
-  if (first) first.focus();
+  if (first) first.focus({ preventScroll: true });
 }
 function m9ApplyRowDetail() {
   const r = m9DetailRows[m9RowDetailIndex];
@@ -660,7 +680,7 @@ function m9ApplyRowDetail() {
   const rowEl = document.querySelector(`#m9DetailGrid .bt-grid__body .bt-grid__row[data-row-index="${idx}"]`);
   if (rowEl) { btGridRowToggle(rowEl); m9SyncDetailToolbar(); }
   document.getElementById('m9SaveBtn').disabled = false;
-  dexClosePanel('m9RowDetail', 'm9RowDetailOv');
+  m9CloseRowDetail();
 }
 
 /* ── DataTable Summary (Figma 1748:158681) — grid'in altındaki toplam şeridi.
@@ -878,6 +898,7 @@ function m9DeleteDetailRows() {
   const selected = new Set(m9SelectedDetailIndexes());
   if (!selected.size) return;
   m9DetailRows = m9DetailRows.filter((_, i) => !selected.has(i));
+  m9CloseRowDetail(); // indeksler kaydı
   m9RenderDetailGrid();
   document.getElementById('m9SaveBtn').disabled = false;
 }
@@ -959,7 +980,8 @@ function _m9RenderWindowBody(row, detailRows) {
       <div class="m9-fis-form__tab" id="m9FisTabGenel">${fisBilgileri}</div>
       <div class="m9-fis-form__tab" id="m9FisTabEDefter" hidden>${eDefterBilgileri}</div>
     </section>
-    <section class="m9-fis-moves">${_m9HareketlerCardHtml()}</section>`;
+    <section class="m9-fis-moves">${_m9HareketlerCardHtml()}</section>
+    ${M9_FIS_WINDOW_LAYOUTS[m9FisLayout].rowDetail ? _m9RowDetailSectionHtml() : ''}`;
 
   _m9AfterBodyRender(detailRows);
 }
