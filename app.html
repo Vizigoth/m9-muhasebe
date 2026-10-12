@@ -134,12 +134,12 @@
   #m9Lookup .bt-window__panel { min-height: 0; overflow: hidden; }
   #m9Lookup .bt-searchbox { flex-shrink: 0; width: 100%; }
   #m9LookupGrid { flex: 1; min-height: 0; border-radius: var(--bt-radius-sm, 4px); }
-  /* Hareketler › Detaylı Arama (sm window) — grid'in her alanı bir input;
-     2 kolon, M9_DETAIL_SEARCH_LAYOUT'ta tek başına olan alanlar tam genişlik */
-  #m9DetailSearch .bt-window__panel { container-type: inline-size; }
-  .m9-search-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--bt-space-2xl); }
-  .m9-search-form__full { grid-column: 1 / -1; }
-  @container (max-width: 320px) { .m9-search-form { grid-template-columns: minmax(0, 1fr); } }
+  /* Hareketler › Detaylı Arama ve Satır Detayı (sm window) — grid'in her alanı bir
+     input; 2 kolon, M9_HAREKET_FORM_LAYOUT'ta tek başına olan alanlar tam genişlik */
+  #m9DetailSearch .bt-window__panel, #m9RowDetail .bt-window__panel { container-type: inline-size; }
+  .m9-hareket-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--bt-space-2xl); }
+  .m9-hareket-form__full { grid-column: 1 / -1; }
+  @container (max-width: 320px) { .m9-hareket-form { grid-template-columns: minmax(0, 1fr); } }
   /* Overflow Menu listesi açılınca body'ye portal'lanıyor ve DS'teki z-index'i
      200 — .bt-window (1000) içinden açıldığında pencerenin ARKASINDA kalıyordu. */
   body > .bt-ovf-menu__list[data-bt-ovf-portal="1"] { z-index: 1010; }

@@ -165,10 +165,18 @@ Bu, kullanıcının sözlü anlattığı, Figma node yapısından/metadata'sınd
     (xl/maximize) kaymaz. Üstteki pencerenin overlay'i (modal) yanda kalan alttaki pencereyi
     de karartır (görünür, etkileşimsiz). Z-index yığın sırasından (overlay 999+2i, window 1000+2i).
     Minimize/maximize ve resize'da yeniden dizilir.
+  - **Satır Detayı** (sadece Ly1, layout `rowDetail: true`): Hareketler toolbar'ında Sil'in yanında;
+    seçili satır yokken disabled. Seçili hareketin 41 alanını sm bt-window (`m9OpenRowDetail`)
+    formunda düzenletir — düzen Detaylı Arama'yla ortak (`M9_HAREKET_FORM_LAYOUT`,
+    `_m9HareketFormHtml`), alan component'i grid'deki edit türüyle aynı (lookup → Select LookUp,
+    + ikonu aynı lookup penceresini açar ve seçimi forma yazar; dropdown/tarih/sayı kısıtı).
+    Uygula → satıra yazar (tutar 2 ondalık, tarih grid biçimi), grid/toplam yenilenir, satır seçili
+    kalır, Kaydet aktifleşir; × değişiklikleri bırakır. Aktif satır öncelikli, yoksa ilk işaretli.
+    Lookup hedefi artık fonksiyon (`m9LookupTarget(values)`): hücre ya da form.
   - Hareketler araması (3 layout ortak): SearchBox metni tüm alanlarda "içerir" (hızlı arama);
     Filter butonu → "Detaylı Arama" bt-window (sm, `m9OpenDetailSearch`) — grid'in 41 alanı
     input (metin/sayı içerir, tarih dd/mm/yyyy içerir, dropdown birebir, "Tümü" = yok), yazdıkça
-    canlı filtreler; 2 kolon, mantıksal sıra (`M9_DETAIL_SEARCH_LAYOUT`: çiftler yan yana, uzun
+    canlı filtreler; 2 kolon, mantıksal sıra (`M9_HAREKET_FORM_LAYOUT`: çiftler yan yana, uzun
     alanlar tam genişlik); header'da Uygula + sağında more (⋯) Overflow Menu'de Temizle. Tutarlar virgülle de aranır.
     Grid motoruna `host._btRowFilter` kancası eklendi (btGridApplyFilters kolon filtreleriyle
     VE'ler). Aramadayken Ekle'yle gelen satır görünür kalır; Fiş Detayı her açılışta arama
