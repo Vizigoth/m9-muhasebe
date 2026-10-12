@@ -132,7 +132,11 @@ Bu, kullanıcının sözlü anlattığı, Figma node yapısından/metadata'sınd
     CSS app.html `.bt-grid__footer*`. Kullanıcı
     onayından sonra DS'e taşınmaya aday.
   - **Ly2** (Figma 1738:135102): solda Segmented Tab'lı form (Fiş / E-Defter), sağda Hareketler,
-    altta summary şeridi.
+    altta summary şeridi. Hareketler toolbar'ında Ly1 ile AYNI Toplamlar menüsü: ana switch
+    "Toplam Alanı" (şeridin tamamı), "Hesaplanan Alanlar"da 4 summary item'ı (Σ toplamlar, terazi
+    bakiyeler); gizlenen item'ın ayracı da kalkar, hiç item kalmazsa şerit gizlenir. Ortak
+    yapı: `M9_TOTALS` (footer / summary hedefi, layout'un `totals` alanı), tercihler layout başına
+    ayrı localStorage (`m9.ly1.footer*` / `m9.ly2.summary*`). Ly3'te menü yok, summary hep tam.
   - **Ly3** (Figma 1752:165085): dikey — daraltılabilir Fiş Bilgileri + E-Defter kartları
     (başlığın tamamı tıklanır, kapalıyken alt başlık özet gösterir, durum localStorage'da),
     altta Hareketler + summary. Ly3'e özel: Toplam Bakiye ≠ 0 kırmızı. Kullanıcı Ly3'ü revize edecek.

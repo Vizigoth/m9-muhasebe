@@ -446,12 +446,33 @@ function m9ApplyLookup(idx) {
      Toplam Kur     — Σ Kur Fiyatı
      Toplam Tutar   — Σ Borç
      Toplam Bakiye  — Σ Borç − Σ Alacak (dengeli fişte 0.00) */
+// icon — Toplamlar menüsündeki (Ly2) sol ikon: toplamlar Σ, bakiyeler terazi.
 const M9_HAREKET_SUMMARY = [
-  { key: 'hesapBakiyesi', label: 'Hesap Bakiyesi' },
-  { key: 'toplamKur',     label: 'Toplam Kur' },
-  { key: 'toplamTutar',   label: 'Toplam Tutar' },
-  { key: 'toplamBakiye',  label: 'Toplam Bakiye' },
+  { key: 'hesapBakiyesi', label: 'Hesap Bakiyesi', icon: 'balance' },
+  { key: 'toplamKur',     label: 'Toplam Kur',     icon: 'sum' },
+  { key: 'toplamTutar',   label: 'Toplam Tutar',   icon: 'sum' },
+  { key: 'toplamBakiye',  label: 'Toplam Bakiye',  icon: 'balance' },
 ];
+// Summary şeridinin item'ları — Ly2'de Toplamlar menüsünde gizlenenler hariç
+// (Ly3'te menü yok, hepsi görünür). Ayraç yalnızca GÖRÜNEN item'lar arasına girer.
+function _m9SummaryItemsHtml() {
+  const hidden = _m9TotalsMode() === 'summary' ? _m9TotalsHidden() : [];
+  return M9_HAREKET_SUMMARY.filter(s => !hidden.includes(s.key)).map((s, i) =>
+    `${i ? '<span class="m9-grid-summary__sep" aria-hidden="true"></span>' : ''}<div class="m9-grid-summary__item"><span class="m9-grid-summary__label">${s.label}</span><span class="m9-grid-summary__value" data-summary="${s.key}">0.00</span></div>`
+  ).join('');
+}
+// Şerit görünür mü — Ly2'de ana switch açık VE en az bir item görünürse.
+function _m9SummaryShown() {
+  if (_m9TotalsMode() !== 'summary') return true;
+  return _m9TotalsVisible() && M9_HAREKET_SUMMARY.some(s => !_m9TotalsHidden().includes(s.key));
+}
+function _m9RenderSummary() {
+  const box = document.getElementById('m9DetailSummary');
+  if (!box) return;
+  box.innerHTML = _m9SummaryItemsHtml();
+  box.hidden = !_m9SummaryShown();
+  m9UpdateDetailSummary();
+}
 const _m9Num = v => parseFloat(String(v == null ? '' : v).replace(',', '.')) || 0;
 const _m9Sum = (rows, f) => rows.reduce((s, r) => s + _m9Num(r[f]), 0);
 function m9UpdateDetailSummary() {
@@ -483,21 +504,45 @@ function m9UpdateDetailSummary() {
      Tutarlar      — Toplam (Borç, Alacak, KDV, Ba/Bs Matrah, Ba/Bs KDV)
      Kur Fiyatı, Birim Fiyatı — Ortalama (oran/fiyat — toplamı anlamsız)
    Miktar farklı birimler içerebildiği için toplanmıyor.
-   Toplamlar menüsündeki "Toplam Satırı" switch'i ile gizlenip gösterilir,
-   tercih tarayıcıda hatırlanır (localStorage, kişisel tercih). */
-function _m9FooterVisible() {
-  try { return localStorage.getItem('m9.ly1.footer') !== '0'; } catch (e) { return true; }
+   Toplamlar menüsündeki "Toplam Satırı" switch'i ile gizlenip gösterilir. */
+
+/* ── Toplamlar menüsü — layout'un `totals` hedefini yönetir:
+     'footer'  (Ly1) — grid footer'ı + footer aggregate'leri
+     'summary' (Ly2) — summary şeridi + summary item'ları
+   Ana switch hedefin tamamını, "Hesaplanan Alanlar" switch'leri tek tek
+   alanları açar/kapatır. Ana switch kapalıyken alan switch'leri Off · Disabled
+   görünür (hiçbir alan "açık" görünmesin — kullanıcı kararı); alanların kendi
+   tercihi saklı kalır, ana switch açılınca o tercihe göre geri gelir. Tercihler
+   layout başına ayrı (localStorage, kişisel tercih). */
+const M9_TOTALS = {
+  footer: {
+    store: 'm9.ly1.footer', masterLabel: 'Toplam Satırı',
+    // Kolon sırasıyla her footer aggregate'i — key 'field:aggregate'
+    items: () => M9_HAREKET_COLUMNS.flatMap(c => c.footer ? [].concat(c.footer).map(a =>
+      ({ key: `${c.field}:${a.aggregate}`, label: c.headerText, icon: a.aggregate })) : []),
+    applyMaster: visible => { const f = document.querySelector('#m9DetailGrid .bt-grid__footer'); if (f) f.hidden = !visible; },
+    applyItem: (key, visible) => btGridFooterSetAgg(document.getElementById('m9DetailGrid'), key, visible),
+  },
+  summary: {
+    store: 'm9.ly2.summary', masterLabel: 'Toplam Alanı',
+    items: () => M9_HAREKET_SUMMARY.map(s => ({ key: s.key, label: s.label, icon: s.icon })),
+    applyMaster: () => _m9RenderSummary(),
+    applyItem: () => _m9RenderSummary(),
+  },
+};
+const _m9TotalsMode = () => M9_FIS_WINDOW_LAYOUTS[m9FisLayout].totals;
+function _m9TotalsVisible() {
+  try { return localStorage.getItem(M9_TOTALS[_m9TotalsMode()].store) !== '0'; } catch (e) { return true; }
 }
-// Toplam Satırı (ana switch) — kapalıyken alan switch'leri Off · Disabled
-// görünür (footer kapalıyken hiçbir alan "açık" görünmesin — kullanıcı kararı);
-// alanların kendi tercihi localStorage'da saklı kalır, ana switch açılınca
-// her switch o tercihe göre geri gelir.
-function m9SetDetailFooter(visible) {
-  try { localStorage.setItem('m9.ly1.footer', visible ? '1' : '0'); } catch (e) {}
-  const footer = document.querySelector('#m9DetailGrid .bt-grid__footer');
-  if (footer) footer.hidden = !visible;
-  const hidden = _m9FooterHiddenAggs();
-  document.querySelectorAll('.bt-ovf-menu__item[data-ovf-key^="agg:"]').forEach(it => {
+function _m9TotalsHidden() {
+  try { return JSON.parse(localStorage.getItem(M9_TOTALS[_m9TotalsMode()].store + 'Hidden') || '[]'); } catch (e) { return []; }
+}
+function m9SetTotalsMaster(visible) {
+  const cfg = M9_TOTALS[_m9TotalsMode()];
+  try { localStorage.setItem(cfg.store, visible ? '1' : '0'); } catch (e) {}
+  cfg.applyMaster(visible);
+  const hidden = _m9TotalsHidden();
+  document.querySelectorAll('.bt-ovf-menu__item[data-ovf-key^="tot:"]').forEach(it => {
     const on = visible && !hidden.includes(it.dataset.ovfKey.slice(4));
     it.classList.toggle('bt-ovf-menu__item--disabled', !visible);
     if (visible) it.removeAttribute('aria-disabled'); else it.setAttribute('aria-disabled', 'true');
@@ -507,15 +552,12 @@ function m9SetDetailFooter(visible) {
     track.classList.toggle('bt-switch__track--on', on);
   });
 }
-// Tek tek footer alanları — gizlenenler 'field:aggregate' listesi olarak hatırlanır.
-function _m9FooterHiddenAggs() {
-  try { return JSON.parse(localStorage.getItem('m9.ly1.footerHidden') || '[]'); } catch (e) { return []; }
-}
-function m9SetFooterAgg(key, visible) {
-  const hidden = new Set(_m9FooterHiddenAggs());
+function m9SetTotalsItem(key, visible) {
+  const cfg = M9_TOTALS[_m9TotalsMode()];
+  const hidden = new Set(_m9TotalsHidden());
   if (visible) hidden.delete(key); else hidden.add(key);
-  try { localStorage.setItem('m9.ly1.footerHidden', JSON.stringify([...hidden])); } catch (e) {}
-  btGridFooterSetAgg(document.getElementById('m9DetailGrid'), key, visible);
+  try { localStorage.setItem(cfg.store + 'Hidden', JSON.stringify([...hidden])); } catch (e) {}
+  cfg.applyItem(key, visible);
 }
 // Toplamlar butonu ikonu — Lucide sigma (menüdeki Σ toplam ikonuyla aynı). Button
 // ikonunda wrapper yok, boyut svg'nin kendi width/height'ında (16×16).
@@ -531,20 +573,21 @@ const _M9_ICO_AGG = {
   count: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="9" y2="9"/><line x1="4" x2="20" y1="15" y2="15"/><line x1="10" x2="8" y1="3" y2="21"/><line x1="16" x2="14" y1="3" y2="21"/></svg>', // hash
   min:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17V3"/><path d="m6 11 6 6 6-6"/><path d="M19 21H5"/></svg>', // arrow-down-to-line
   max:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h14"/><path d="m18 13-6-6-6 6"/><path d="M12 7v14"/></svg>', // arrow-up-to-line
+  balance: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>', // scale (bakiye)
 };
+// Ana switch ikonu — grid altındaki şerit (footer satırı / summary alanı)
 const _m9IcoFooterRow = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 15h18"/></svg>'; // panel-bottom
-function _m9ViewMenuHtml() {
+function _m9TotalsMenuHtml() {
+  const cfg = M9_TOTALS[_m9TotalsMode()];
+  const visible = _m9TotalsVisible();
+  const hidden = _m9TotalsHidden();
   return renderOverflowMenu([
-    { key: 'footer', label: 'Toplam Satırı', icon: _m9IcoFooterRow, toggle: 'switch', on: _m9FooterVisible(),
-      onClick: "m9SetDetailFooter(this.getAttribute('aria-checked')==='true')" },
+    { key: 'totals', label: cfg.masterLabel, icon: _m9IcoFooterRow, toggle: 'switch', on: visible,
+      onClick: "m9SetTotalsMaster(this.getAttribute('aria-checked')==='true')" },
     { group: 'Hesaplanan Alanlar' },
-    // Kolon sırasıyla her footer aggregate'i
-    ...M9_HAREKET_COLUMNS.flatMap(c => c.footer ? [].concat(c.footer).map(a => {
-      const key = `${c.field}:${a.aggregate}`;
-      return { key: 'agg:' + key, label: c.headerText, icon: _M9_ICO_AGG[a.aggregate],
-        toggle: 'switch', on: _m9FooterVisible() && !_m9FooterHiddenAggs().includes(key), disabled: !_m9FooterVisible(),
-        onClick: `m9SetFooterAgg('${key}', this.getAttribute('aria-checked')==='true')` };
-    }) : []),
+    ...cfg.items().map(it => ({ key: 'tot:' + it.key, label: it.label, icon: _M9_ICO_AGG[it.icon],
+      toggle: 'switch', on: visible && !hidden.includes(it.key), disabled: !visible,
+      onClick: `m9SetTotalsItem('${it.key}', this.getAttribute('aria-checked')==='true')` })),
   ], { triggerLabel: 'Toplamlar', triggerIcon: _m9IcoTotals });
 }
 
@@ -555,7 +598,8 @@ function m9RenderDetailGrid() {
   const withFooter = M9_FIS_WINDOW_LAYOUTS[m9FisLayout].footer;
   const cols = withFooter ? M9_HAREKET_COLUMNS : M9_HAREKET_COLUMNS.map(({ footer, ...c }) => c);
   const grid = document.getElementById('m9DetailGrid');
-  grid.innerHTML = renderDataTable(cols, m9DetailRows, { emptyText: 'Kayıt bulunamadı', footer: { hidden: !_m9FooterVisible(), hiddenAggs: _m9FooterHiddenAggs() } });
+  const footer = withFooter ? { hidden: !_m9TotalsVisible(), hiddenAggs: _m9TotalsHidden() } : null;
+  grid.innerHTML = renderDataTable(cols, m9DetailRows, { emptyText: 'Kayıt bulunamadı', footer });
   btGridFooterUpdate(grid);
   m9SyncDetailToolbar();
 }
@@ -597,7 +641,8 @@ let m9EditingIndex = null; // null → Yeni Ekle; sayı → m9FisRows[] içindek
    Hareketler kartı (başlık, Ekle/Sil + arama, InCell grid) üç layout'ta da
    AYNI — id'ler (m9DetailGrid, m9DetailDeleteBtn, m9DetailSummary) ortak
    fonksiyonlar tarafından kullanılıyor. Toplamların gösterimi layout'a göre:
-   summary şeridi (Ly2/Ly3) ya da grid footer'ı + Toplamlar menüsü (Ly1). */
+   grid footer'ı (Ly1) ya da summary şeridi (Ly2/Ly3); Toplamlar menüsü
+   layout'un `totals` hedefi varsa (Ly1/Ly2) çizilir. */
 function _m9HareketlerCardHtml() {
   const lay = M9_FIS_WINDOW_LAYOUTS[m9FisLayout];
   return `
@@ -609,14 +654,12 @@ function _m9HareketlerCardHtml() {
         <div class="m9-fis-moves__toolbar">
           <button type="button" class="bt-btn bt-btn--sm bt-btn--primary-solid" onclick="m9AddDetailRow()">${icoPlus}<span>Ekle</span></button>
           <button type="button" class="bt-btn bt-btn--sm bt-btn--base-flat" id="m9DetailDeleteBtn" disabled onclick="m9DeleteDetailRows()">${icoTrash}<span>Sil</span></button>
-          ${lay.footer ? _m9ViewMenuHtml() : ''}
+          ${lay.totals ? _m9TotalsMenuHtml() : ''}
           ${renderSearchBox({ advanced: true })}
         </div>
         <div class="m9-fis-moves__content">
           <div class="bt-grid-actions-container" id="m9DetailGrid"></div>
-          ${lay.summary ? `<div class="m9-grid-summary" id="m9DetailSummary">${M9_HAREKET_SUMMARY.map((s, i) =>
-            `${i ? '<span class="m9-grid-summary__sep" aria-hidden="true"></span>' : ''}<div class="m9-grid-summary__item"><span class="m9-grid-summary__label">${s.label}</span><span class="m9-grid-summary__value" data-summary="${s.key}">0.00</span></div>`
-          ).join('')}</div>` : ''}
+          ${lay.summary ? `<div class="m9-grid-summary" id="m9DetailSummary"${_m9SummaryShown() ? '' : ' hidden'}>${_m9SummaryItemsHtml()}</div>` : ''}
         </div>
       </div>`;
 }
@@ -772,12 +815,13 @@ function _m9RenderWindowBodyLy3(row, detailRows) {
 }
 /*   ly1 — sol form + sağ Hareketler (Figma 1738:135102); toplamlar grid
            footer'ında, Hareketler toolbar'ında Toplamlar menüsü (summary yok)
-     ly2 — ly1'in summary şeritli versiyonu (Figma 1738:135102 + 1748:158681)
+     ly2 — ly1'in summary şeritli versiyonu (Figma 1738:135102 + 1748:158681);
+           Hareketler toolbar'ında Toplamlar menüsü summary'yi yönetir
      ly3 — dikey, daraltılabilir kartlar + summary (Figma 1752:165085);
            revize edilecek */
 const M9_FIS_WINDOW_LAYOUTS = {
-  ly1: { render: _m9RenderWindowBody, footer: true },
-  ly2: { render: _m9RenderWindowBody, summary: true },
+  ly1: { render: _m9RenderWindowBody, footer: true, totals: 'footer' },
+  ly2: { render: _m9RenderWindowBody, summary: true, totals: 'summary' },
   ly3: { render: _m9RenderWindowBodyLy3, summary: true },
 };
 
