@@ -215,15 +215,7 @@
      Fiş Bilgileri + E-Defter kartları, altta kalan yüksekliği dolduran
      Hareketler. Figma'da TEK Panel (padding 2xl) içinde kartlar arası gap 2xl. */
   #m9RecordWindow .bt-window__body.m9-ly3 { flex-direction: column; overflow-y: auto; padding: var(--bt-space-2xl); gap: var(--bt-space-2xl); }
-  #m9RecordWindow .bt-window__body.m9-ly3 { container-type: inline-size; }
   .m9-ly3-panel { flex-shrink: 0; }
-  /* Fiş (2/3) + E-Defter (1/3) yan yana. Fiş kartının 4 kolonu (iç container ≥900px)
-     ancak ~1420px gövdede sığar; altında kartlar alt alta. */
-  .m9-ly3-row { flex-shrink: 0; display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: var(--bt-space-2xl); }
-  /* Açık kartlar aynı yükseklikte biter; kapalı kart kendi (header) yüksekliğinde kalır */
-  .m9-ly3-row > .m9-ly3-panel { display: flex; flex-direction: column; }
-  .m9-ly3-row .m9-ly3-card:not(.is-collapsed) { flex: 1; }
-  @container (max-width: 1440px) { .m9-ly3-row { grid-template-columns: minmax(0, 1fr); } }
   .m9-ly3-panel--fill { flex: 1 0 auto; min-height: 320px; /* Figma 1080px window'a iki form kartı açıkken sığar */ display: flex; flex-direction: column; }
   .m9-ly3-panel--fill > .m9-fis-moves__card { flex: 1; }
   .m9-ly3-card {
@@ -249,16 +241,8 @@
   .m9-ly3-card__content { margin-top: var(--bt-space-xl); padding: var(--bt-space-2xl); container-type: inline-size; }
   .m9-ly3-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--bt-space-2xl); }
   .m9-ly3-grid__full { grid-column: 1 / -1; }
-  /* Fiş Bilgileri: alanlar solda, Açıklama sağda alanların yüksekliği boyunca uzar */
-  .m9-ly3-split { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 1fr); gap: var(--bt-space-2xl); }
-  .m9-ly3-split__aside { display: flex; }
-  .m9-ly3-split__aside .bt-txa__input { flex: 1; display: flex; }
-  .m9-ly3-split__aside .bt-txa__text { flex: 1; }
-  /* Window küçültülünce (50vw) 4 kolon sıkışmasın; Açıklama alta iner */
-  @container (max-width: 900px) {
-    .m9-ly3-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .m9-ly3-split { grid-template-columns: minmax(0, 1fr); }
-  }
+  /* Window küçültülünce (50vw) 4 kolon sıkışmasın */
+  @container (max-width: 900px) { .m9-ly3-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   .m9-ly3 .m9-grid-summary__value--error { color: var(--bt-text-error-default); }
   /* bkz. #m9Grid notu — .bt-grid-actions-container'a radius ayrıca verilir */
   #m9DetailGrid { border-radius: var(--bt-radius-sm, 4px); }

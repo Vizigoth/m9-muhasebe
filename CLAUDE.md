@@ -144,9 +144,7 @@ Bu, kullanıcının sözlü anlattığı, Figma node yapısından/metadata'sınd
     "Kayıt Sayısı" (`_GRID_AGG_LABELS.count`).
   - **Ly3** (Figma 1752:165085): dikey — daraltılabilir Fiş Bilgileri + E-Defter kartları
     (başlığın tamamı tıklanır, kapalıyken alt başlık özet gösterir, durum localStorage'da),
-    altta Hareketler + summary. Ly3'e özel: Toplam Bakiye ≠ 0 kırmızı. Kullanıcı Ly3'ü revize ediyor:
-    Fiş (2/3) + E-Defter (1/3) kartları yan yana (`.m9-ly3-row`, gövde <1440px'te alt alta; açık
-    kartlar eşit yükseklik), Fiş Bilgileri'nde Açıklama alanların sağında (`.m9-ly3-split`).
+    altta Hareketler + summary. Ly3'e özel: Toplam Bakiye ≠ 0 kırmızı. Kullanıcı Ly3'ü revize edecek.
   - Ortak: window toolbar (sığmayan butonlar Overflow Menu'ye), Hareketler kartı
     (`_m9HareketlerCardHtml`), summary şeridi (formüller VARSAYIM, bkz. `M9_HAREKET_SUMMARY`).
   - Overflow Menu (`renderOverflowMenu`) artık switch/checkbox toggle item'ı (`toggle`, `on`,

@@ -794,8 +794,8 @@ function _m9RenderWindowBodyLy3(row, detailRows) {
   const sm = { size: 'sm' };
   const collapsed = _m9Ly3LoadCollapsed();
 
-  // Figma sırası: 4 kolonluk ızgara; Açıklama sağda, alanların yüksekliği boyunca.
-  const fisBilgileri = `<div class="m9-ly3-split"><div class="m9-ly3-grid">
+  // Figma sırası: 4 kolonluk ızgara, Açıklama tam genişlik en altta.
+  const fisBilgileri = `<div class="m9-ly3-grid">
     ${winFieldHtml('Fiş Numarası', row.fisNo, 'm9f_fisNo', { ...sm, placeholder: 'Fiş Numarası' })}
     ${winDateHtml({ ...sm, id: 'm9f_fisTarihi', label: 'Fiş Tarihi', value: m9ParseDate(row.fisTarihi) })}
     ${winDropdownHtml({ ...sm, id: 'm9f_fisTipi', label: 'Fiş Tipi', value: row.fisTipi, placeholder: 'Fiş Tipi', options: M9_FIS_TIPI_OPTS })}
@@ -807,8 +807,7 @@ function _m9RenderWindowBodyLy3(row, detailRows) {
     ${winDateHtml({ ...sm, id: 'm9f_girisTarihi', label: 'Giriş Tarihi', value: m9ParseDate(row.girisTarihi) })}
     ${winDateHtml({ ...sm, id: 'm9f_sonGuncelleme', label: 'Son Güncelleme Tarihi', value: m9ParseDate(row.sonGuncelleme) })}
     ${winFieldHtml('Kullanıcı', row.kullanici, 'm9f_kullanici', { ...sm, readonly: true })}
-  </div>
-    <div class="m9-ly3-split__aside">${winTextareaHtml('Açıklama', row.aciklama, 'm9f_aciklama', { ...sm, readonly: true })}</div>
+    <div class="m9-ly3-grid__full">${winTextareaHtml('Açıklama', row.aciklama, 'm9f_aciklama', { ...sm, readonly: true })}</div>
   </div>`;
 
   // E-Defter — Ly1'deki tab'ın alanları, aynı 4 kolon desenine yerleştirildi.
@@ -820,12 +819,9 @@ function _m9RenderWindowBodyLy3(row, detailRows) {
     <div class="m9-ly3-grid__full">${winTextareaHtml('Açıklama', row.eDefterAciklama, 'm9f_edAciklama', { ...sm, placeholder: 'Açıklama', readonly: true })}</div>
   </div>`;
 
-  // Fiş + E-Defter kartları yan yana (geniş window'da); dar window'da alt alta.
   body.innerHTML =
-    `<div class="m9-ly3-row">` +
     _m9Ly3CardHtml('fis', 'Fiş Bilgileri', 'Fişin türü, tarihleri ve açıklaması', fisBilgileri, collapsed.fis) +
     _m9Ly3CardHtml('edefter', 'E-Defter Bilgileri', 'E-Defter evrak bilgileri', eDefterBilgileri, collapsed.edefter) +
-    `</div>` +
     `<section class="m9-ly3-panel m9-ly3-panel--fill">${_m9HareketlerCardHtml()}</section>`;
   body.querySelectorAll('.m9-ly3-card.is-collapsed').forEach(_m9Ly3UpdateSubtitle);
 
