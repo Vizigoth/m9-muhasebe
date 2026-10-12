@@ -482,7 +482,7 @@ function m9UpdateDetailSummary() {
      Tutarlar      — Toplam (Borç, Alacak, KDV, Ba/Bs Matrah, Ba/Bs KDV)
      Kur Fiyatı, Birim Fiyatı — Ortalama (oran/fiyat — toplamı anlamsız)
    Miktar farklı birimler içerebildiği için toplanmıyor.
-   Görünüm menüsündeki "Toplam Satırı" switch'i ile gizlenip gösterilir,
+   Toplamlar menüsündeki "Toplam Satırı" switch'i ile gizlenip gösterilir,
    tercih tarayıcıda hatırlanır (localStorage, kişisel tercih). */
 function _m9FooterVisible() {
   try { return localStorage.getItem('m9.ly1.footer') !== '0'; } catch (e) { return true; }
@@ -516,8 +516,10 @@ function m9SetFooterAgg(key, visible) {
   try { localStorage.setItem('m9.ly1.footerHidden', JSON.stringify([...hidden])); } catch (e) {}
   btGridFooterSetAgg(document.getElementById('m9DetailGrid'), key, visible);
 }
-const _m9IcoView = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><line x1="14" x2="14" y1="2" y2="6"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="16" x2="16" y1="18" y2="22"/></svg>`; // Lucide sliders-horizontal
-/* Görünüm menüsü — DS "Overflow Menu Switches Icons" varyantı birebir: sol
+// Toplamlar butonu ikonu — Lucide sigma (menüdeki Σ toplam ikonuyla aynı). Button
+// ikonunda wrapper yok, boyut svg'nin kendi width/height'ında (16×16).
+const _m9IcoTotals = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 7V5a1 1 0 0 0-1-1H6.5a.5.5 0 0 0-.4.8l4.5 6a2 2 0 0 1 0 2.4l-4.5 6a.5.5 0 0 0 .4.8H17a1 1 0 0 0 1-1v-2"/></svg>`;
+/* Toplamlar menüsü — DS "Overflow Menu Switches Icons" varyantı birebir: sol
    slotta anlamsal ikon, label, sağ slotta switch (ek stil YOK). Hesaplanan
    alanlarda ikon aggregate türünü taşır (Σ toplam, ÷ ortalama, # kayıt,
    ↓/↑ en az/en çok), label kolon adıdır. İkonlar .bt-icon wrapper'ında
@@ -542,7 +544,7 @@ function _m9ViewMenuHtml() {
         toggle: 'switch', on: _m9FooterVisible() && !_m9FooterHiddenAggs().includes(key), disabled: !_m9FooterVisible(),
         onClick: `m9SetFooterAgg('${key}', this.getAttribute('aria-checked')==='true')` };
     }) : []),
-  ], { triggerLabel: 'Görünüm', triggerIcon: _m9IcoView });
+  ], { triggerLabel: 'Toplamlar', triggerIcon: _m9IcoTotals });
 }
 
 // Sıra her render'da satır sırasından yeniden üretilir (001, 002, …).
@@ -594,7 +596,7 @@ let m9EditingIndex = null; // null → Yeni Ekle; sayı → m9FisRows[] içindek
    Hareketler kartı (başlık, Ekle/Sil + arama, InCell grid) üç layout'ta da
    AYNI — id'ler (m9DetailGrid, m9DetailDeleteBtn, m9DetailSummary) ortak
    fonksiyonlar tarafından kullanılıyor. Toplamların gösterimi layout'a göre:
-   summary şeridi (Ly2/Ly3) ya da grid footer'ı + Görünüm menüsü (Ly1). */
+   summary şeridi (Ly2/Ly3) ya da grid footer'ı + Toplamlar menüsü (Ly1). */
 function _m9HareketlerCardHtml() {
   const lay = M9_FIS_WINDOW_LAYOUTS[m9FisLayout];
   return `
@@ -768,7 +770,7 @@ function _m9RenderWindowBodyLy3(row, detailRows) {
   _m9AfterBodyRender(detailRows);
 }
 /*   ly1 — sol form + sağ Hareketler (Figma 1738:135102); toplamlar grid
-           footer'ında, Hareketler toolbar'ında Görünüm menüsü (summary yok)
+           footer'ında, Hareketler toolbar'ında Toplamlar menüsü (summary yok)
      ly2 — ly1'in summary şeritli versiyonu (Figma 1738:135102 + 1748:158681)
      ly3 — dikey, daraltılabilir kartlar + summary (Figma 1752:165085);
            revize edilecek */

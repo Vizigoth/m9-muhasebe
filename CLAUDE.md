@@ -114,7 +114,7 @@ Bu, kullanıcının sözlü anlattığı, Figma node yapısından/metadata'sınd
   her layout `{ render, footer?, summary? }`). Diğerleri "henüz hazırlanmadı" placeholder'ı.
   (2026-10-12'de yeniden numaralandı: eski Ly1 → Ly2, eski Ly2 → Ly3, yeni Ly1 eklendi.)
   - **Ly1**: Ly2 ile aynı gövde ama summary şeridi YOK — toplamlar grid footer'ında.
-    Hareketler toolbar'ında "Görünüm" butonu → Overflow Menu, içinde "Toplam Satırı" switch'i
+    Hareketler toolbar'ında "Toplamlar" butonu (Σ ikonu; eski adı "Görünüm", UX değerlendirmesiyle değişti) → Overflow Menu, içinde "Toplam Satırı" switch'i
     (footer'ı gizler/gösterir, localStorage `m9.ly1.footer`), altında "Hesaplanan Alanlar" bölümünde
     her footer aggregate'i için ayrı switch — DS "Overflow Menu Switches Icons" varyantı BİREBİR
     (sol ikon = aggregate türü Σ/÷/#/↓/↑, label = kolon adı, ek CSS YOK;
