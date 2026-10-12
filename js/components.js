@@ -480,20 +480,23 @@ function gridCellHtml(opts) {
    eden 'btgridcelledit' event'i ({ rowIndex, field, value }) — sayfa kendi
    veri modelini (rows[]) güncelleyebilsin diye (docs demo'sunda veri modeli
    yoktu, sadece DOM güncelleniyordu). */
-/* inputType (proje eki): 'decimal' | 'integer' — sayısal kolonlarda sadece
-   rakam (decimal'de + tek ondalık ayırıcı) kabul edilir, bkz. btGridNumericInput.
+/* inputType (proje eki): 'decimal' | 'amount' | 'integer' — sayısal kolonlarda
+   sadece rakam (decimal/amount'ta + tek ondalık ayırıcı) kabul edilir, bkz.
+   btGridNumericInput. amount = para tutarı: en fazla 2 ondalık yazılır, commit'te
+   her zaman 2 ondalığa tamamlanır ("500" → "500.00", bkz. _gridFormatAmount).
    Verilmezse serbest metin (DS'in kendi davranışı). */
 function _gridEditTextboxHtml(value, inputType) {
   const v = (value == null ? '' : String(value)).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
-  const numAttrs = (inputType === 'decimal' || inputType === 'integer')
-    ? ` inputmode="${inputType === 'decimal' ? 'decimal' : 'numeric'}" oninput="btGridNumericInput(this,'${inputType}')"`
+  const numAttrs = (inputType === 'decimal' || inputType === 'amount' || inputType === 'integer')
+    ? ` inputmode="${inputType === 'integer' ? 'numeric' : 'decimal'}" data-input-type="${inputType}" oninput="btGridNumericInput(this,'${inputType}')"`
     : '';
   return `<div class="bt-input bt-input--sm" style="gap:0;width:100%;"><div class="bt-tbx__input"><div class="bt-tbx__field"><input class="bt-tbx__text" type="text" value="${v}"${numAttrs} onkeydown="btGridCellEditKeydown(event,this)" onblur="btGridCellEditBlur(event,this)" /></div></div></div>`;
 }
 /* Sayısal hücre girişi — yazma VE yapıştırmada geçersiz karakterleri anında
    ayıklar (keydown engellemek yapıştırmayı kaçırırdı). integer: sadece rakam.
    decimal: rakam + TEK ondalık ayırıcı; virgül noktaya çevrilir (veri modeli
-   '308.57' biçiminde). İmleç, silinen karakter sayısı kadar geri alınır. */
+   '308.57' biçiminde). amount: decimal + ondalık kısım en fazla 2 hane.
+   İmleç, silinen karakter sayısı kadar geri alınır. */
 window.btGridNumericInput = function (el, kind) {
   const before = el.value;
   let v;
@@ -502,7 +505,7 @@ window.btGridNumericInput = function (el, kind) {
   } else {
     v = before.replace(/,/g, '.').replace(/[^\d.]/g, '');
     const i = v.indexOf('.');
-    if (i >= 0) v = v.slice(0, i + 1) + v.slice(i + 1).replace(/\./g, '');
+    if (i >= 0) v = v.slice(0, i + 1) + v.slice(i + 1).replace(/\./g, '').slice(0, kind === 'amount' ? 2 : undefined);
   }
   if (v === before) return;
   const pos = Math.max(0, (el.selectionStart || 0) - (before.length - v.length));
@@ -655,10 +658,17 @@ function btGridCellSetValue(cell, value) {
   _btGridSyncEditView(cell);
   cell.classList.remove('bt-grid__cell--editing');
 }
+/* Para tutarı → her zaman 2 ondalık ("500" → "500.00", ".5" → "0.50",
+   "12." → "12.00"). Boş (veya sadece ".") boş kalır — Default/placeholder state. */
+function _gridFormatAmount(v) {
+  const n = parseFloat(String(v).replace(',', '.'));
+  return isNaN(n) ? '' : n.toFixed(2);
+}
 function _btGridSyncEditView(cell) {
   const input = cell.querySelector('.bt-grid__cell-edit input.bt-tbx__text');
   const view  = cell.querySelector('.bt-grid__content');
   if (!input || !view) return;
+  if (input.dataset.inputType === 'amount') input.value = _gridFormatAmount(input.value);
   const changed = input.value !== input.defaultValue;
   // Tarih hücresi: input "gg/aa/yyyy", grid/veri "gg / aa / yyyy" (mevcut biçim)
   const value = cell.dataset.editKind === 'date' ? _gridDateToDisplay(input.value) : input.value;

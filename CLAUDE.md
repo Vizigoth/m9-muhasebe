@@ -120,7 +120,9 @@ Bu, kullanıcının sözlü anlattığı, Figma node yapısından/metadata'sınd
     (`_m9HareketlerCardHtml`), summary şeridi (formüller VARSAYIM, bkz. `M9_HAREKET_SUMMARY`).
   - Kart başlıkları kullanıcı isteğiyle Title/sm/Medium (Figma'da md/Medium).
 - **Hareketler grid'i InCell editKind'ları** (`js/components.js` gridCellHtml, kolona `editable`
-  + `editKind`): TextBox (varsayılan; `inputType: 'decimal'|'integer'` ile sadece rakam),
+  + `editKind`): TextBox (varsayılan; `inputType: 'decimal'|'amount'|'integer'` ile sadece rakam —
+  `amount` = para tutarı: Borç/Alacak/Kur Fiyatı/Birim Fiyatı/KDV/Ba-Bs tutarları, en fazla
+  2 ondalık yazılır, commit'te her zaman 2 ondalığa tamamlanır: 500 → 500.00; Miktar `decimal`),
   `lookup` (Select LookUp → sm window, `M9_LOOKUPS`: Ünvan / Hesap Kodu+Ad / Maliyet Merkezi;
   satıra TEK tıklama = seçim, Seç butonu yok), `dropdown` ve `date` (liste/takvim body'ye
   portal'lı `.bt-grid-popover`'da; dropdown açıkken DS'teki `bt-input--active` + 12×7 chevron).
@@ -129,7 +131,7 @@ Bu, kullanıcının sözlü anlattığı, Figma node yapısından/metadata'sınd
   seçenekleri, E-Defter Ödeme/Evrak Türü listeleri, lookup örnek listeleri (veritabanı yok),
   summary formülleri, window toolbar butonlarının işlevi (stub), Açıklama alanlarının salt-okunur
   olması. Önerilmiş ama yapılmamış: kaydetmeden kapatma koruması, grid'de klavye gezinmesi,
-  ondalık basamak sınırı / binlik ayırıcı, DatePicker hücresine de Active state.
+  binlik ayırıcı / Türkçe sayı biçimi (1.234,56), DatePicker hücresine de Active state.
 - **Frozen kolonlu grid'lerde scroll** (`#m9Grid`, `#m9DetailGrid`, app.html): sticky hücreler
   için `.bt-grid__body` overflow visible olmak ZORUNDA — bu, DS'in "body kendi içinde dikey kayar"
   düzeltmesini (c6669e5) devre dışı bırakıp header'ı satırlarla birlikte kaydırıyordu (2026-10-09'da

@@ -190,8 +190,9 @@ function m9ParseDate(str) {
    seçim checkbox'ı da bu kolonda. R = sayısal, sağa yaslı (Figma). */
 const _m9R = 'right';
 /* Sayısal kolonlar — InCell edit'te sadece rakam kabul edilir
-   (btGridNumericInput, js/components.js). decimal: tutar/miktar (tek ondalık
-   ayırıcı), integer: adet ve numara. Evrak Numarası / E-Defter Evrak Numarası
+   (btGridNumericInput, js/components.js). amount: para tutarları — en fazla
+   2 ondalık, commit'te her zaman 2 ondalığa tamamlanır (500 → 500.00);
+   decimal: miktar (tek ondalık ayırıcı, basamak serbest); integer: adet ve numara. Evrak Numarası / E-Defter Evrak Numarası
    ("EFT-…" gibi harf içerebilir) ve Birim (Adet/Kg…) metin olarak kalır. */
 /* Dropdown kolonları — Belge Türü seçenekleri kullanıcıdan (Kağıt / E-Belge);
    E-Defter Evrak Türü formdaki E-Defter alanıyla aynı liste; Kur ve Evrak Tipi
@@ -206,8 +207,8 @@ const M9_HAREKET_DROPDOWNS = {
 // DatePicker kolonları — tarih içeren tüm kolonlar
 const M9_HAREKET_DATES = ['valorTarihi', 'duzeltmeyeEsasTarih', 'baslangicTarihi', 'bitisTarihi', 'eDefterEvrakTarihi'];
 const M9_HAREKET_NUMERIC = {
-  borc: 'decimal', alacak: 'decimal', kurFiyati: 'decimal', miktar: 'decimal',
-  birimFiyati: 'decimal', kdvTutari: 'decimal', baBsMatrah: 'decimal', baBsKdvTutari: 'decimal',
+  borc: 'amount', alacak: 'amount', kurFiyati: 'amount', miktar: 'decimal',
+  birimFiyati: 'amount', kdvTutari: 'amount', baBsMatrah: 'amount', baBsKdvTutari: 'amount',
   borcluAdet: 'integer', alacakAdet: 'integer', cariNo: 'integer', indeksNo: 'integer',
 };
 const M9_HAREKET_COLUMNS = [
