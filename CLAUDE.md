@@ -120,9 +120,9 @@ Bu, kullanıcının sözlü anlattığı, Figma node yapısından/metadata'sınd
     modelinden uyarlandı (kullanıcı referans olarak paylaştı, birebir değil): kolon tanımında
     `footer: { aggregate: 'sum'|'avg'|'min'|'max'|'count', label?, decimals? }` (dizi = alt alta
     satırlar), hesaplamayı grid yapar (`btGridFooterUpdate` — GÖRÜNEN/filtrelenmiş satırların
-    hücre değerleri; render, InCell commit ve filtre sonrası çağrılır). Hücrede solda etiket,
-    sağda değer. Hareketler'de `M9_HAREKET_FOOTER`: Sıra=count, tutarlar=sum, Kur Fiyatı=avg,
-    Birim Fiyatı=min+max (çok satır örneği). CSS app.html `.bt-grid__footer*`. Kullanıcı
+    hücre değerleri; render, InCell commit ve filtre sonrası çağrılır). Hücrede üstte etiket,
+    altında değer (summary gibi alt alta; etiket solda, değer sağda). Hareketler'de `M9_HAREKET_FOOTER`: Sıra=count, tutarlar=sum, Kur/Birim Fiyatı=avg.
+    CSS app.html `.bt-grid__footer*`. Kullanıcı
     onayından sonra DS'e taşınmaya aday.
   - **Ly2** (Figma 1738:135102): solda Segmented Tab'lı form (Fiş / E-Defter), sağda Hareketler,
     altta summary şeridi.

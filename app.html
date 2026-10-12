@@ -82,17 +82,21 @@
   .bt-grid__footer-cell--left  { border-left:  1px solid var(--bt-border-primary-default, #d4d4d4); }
   .bt-grid__footer-cell--right { border-right: 1px solid var(--bt-border-primary-default, #d4d4d4); }
   .bt-grid__footer-cell--frozen-edge { box-shadow: 2px 0 4px rgba(16,24,40,0.08); }
-  /* Aggregate satırları (Telerik FooterTemplate'teki "Sum: … / Average: …"
-     uyarlaması): her aggregate bir satır — solda etiket (Subtitle rengi,
-     regular), sağda değer (medium, tabular). Bir hücrede birden fazla
-     aggregate varsa alt alta dizilir, footer satırı en yüksek hücre kadar
-     uzar (min 36px). Değer 0 / yok → muted (summary'deki boş state ile aynı). */
+  /* Aggregate (Telerik FooterTemplate'teki "Sum: …" uyarlaması) — summary
+     şeridindeki gibi etiket ÜSTTE, değer ALTTA (item gap'i de summary ile aynı
+     --bt-space-xs). Grid'in kendi hizasını tekrarlar: etiket header gibi
+     solda (Subtitle rengi, regular), değer üstteki rakamların tam altında
+     sağda (medium, tabular). Bir hücrede birden fazla aggregate varsa her
+     etiket/değer çifti alt alta dizilir, footer satırı en yüksek hücre kadar
+     uzar. Değer 0 / yok → muted (summary'deki boş state ile aynı). */
   .bt-grid__footer-aggs {
     flex: 1; min-width: 0;
-    display: flex; flex-direction: column; gap: var(--bt-space-2xs, 2px);
+    display: flex; flex-direction: column; gap: var(--bt-space-md, 8px);
     padding: var(--bt-space-sm, 6px) var(--bt-space-md, 8px);
   }
-  .bt-grid__footer-agg { display: flex; align-items: baseline; justify-content: space-between; gap: var(--bt-space-md, 8px); white-space: nowrap; }
+  .bt-grid__footer-agg { display: flex; flex-direction: column; gap: var(--bt-space-xs, 4px); white-space: nowrap; min-width: 0; }
+  .bt-grid__footer-agg .bt-grid__footer-label { align-self: flex-start; }
+  .bt-grid__footer-agg .bt-grid__footer-value { align-self: stretch; text-align: right; }
   .bt-grid__footer-label { font: var(--bt-text-xs-regular, 400 12px/16px var(--font)); color: var(--bt-text-primary-emphasis, #737373); }
   .bt-grid__footer-value {
     font: var(--bt-text-xs-medium, 500 12px/16px var(--font));

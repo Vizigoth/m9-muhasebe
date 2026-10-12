@@ -219,7 +219,7 @@ const M9_HAREKET_FOOTER = {
   borc: { aggregate: 'sum' }, alacak: { aggregate: 'sum' }, kdvTutari: { aggregate: 'sum' },
   baBsMatrah: { aggregate: 'sum' }, baBsKdvTutari: { aggregate: 'sum' },
   kurFiyati: { aggregate: 'avg' },
-  birimFiyati: [{ aggregate: 'min' }, { aggregate: 'max' }],
+  birimFiyati: { aggregate: 'avg' },
 };
 const M9_HAREKET_COLUMNS = [
   // frozen — Fiş Listesi'ndeki Fiş Numarası ile aynı desen (position:sticky +
@@ -480,8 +480,7 @@ function m9UpdateDetailSummary() {
    (btGridFooterUpdate — görünen/filtrelenmiş satırlar üzerinden).
      Sıra          — Kayıt (satır sayısı)
      Tutarlar      — Toplam (Borç, Alacak, KDV, Ba/Bs Matrah, Ba/Bs KDV)
-     Kur Fiyatı    — Ortalama (oran — toplamı anlamsız)
-     Birim Fiyatı  — En Az + En Çok (çok satırlı footer örneği)
+     Kur Fiyatı, Birim Fiyatı — Ortalama (oran/fiyat — toplamı anlamsız)
    Miktar farklı birimler içerebildiği için toplanmıyor.
    Görünüm menüsündeki "Toplam Satırı" switch'i ile gizlenip gösterilir,
    tercih tarayıcıda hatırlanır (localStorage, kişisel tercih). */
