@@ -830,7 +830,7 @@ window.btGridResizeStart = function (event, handle) {
     const newWidth = Math.max(minWidth, startWidth + (e.clientX - startX));
     headerCell.style.flex = '0 0 auto';
     headerCell.style.width = newWidth + 'px';
-    grid.querySelectorAll(`.bt-grid__body .bt-grid__cell:nth-child(${nth})`).forEach(cell => {
+    grid.querySelectorAll(`.bt-grid__body .bt-grid__cell:nth-child(${nth}), .bt-grid__footer > .bt-grid__footer-cell:nth-child(${nth})`).forEach(cell => {
       cell.style.flex = '0 0 auto';
       cell.style.width = newWidth + 'px';
     });
@@ -1114,9 +1114,28 @@ function renderDataTable(columns, rows, opts) {
         placeholder: c.placeholder === true ? c.headerText : c.placeholder,
       })).join('')}</div>`).join('');
 
+  // Footer (proje eki — DS'te grid footer'ı yok): opts.footer = { label,
+  // fields: [field…], hidden }. İlk kolon label'ı taşır, fields'taki kolonların
+  // hücreleri data-field ile işaretlenir; değerleri sayfa doldurur (render
+  // sonrası ve her veri değişiminde). Satır header ile aynı kolon genişlik/frozen
+  // desenini kullanır, resize'da body hücreleriyle birlikte güncellenir.
+  const f = o.footer;
+  const footerHtml = f ? `<div class="bt-grid__footer"${f.hidden ? ' hidden' : ''}>${cols.map((c, i) => {
+    const pos = posFor(i);
+    const fz = frozenInfo[i];
+    const isSum = (f.fields || []).includes(c.field);
+    const cls = ['bt-grid__footer-cell', pos === 'left' ? 'bt-grid__footer-cell--left' : '', pos === 'right' ? 'bt-grid__footer-cell--right' : '',
+      fz && fz.frozenEdge ? 'bt-grid__footer-cell--frozen-edge' : ''].filter(Boolean).join(' ');
+    const w = c.width || 180;
+    const style = (c.fillWidth ? `flex:1;min-width:${w}px;` : `width:${w}px;`) + (fz ? `position:sticky;left:${fz.sticky}px;z-index:5;` : '');
+    const content = i === 0 ? `<span class="bt-grid__content">${f.label || 'Toplam'}</span>`
+      : isSum ? `<span class="bt-grid__content${c.align === 'right' ? ' bt-grid__content--right' : ''}"></span>` : '';
+    return `<div class="${cls}" style="${style}"${isSum ? ` data-field="${c.field}"` : ''}>${content}</div>`;
+  }).join('')}</div>` : '';
+
   return `<div class="bt-grid-scroll-x"><div class="bt-grid">
     <div class="bt-grid__row">${headerRow}</div>
-    <div class="bt-grid__body">${bodyHtml}</div>
+    <div class="bt-grid__body">${bodyHtml}</div>${footerHtml}
   </div></div>`;
 }
 
@@ -1654,6 +1673,23 @@ window.btOvfMenuClose = function (event, item) {
   event.stopPropagation();
   _btOvfCloseAll();
 };
+/* Toggle item (Checkbox / Switch varyantı) — pages-web.js btOvfToggle /
+   _btOvfToggleCls'den birebir: sağ slottaki kontrolün açık class'ını çevirir,
+   aria-checked'i günceller, MENÜYÜ KAPATMAZ (çoklu bağımsız aç/kapat). */
+function _btOvfToggleCls(box) {
+  if (box.classList.contains('bt-checkbox__box')) return 'bt-checkbox__box--checked';
+  if (box.classList.contains('bt-switch__track'))  return 'bt-switch__track--on';
+  return null;
+}
+window.btOvfToggle = function (event, item) {
+  event.stopPropagation();
+  if (item.getAttribute('aria-disabled') === 'true') return;
+  const boxes = item.querySelectorAll(':scope > .bt-ovf-menu__item-row .bt-checkbox__box, :scope > .bt-ovf-menu__item-row .bt-switch__track');
+  const box = boxes[boxes.length - 1];
+  if (!box) return;
+  const on = box.classList.toggle(_btOvfToggleCls(box));
+  item.setAttribute('aria-checked', on ? 'true' : 'false');
+};
 document.addEventListener('click', function (e) {
   if (!e.target.closest('.bt-ovf-menu') && !e.target.closest('.bt-ovf-menu__list')) _btOvfCloseAll();
 });
@@ -1661,17 +1697,40 @@ document.addEventListener('scroll', function () { _btOvfCloseAll(); }, true);
 
 /**
  * renderOverflowMenu — "More" (⋯) tetikleyicili Overflow Menu.
- * items: [{ key, label, icon, onClick }] — icon verilirse 32×32 Left Control
- * slotunda (.bt-icon, svg boyutu CSS'ten), onClick item tıklanınca çalışacak
- * JS string'i. key, item'a data-ovf-key olarak yazılır.
+ * items: [{ key, label, icon, onClick, toggle, on }] — icon verilirse 32×32
+ * Left Control slotunda (.bt-icon, svg boyutu CSS'ten), onClick item
+ * tıklanınca çalışacak JS string'i. key, item'a data-ovf-key olarak yazılır.
+ * toggle: 'switch' | 'checkbox' → DS "Overflow Menu Switches/Checkboxes"
+ * item'ı: sağ slotta gerçek kontrol, tıklama btOvfToggle (menü açık kalır),
+ * on = başlangıç durumu; onClick toggle'dan SONRA çalışır (`this` = item,
+ * yeni durum aria-checked'te).
+ * opts.triggerLabel (+ triggerIcon) → ⋯ yerine metinli tetikleyici buton
+ * (DS "Example"'daki kısa metinli tetikleyici; varyant opts.triggerVariant,
+ * varsayılan base-flat — toolbar komşularıyla aynı).
  */
 function renderOverflowMenu(items, opts) {
   const o = opts || {};
-  const itemHtml = (items || []).map(it => `<div class="bt-ovf-menu__item" role="menuitem" data-ovf-key="${it.key || ''}" onclick="btOvfMenuClose(event,this);${it.onClick || ''}">
-      <div class="bt-ovf-menu__item-row">${it.icon ? `<span class="bt-ovf-menu__ctrl" aria-hidden="true"><span class="bt-icon">${it.icon}</span></span>` : ''}<span class="bt-ovf-menu__label"><span class="bt-ovf-menu__label-text">${it.label}</span></span></div>
-    </div>`).join('');
+  const ctrl = inner => `<span class="bt-ovf-menu__ctrl" aria-hidden="true">${inner}</span>`;
+  const itemHtml = (items || []).map(it => {
+    const label = `<span class="bt-ovf-menu__label"><span class="bt-ovf-menu__label-text">${it.label}</span></span>`;
+    const left = it.icon ? ctrl(`<span class="bt-icon">${it.icon}</span>`) : '';
+    if (it.toggle) {
+      const right = it.toggle === 'switch'
+        ? ctrl(`<div class="bt-switch__track${it.on ? ' bt-switch__track--on' : ''}"><div class="bt-switch__thumb"></div></div>`)
+        : ctrl(`<span class="bt-checkbox__box${it.on ? ' bt-checkbox__box--checked' : ''}">${_chkCheck}</span>`);
+      return `<div class="bt-ovf-menu__item" role="menuitemcheckbox" aria-checked="${it.on ? 'true' : 'false'}" data-ovf-key="${it.key || ''}" onclick="btOvfToggle(event,this);${it.onClick || ''}">
+      <div class="bt-ovf-menu__item-row">${left}${label}${right}</div>
+    </div>`;
+    }
+    return `<div class="bt-ovf-menu__item" role="menuitem" data-ovf-key="${it.key || ''}" onclick="btOvfMenuClose(event,this);${it.onClick || ''}">
+      <div class="bt-ovf-menu__item-row">${left}${label}</div>
+    </div>`;
+  }).join('');
+  const trigger = o.triggerLabel
+    ? `<button type="button" class="bt-btn bt-btn--sm bt-btn--${o.triggerVariant || 'base-flat'}" aria-haspopup="true" onclick="btOvfMenuToggle(event,this);this.blur()">${o.triggerIcon || ''}<span>${o.triggerLabel}</span></button>`
+    : `<button type="button" class="bt-btn bt-btn--sm bt-btn--base-flat bt-btn--icon" aria-label="${o.label || 'Diğer'}" aria-haspopup="true" onclick="btOvfMenuToggle(event,this)">${_ovfIconMore}</button>`;
   return `<div class="bt-ovf-menu${o.className ? ' ' + o.className : ''}">
-    <button type="button" class="bt-btn bt-btn--sm bt-btn--base-flat bt-btn--icon" aria-label="${o.label || 'Diğer'}" aria-haspopup="true" onclick="btOvfMenuToggle(event,this)">${_ovfIconMore}</button>
+    ${trigger}
     <div class="bt-ovf-menu__list" role="menu"><div class="bt-ovf-menu__section" role="group">${itemHtml}</div></div>
   </div>`;
 }

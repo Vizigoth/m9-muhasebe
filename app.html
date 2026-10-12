@@ -61,6 +61,35 @@
      içeriği kadar uzamalı, yoksa en alta kaydırınca header yine kaybolur. */
   #m9Grid .bt-grid,
   #m9DetailGrid .bt-grid { flex: 1 0 auto; }
+  /* ── Grid Footer (proje eki — DS'te grid footer'ı henüz yok; renderDataTable
+     opts.footer). Mevcut grid dilinden türetildi, yeni değer icat edilmedi:
+     header ile aynı 36px yükseklik ve xs-medium font (özet satırı = vurgulu),
+     body hücresiyle aynı 8px içerik padding'i (rakamlar üstteki hücrelerle
+     aynı hizada), zemin summary şeridiyle aynı --bt-surface-primary-subtle
+     (veri satırlarından ayrışsın), frozen kenar gölgesi/sol-sağ kenar
+     border'ları hücrelerle birebir. Scroll container'ın altına sticky —
+     satır çok olsa da her zaman görünür; satırlar azken body flex:1 olduğu
+     için grid alanının en altında durur. margin-top:-1px: son satırın alt
+     border'ıyla üst üste binsin, çift çizgi olmasın. */
+  .bt-grid__footer { display: flex; width: 100%; position: sticky; bottom: 0; z-index: 6; margin-top: -1px; }
+  .bt-grid__footer[hidden] { display: none; }
+  .bt-grid__footer-cell {
+    display: flex; align-items: center; flex-shrink: 0; height: 36px; box-sizing: border-box;
+    background: var(--bt-surface-primary-subtle, #f5f5f5);
+    border-top: 1px solid var(--bt-border-primary-default, #d4d4d4);
+    border-bottom: 1px solid var(--bt-border-primary-default, #d4d4d4);
+  }
+  .bt-grid__footer-cell--left  { border-left:  1px solid var(--bt-border-primary-default, #d4d4d4); }
+  .bt-grid__footer-cell--right { border-right: 1px solid var(--bt-border-primary-default, #d4d4d4); }
+  .bt-grid__footer-cell--frozen-edge { box-shadow: 2px 0 4px rgba(16,24,40,0.08); }
+  .bt-grid__footer-cell .bt-grid__content {
+    padding: var(--bt-space-md, 8px);
+    font: var(--bt-text-xs-medium, 500 12px/16px var(--font));
+    color: var(--bt-text-primary-default, #1a1a1a);
+    font-variant-numeric: tabular-nums;
+  }
+  .bt-grid__footer-cell .bt-grid__content--right { text-align: right; }
+  .bt-grid__footer-cell .bt-grid__content--muted { color: var(--bt-text-primary-muted, #a3a3a3); }
   /* .bt-pl-toolbar'ın display:flex'i [hidden] attribute'unu eziyor — toolbar'ı
      olmayan ekranlar (bkz. router.js m9RenderPlaceholder) için geri veriliyor. */
   .bt-pl-toolbar[hidden] { display: none; }
@@ -167,39 +196,39 @@
   .m9-grid-summary__value { font: var(--bt-text-xs-regular, 400 12px/16px var(--font)); color: var(--bt-text-primary-default); font-variant-numeric: tabular-nums; }
   .m9-grid-summary__value--empty { color: var(--bt-text-primary-muted); }
   .m9-grid-summary__sep { width: 1px; height: 40px; flex-shrink: 0; background: var(--bt-border-primary-default); }
-  /* ── Fiş Detayı Ly2 (Figma 1752:165085) — dikey yığın: daraltılabilir
+  /* ── Fiş Detayı Ly3 (Figma 1752:165085) — dikey yığın: daraltılabilir
      Fiş Bilgileri + E-Defter kartları, altta kalan yüksekliği dolduran
      Hareketler. Figma'da TEK Panel (padding 2xl) içinde kartlar arası gap 2xl. */
-  #m9RecordWindow .bt-window__body.m9-ly2 { flex-direction: column; overflow-y: auto; padding: var(--bt-space-2xl); gap: var(--bt-space-2xl); }
-  .m9-ly2-panel { flex-shrink: 0; }
-  .m9-ly2-panel--fill { flex: 1 0 auto; min-height: 320px; /* Figma 1080px window'a iki form kartı açıkken sığar */ display: flex; flex-direction: column; }
-  .m9-ly2-panel--fill > .m9-fis-moves__card { flex: 1; }
-  .m9-ly2-card {
+  #m9RecordWindow .bt-window__body.m9-ly3 { flex-direction: column; overflow-y: auto; padding: var(--bt-space-2xl); gap: var(--bt-space-2xl); }
+  .m9-ly3-panel { flex-shrink: 0; }
+  .m9-ly3-panel--fill { flex: 1 0 auto; min-height: 320px; /* Figma 1080px window'a iki form kartı açıkken sığar */ display: flex; flex-direction: column; }
+  .m9-ly3-panel--fill > .m9-fis-moves__card { flex: 1; }
+  .m9-ly3-card {
     background: var(--bt-surface-primary-default);
     border: 1px solid var(--bt-border-primary-default);
     border-radius: var(--bt-radius-sm);
   }
-  .m9-ly2-card__header {
+  .m9-ly3-card__header {
     display: flex; align-items: center; justify-content: space-between; gap: var(--bt-space-2xs);
     padding: var(--bt-space-xs) var(--bt-space-2xl);
     border-bottom: 1px solid var(--bt-border-primary-default);
     cursor: pointer; user-select: none;
     transition: border-color 220ms ease;
   }
-  .m9-ly2-card.is-collapsed .m9-ly2-card__header { border-bottom-color: transparent; }
-  .m9-ly2-card__toggle svg { transition: transform 180ms ease; }
-  .m9-ly2-card.is-collapsed .m9-ly2-card__toggle svg { transform: rotate(-90deg); }
+  .m9-ly3-card.is-collapsed .m9-ly3-card__header { border-bottom-color: transparent; }
+  .m9-ly3-card__toggle svg { transition: transform 180ms ease; }
+  .m9-ly3-card.is-collapsed .m9-ly3-card__toggle svg { transform: rotate(-90deg); }
   /* Aç/kapa — grid-rows 0fr↔1fr (sabit yükseklik gerektirmeyen yumuşak geçiş) */
-  .m9-ly2-card__collapse { display: grid; grid-template-rows: 1fr; transition: grid-template-rows 220ms ease; }
-  .m9-ly2-card.is-collapsed .m9-ly2-card__collapse { grid-template-rows: 0fr; }
-  .m9-ly2-card__inner { min-height: 0; overflow: hidden; }
+  .m9-ly3-card__collapse { display: grid; grid-template-rows: 1fr; transition: grid-template-rows 220ms ease; }
+  .m9-ly3-card.is-collapsed .m9-ly3-card__collapse { grid-template-rows: 0fr; }
+  .m9-ly3-card__inner { min-height: 0; overflow: hidden; }
   /* Figma: Header ile Content arası gap-xl (12px) + Content padding 2xl (16px) */
-  .m9-ly2-card__content { margin-top: var(--bt-space-xl); padding: var(--bt-space-2xl); container-type: inline-size; }
-  .m9-ly2-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--bt-space-2xl); }
-  .m9-ly2-grid__full { grid-column: 1 / -1; }
+  .m9-ly3-card__content { margin-top: var(--bt-space-xl); padding: var(--bt-space-2xl); container-type: inline-size; }
+  .m9-ly3-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--bt-space-2xl); }
+  .m9-ly3-grid__full { grid-column: 1 / -1; }
   /* Window küçültülünce (50vw) 4 kolon sıkışmasın */
-  @container (max-width: 900px) { .m9-ly2-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-  .m9-ly2 .m9-grid-summary__value--error { color: var(--bt-text-error-default); }
+  @container (max-width: 900px) { .m9-ly3-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .m9-ly3 .m9-grid-summary__value--error { color: var(--bt-text-error-default); }
   /* bkz. #m9Grid notu — .bt-grid-actions-container'a radius ayrıca verilir */
   #m9DetailGrid { border-radius: var(--bt-radius-sm, 4px); }
   /* Sıra kolonu frozen — scroll kuralları #m9Grid ile ortak (yukarıda). */

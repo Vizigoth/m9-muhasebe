@@ -1,7 +1,8 @@
 /* ============================================================
    M9 MUHASEBE — Ekran: Fiş Listesi
-   Nav: Bilgi Girişi › Yevmiye Fiş Listesi Ly1 / Ly2
-   (route: yevmiye-fis-listesi-ly1 / -ly2 — aynı liste, farklı window layout)
+   Nav: Bilgi Girişi › Yevmiye Fiş Listesi Ly1 / Ly2 / Ly3
+   (route: yevmiye-fis-listesi-ly1 / -ly2 / -ly3 — aynı liste, farklı window
+   layout; bkz. M9_FIS_WINDOW_LAYOUTS)
    Figma "M9 Design" › Main Page 1 (1697:25814): Toolbar + Data Table +
    Kayıt Detayı paneli (bt-window XL). Kabuk (sidebar/header) ve ekran
    geçişi: js/app.js.
@@ -172,6 +173,7 @@ function m9EnsureRecordWindow() {
     const { rowIndex, field, value } = e.detail;
     if (m9DetailRows[rowIndex]) m9DetailRows[rowIndex][field] = value;
     m9UpdateDetailSummary();
+    m9UpdateDetailFooter();
     markDirty();
   });
 }
@@ -459,15 +461,47 @@ function m9UpdateDetailSummary() {
     el.textContent = v.toFixed(2);
     // 0.00 = boş/Default state → Figma'daki muted renk; değer varsa okunur renk
     el.classList.toggle('m9-grid-summary__value--empty', Math.abs(v) < 0.005);
-    // Fiş dengede değil (Σ Borç ≠ Σ Alacak) — sadece Ly2'de renkleniyor (app.html .m9-ly2)
+    // Fiş dengede değil (Σ Borç ≠ Σ Alacak) — sadece Ly3'te renkleniyor (app.html .m9-ly3)
     el.classList.toggle('m9-grid-summary__value--error', el.dataset.summary === 'toplamBakiye' && Math.abs(v) >= 0.005);
   });
+}
+
+/* ── Grid Footer — Ly1 (summary yerine). Para tutarı kolonlarının toplamı
+   grid'in en altındaki sabit (sticky) satırda, ilgili kolonun altında.
+   Birim Fiyatı / Kur Fiyatı fiyat/oran olduğu için toplanmıyor (toplamı
+   anlamsız); Miktar farklı birimler içerebildiği için toplanmıyor.
+   Görünüm menüsündeki "Toplam Satırı" switch'i ile gizlenip gösterilir,
+   tercih tarayıcıda hatırlanır (localStorage, kişisel tercih). */
+const M9_HAREKET_FOOTER_SUM = ['borc', 'alacak', 'kdvTutari', 'baBsMatrah', 'baBsKdvTutari'];
+function _m9FooterVisible() {
+  try { return localStorage.getItem('m9.ly1.footer') !== '0'; } catch (e) { return true; }
+}
+function m9SetDetailFooter(visible) {
+  try { localStorage.setItem('m9.ly1.footer', visible ? '1' : '0'); } catch (e) {}
+  const footer = document.querySelector('#m9DetailGrid .bt-grid__footer');
+  if (footer) footer.hidden = !visible;
+}
+function m9UpdateDetailFooter() {
+  document.querySelectorAll('#m9DetailGrid .bt-grid__footer-cell[data-field] .bt-grid__content').forEach(el => {
+    const v = _m9Sum(m9DetailRows, el.parentElement.dataset.field);
+    el.textContent = v.toFixed(2);
+    el.classList.toggle('bt-grid__content--muted', Math.abs(v) < 0.005); // 0.00 = boş state
+  });
+}
+const _m9IcoView = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><line x1="14" x2="14" y1="2" y2="6"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="16" x2="16" y1="18" y2="22"/></svg>`; // Lucide sliders-horizontal
+function _m9ViewMenuHtml() {
+  return renderOverflowMenu([
+    { key: 'footer', label: 'Toplam Satırı', toggle: 'switch', on: _m9FooterVisible(),
+      onClick: "m9SetDetailFooter(this.getAttribute('aria-checked')==='true')" },
+  ], { triggerLabel: 'Görünüm', triggerIcon: _m9IcoView });
 }
 
 // Sıra her render'da satır sırasından yeniden üretilir (001, 002, …).
 function m9RenderDetailGrid() {
   m9DetailRows.forEach((r, i) => { r.sira = String(i + 1).padStart(3, '0'); });
-  document.getElementById('m9DetailGrid').innerHTML = renderDataTable(M9_HAREKET_COLUMNS, m9DetailRows, { emptyText: 'Kayıt bulunamadı' });
+  const footer = M9_FIS_WINDOW_LAYOUTS[m9FisLayout].footer
+    ? { label: 'Toplam', fields: M9_HAREKET_FOOTER_SUM, hidden: !_m9FooterVisible() } : null;
+  document.getElementById('m9DetailGrid').innerHTML = renderDataTable(M9_HAREKET_COLUMNS, m9DetailRows, { emptyText: 'Kayıt bulunamadı', footer });
   m9SyncDetailToolbar();
 }
 // Seçili satır: satıra tıklanarak (Sıra hücresi — editable hücreler tek
@@ -480,6 +514,7 @@ function m9SelectedDetailIndexes() {
 function m9SyncDetailToolbar() {
   document.getElementById('m9DetailDeleteBtn').disabled = m9SelectedDetailIndexes().length === 0;
   m9UpdateDetailSummary(); // seçim Hesap Bakiyesi'ni değiştirir
+  m9UpdateDetailFooter();
 }
 function m9AddDetailRow() {
   const empty = {};
@@ -504,11 +539,13 @@ function m9DeleteDetailRows() {
 }
 
 let m9EditingIndex = null; // null → Yeni Ekle; sayı → m9FisRows[] içindeki mevcut kayıt
-/* ── Ortak parçalar (Ly1 + Ly2) ─────────────────────────────────────────
-   Hareketler kartı (başlık, Ekle/Sil + arama, InCell grid, summary) iki
-   layout'ta da AYNI — id'ler (m9DetailGrid, m9DetailDeleteBtn,
-   m9DetailSummary) ortak fonksiyonlar tarafından kullanılıyor. */
+/* ── Ortak parçalar (Ly1 + Ly2 + Ly3) ───────────────────────────────────
+   Hareketler kartı (başlık, Ekle/Sil + arama, InCell grid) üç layout'ta da
+   AYNI — id'ler (m9DetailGrid, m9DetailDeleteBtn, m9DetailSummary) ortak
+   fonksiyonlar tarafından kullanılıyor. Toplamların gösterimi layout'a göre:
+   summary şeridi (Ly2/Ly3) ya da grid footer'ı + Görünüm menüsü (Ly1). */
 function _m9HareketlerCardHtml() {
+  const lay = M9_FIS_WINDOW_LAYOUTS[m9FisLayout];
   return `
       <div class="m9-fis-moves__card">
         <div class="m9-fis-moves__header">
@@ -518,19 +555,20 @@ function _m9HareketlerCardHtml() {
         <div class="m9-fis-moves__toolbar">
           <button type="button" class="bt-btn bt-btn--sm bt-btn--primary-solid" onclick="m9AddDetailRow()">${icoPlus}<span>Ekle</span></button>
           <button type="button" class="bt-btn bt-btn--sm bt-btn--base-flat" id="m9DetailDeleteBtn" disabled onclick="m9DeleteDetailRows()">${icoTrash}<span>Sil</span></button>
+          ${lay.footer ? _m9ViewMenuHtml() : ''}
           ${renderSearchBox({ advanced: true })}
         </div>
         <div class="m9-fis-moves__content">
           <div class="bt-grid-actions-container" id="m9DetailGrid"></div>
-          <div class="m9-grid-summary" id="m9DetailSummary">${M9_HAREKET_SUMMARY.map((s, i) =>
+          ${lay.summary ? `<div class="m9-grid-summary" id="m9DetailSummary">${M9_HAREKET_SUMMARY.map((s, i) =>
             `${i ? '<span class="m9-grid-summary__sep" aria-hidden="true"></span>' : ''}<div class="m9-grid-summary__item"><span class="m9-grid-summary__label">${s.label}</span><span class="m9-grid-summary__value" data-summary="${s.key}">0.00</span></div>`
-          ).join('')}</div>
+          ).join('')}</div>` : ''}
         </div>
       </div>`;
 }
 function _m9AfterBodyRender(detailRows) {
-  // Layout'a özel gövde stilleri (app.html'de .m9-ly2 altında)
-  document.getElementById('m9RecordWindow-body').classList.toggle('m9-ly2', m9FisLayout === 'ly2');
+  // Layout'a özel gövde stilleri (app.html'de .m9-ly3 altında)
+  document.getElementById('m9RecordWindow-body').classList.toggle('m9-ly3', m9FisLayout === 'ly3');
   m9DetailRows = detailRows;
   m9RenderDetailGrid();
   // Satır seçimi / checkbox değişince Sil'i güncelle (satırın kendi onclick'i
@@ -580,13 +618,12 @@ function _m9RenderWindowBody(row, detailRows) {
 
   _m9AfterBodyRender(detailRows);
 }
-/* ── Window layout varyantları — aynı Fiş Listesi iki nav item'dan (Ly1/Ly2)
+/* ── Window layout varyantları — aynı Fiş Listesi üç nav item'dan (Ly1/Ly2/Ly3)
    açılır, kayıt açılınca hangi window gövdesinin render edileceği aktif
    ekranın layout'una (m9FisLayout) göre seçilir. Veri (m9FisRows) ortak.
-     ly1 — mevcut layout (Figma 1738:135102: sol form + sağ Hareketler)
-     ly2 — yeni layout denemesi; tasarımı gelene kadar ly1'in birebir kopyası */
+   Tanımlar M9_FIS_WINDOW_LAYOUTS'ta (aşağıda). */
 let m9FisLayout = 'ly1';
-/* ── Ly2 — Figma "Window" (node 1752:165085): üstte daraltılabilir kartlar
+/* ── Ly3 — Figma "Window" (node 1752:165085): üstte daraltılabilir kartlar
    (Fiş Bilgileri, altında E-Defter Bilgileri), altta tam genişlik Hareketler.
    Form alanlarının id'leri Ly1 ile AYNI (m9f_*) → m9SaveRecord ortak.
    Ly1'e göre ek UX iyileştirmeleri (Figma'da yok, değerlendirme sonrası):
@@ -595,59 +632,59 @@ let m9FisLayout = 'ly1';
        (ör. "000001 · 01/01/2026 · Mahsup · Transfer") — kapalıyken de bağlam kaybolmaz.
      • Açık/kapalı durumu tarayıcıda hatırlanır (localStorage, kişisel tercih).
      • Summary'de Toplam Bakiye ≠ 0 (fiş dengede değil) kırmızı gösterilir. */
-const _m9Ly2Chevron = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>`;
-const M9_LY2_CARD_DEFAULTS = { fis: false, edefter: false }; // true = kapalı — Figma'da ikisi de açık
-function _m9Ly2LoadCollapsed() {
-  try { return { ...M9_LY2_CARD_DEFAULTS, ...JSON.parse(localStorage.getItem('m9.ly2.collapsed') || '{}') }; }
-  catch (e) { return { ...M9_LY2_CARD_DEFAULTS }; }
+const _m9Ly3Chevron = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>`;
+const M9_LY3_CARD_DEFAULTS = { fis: false, edefter: false }; // true = kapalı — Figma'da ikisi de açık
+function _m9Ly3LoadCollapsed() {
+  try { return { ...M9_LY3_CARD_DEFAULTS, ...JSON.parse(localStorage.getItem('m9.ly3.collapsed') || '{}') }; }
+  catch (e) { return { ...M9_LY3_CARD_DEFAULTS }; }
 }
-function _m9Ly2SaveCollapsed(key, collapsed) {
-  try { const s = _m9Ly2LoadCollapsed(); s[key] = collapsed; localStorage.setItem('m9.ly2.collapsed', JSON.stringify(s)); } catch (e) {}
+function _m9Ly3SaveCollapsed(key, collapsed) {
+  try { const s = _m9Ly3LoadCollapsed(); s[key] = collapsed; localStorage.setItem('m9.ly3.collapsed', JSON.stringify(s)); } catch (e) {}
 }
 // Kapalı kartın alt başlığında gösterilen özet — o an formda girili değerlerden.
-const M9_LY2_CARD_SUMMARY = {
-  fis:     () => [_m9Ly2Val('m9f_fisNo'), _m9Ly2Val('m9f_fisTarihi'), _m9Ly2Dd('m9f_fisTipi', M9_FIS_TIPI_OPTS), _m9Ly2Dd('m9f_islemTuru', M9_ISLEM_TURU_OPTS)],
-  edefter: () => [_m9Ly2Dd('m9f_edOdemeTuru', M9_ED_ODEME_TURU_OPTS), _m9Ly2Dd('m9f_edEvrakTuru', M9_ED_EVRAK_TURU_OPTS), _m9Ly2Val('m9f_edEvrakNo'), _m9Ly2Val('m9f_edEvrakTarihi')],
+const M9_LY3_CARD_SUMMARY = {
+  fis:     () => [_m9Ly3Val('m9f_fisNo'), _m9Ly3Val('m9f_fisTarihi'), _m9Ly3Dd('m9f_fisTipi', M9_FIS_TIPI_OPTS), _m9Ly3Dd('m9f_islemTuru', M9_ISLEM_TURU_OPTS)],
+  edefter: () => [_m9Ly3Dd('m9f_edOdemeTuru', M9_ED_ODEME_TURU_OPTS), _m9Ly3Dd('m9f_edEvrakTuru', M9_ED_EVRAK_TURU_OPTS), _m9Ly3Val('m9f_edEvrakNo'), _m9Ly3Val('m9f_edEvrakTarihi')],
 };
-function _m9Ly2Val(id) { const el = document.getElementById(id); return el ? el.value.trim() : ''; }
-function _m9Ly2Dd(id, opts) { const el = document.getElementById(id); const t = el ? el.querySelector('.bt-input__value').textContent : ''; return opts.includes(t) ? t : ''; }
-function _m9Ly2UpdateSubtitle(card) {
-  const sub = card.querySelector('.m9-ly2-card__subtitle');
+function _m9Ly3Val(id) { const el = document.getElementById(id); return el ? el.value.trim() : ''; }
+function _m9Ly3Dd(id, opts) { const el = document.getElementById(id); const t = el ? el.querySelector('.bt-input__value').textContent : ''; return opts.includes(t) ? t : ''; }
+function _m9Ly3UpdateSubtitle(card) {
+  const sub = card.querySelector('.m9-ly3-card__subtitle');
   if (!card.classList.contains('is-collapsed')) { sub.textContent = sub.dataset.default; return; }
-  const parts = M9_LY2_CARD_SUMMARY[card.dataset.card]().filter(Boolean);
+  const parts = M9_LY3_CARD_SUMMARY[card.dataset.card]().filter(Boolean);
   sub.textContent = parts.length ? parts.join(' · ') : 'Bilgi girilmedi';
 }
-function m9Ly2ToggleCard(header) {
-  const card = header.closest('.m9-ly2-card');
+function m9Ly3ToggleCard(header) {
+  const card = header.closest('.m9-ly3-card');
   const collapsed = card.classList.toggle('is-collapsed');
   header.querySelector('button').setAttribute('aria-expanded', String(!collapsed));
-  _m9Ly2UpdateSubtitle(card);
-  _m9Ly2SaveCollapsed(card.dataset.card, collapsed);
+  _m9Ly3UpdateSubtitle(card);
+  _m9Ly3SaveCollapsed(card.dataset.card, collapsed);
 }
-function _m9Ly2CardHtml(key, title, subtitle, contentHtml, collapsed) {
+function _m9Ly3CardHtml(key, title, subtitle, contentHtml, collapsed) {
   return `
-    <section class="m9-ly2-panel">
-      <div class="m9-ly2-card${collapsed ? ' is-collapsed' : ''}" data-card="${key}">
-        <div class="m9-ly2-card__header" onclick="m9Ly2ToggleCard(this)">
+    <section class="m9-ly3-panel">
+      <div class="m9-ly3-card${collapsed ? ' is-collapsed' : ''}" data-card="${key}">
+        <div class="m9-ly3-card__header" onclick="m9Ly3ToggleCard(this)">
           <div>
             <div class="m9-fis-moves__title">${title}</div>
-            <div class="m9-fis-moves__subtitle m9-ly2-card__subtitle" data-default="${subtitle}">${subtitle}</div>
+            <div class="m9-fis-moves__subtitle m9-ly3-card__subtitle" data-default="${subtitle}">${subtitle}</div>
           </div>
-          <button type="button" class="bt-btn bt-btn--sm bt-btn--base-flat bt-btn--icon m9-ly2-card__toggle" aria-label="${title} panelini aç/kapat" aria-expanded="${!collapsed}">${_m9Ly2Chevron}</button>
+          <button type="button" class="bt-btn bt-btn--sm bt-btn--base-flat bt-btn--icon m9-ly3-card__toggle" aria-label="${title} panelini aç/kapat" aria-expanded="${!collapsed}">${_m9Ly3Chevron}</button>
         </div>
-        <div class="m9-ly2-card__collapse"><div class="m9-ly2-card__inner">
-          <div class="m9-ly2-card__content">${contentHtml}</div>
+        <div class="m9-ly3-card__collapse"><div class="m9-ly3-card__inner">
+          <div class="m9-ly3-card__content">${contentHtml}</div>
         </div></div>
       </div>
     </section>`;
 }
-function _m9RenderWindowBodyLy2(row, detailRows) {
+function _m9RenderWindowBodyLy3(row, detailRows) {
   const body = document.getElementById('m9RecordWindow-body');
   const sm = { size: 'sm' };
-  const collapsed = _m9Ly2LoadCollapsed();
+  const collapsed = _m9Ly3LoadCollapsed();
 
   // Figma sırası: 4 kolonluk ızgara, Açıklama tam genişlik en altta.
-  const fisBilgileri = `<div class="m9-ly2-grid">
+  const fisBilgileri = `<div class="m9-ly3-grid">
     ${winFieldHtml('Fiş Numarası', row.fisNo, 'm9f_fisNo', { ...sm, placeholder: 'Fiş Numarası' })}
     ${winDateHtml({ ...sm, id: 'm9f_fisTarihi', label: 'Fiş Tarihi', value: m9ParseDate(row.fisTarihi) })}
     ${winDropdownHtml({ ...sm, id: 'm9f_fisTipi', label: 'Fiş Tipi', value: row.fisTipi, placeholder: 'Fiş Tipi', options: M9_FIS_TIPI_OPTS })}
@@ -659,33 +696,42 @@ function _m9RenderWindowBodyLy2(row, detailRows) {
     ${winDateHtml({ ...sm, id: 'm9f_girisTarihi', label: 'Giriş Tarihi', value: m9ParseDate(row.girisTarihi) })}
     ${winDateHtml({ ...sm, id: 'm9f_sonGuncelleme', label: 'Son Güncelleme Tarihi', value: m9ParseDate(row.sonGuncelleme) })}
     ${winFieldHtml('Kullanıcı', row.kullanici, 'm9f_kullanici', { ...sm, readonly: true })}
-    <div class="m9-ly2-grid__full">${winTextareaHtml('Açıklama', row.aciklama, 'm9f_aciklama', { ...sm, readonly: true })}</div>
+    <div class="m9-ly3-grid__full">${winTextareaHtml('Açıklama', row.aciklama, 'm9f_aciklama', { ...sm, readonly: true })}</div>
   </div>`;
 
   // E-Defter — Ly1'deki tab'ın alanları, aynı 4 kolon desenine yerleştirildi.
-  const eDefterBilgileri = `<div class="m9-ly2-grid">
+  const eDefterBilgileri = `<div class="m9-ly3-grid">
     ${winDropdownHtml({ ...sm, id: 'm9f_edOdemeTuru', label: 'Ödeme Türü', value: row.eDefterOdemeTuru, placeholder: 'Ödeme Türü', options: M9_ED_ODEME_TURU_OPTS })}
     ${winDropdownHtml({ ...sm, id: 'm9f_edEvrakTuru', label: 'Evrak Türü', value: row.eDefterEvrakTuru, placeholder: 'Evrak Türü', options: M9_ED_EVRAK_TURU_OPTS })}
     ${winFieldHtml('Evrak Numarası', row.eDefterEvrakNo, 'm9f_edEvrakNo', { ...sm, placeholder: 'Evrak Numarası' })}
     ${winDateHtml({ ...sm, id: 'm9f_edEvrakTarihi', label: 'Evrak Tarihi', value: m9ParseDate(row.eDefterEvrakTarihi) })}
-    <div class="m9-ly2-grid__full">${winTextareaHtml('Açıklama', row.eDefterAciklama, 'm9f_edAciklama', { ...sm, placeholder: 'Açıklama', readonly: true })}</div>
+    <div class="m9-ly3-grid__full">${winTextareaHtml('Açıklama', row.eDefterAciklama, 'm9f_edAciklama', { ...sm, placeholder: 'Açıklama', readonly: true })}</div>
   </div>`;
 
   body.innerHTML =
-    _m9Ly2CardHtml('fis', 'Fiş Bilgileri', 'Fişin türü, tarihleri ve açıklaması', fisBilgileri, collapsed.fis) +
-    _m9Ly2CardHtml('edefter', 'E-Defter Bilgileri', 'E-Defter evrak bilgileri', eDefterBilgileri, collapsed.edefter) +
-    `<section class="m9-ly2-panel m9-ly2-panel--fill">${_m9HareketlerCardHtml()}</section>`;
-  body.querySelectorAll('.m9-ly2-card.is-collapsed').forEach(_m9Ly2UpdateSubtitle);
+    _m9Ly3CardHtml('fis', 'Fiş Bilgileri', 'Fişin türü, tarihleri ve açıklaması', fisBilgileri, collapsed.fis) +
+    _m9Ly3CardHtml('edefter', 'E-Defter Bilgileri', 'E-Defter evrak bilgileri', eDefterBilgileri, collapsed.edefter) +
+    `<section class="m9-ly3-panel m9-ly3-panel--fill">${_m9HareketlerCardHtml()}</section>`;
+  body.querySelectorAll('.m9-ly3-card.is-collapsed').forEach(_m9Ly3UpdateSubtitle);
 
   _m9AfterBodyRender(detailRows);
 }
-const M9_FIS_WINDOW_LAYOUTS = { ly1: _m9RenderWindowBody, ly2: _m9RenderWindowBodyLy2 };
+/*   ly1 — sol form + sağ Hareketler (Figma 1738:135102); toplamlar grid
+           footer'ında, Hareketler toolbar'ında Görünüm menüsü (summary yok)
+     ly2 — ly1'in summary şeritli versiyonu (Figma 1738:135102 + 1748:158681)
+     ly3 — dikey, daraltılabilir kartlar + summary (Figma 1752:165085);
+           revize edilecek */
+const M9_FIS_WINDOW_LAYOUTS = {
+  ly1: { render: _m9RenderWindowBody, footer: true },
+  ly2: { render: _m9RenderWindowBody, summary: true },
+  ly3: { render: _m9RenderWindowBodyLy3, summary: true },
+};
 
 function m9OpenRecordWindow(idx) {
   m9EditingIndex = idx;
   document.getElementById('m9RecordWindow-title').textContent = 'Fiş Detayı';
   const row = m9FisRows[idx];
-  M9_FIS_WINDOW_LAYOUTS[m9FisLayout](row, (row.hareketler || M9_SAMPLE_HAREKETLER).map(r => ({ ...r })));
+  M9_FIS_WINDOW_LAYOUTS[m9FisLayout].render(row, (row.hareketler || M9_SAMPLE_HAREKETLER).map(r => ({ ...r })));
   dexOpenPanel('m9RecordWindow', 'm9RecordWindowOv');
 }
 function m9OpenNewRecordWindow() {
@@ -693,7 +739,7 @@ function m9OpenNewRecordWindow() {
   document.getElementById('m9RecordWindow-title').textContent = 'Yeni Fiş';
   const emptyRow = {};
   M9_FIS_COLUMNS.forEach(c => { if (c.field) emptyRow[c.field] = ''; });
-  M9_FIS_WINDOW_LAYOUTS[m9FisLayout](emptyRow, []);
+  M9_FIS_WINDOW_LAYOUTS[m9FisLayout].render(emptyRow, []);
   dexOpenPanel('m9RecordWindow', 'm9RecordWindowOv');
 }
 function m9SaveRecord() {
@@ -770,3 +816,4 @@ function m9FisListesiScreen(layout) { return {
 }; }
 M9_SCREENS['yevmiye-fis-listesi-ly1'] = m9FisListesiScreen('ly1');
 M9_SCREENS['yevmiye-fis-listesi-ly2'] = m9FisListesiScreen('ly2');
+M9_SCREENS['yevmiye-fis-listesi-ly3'] = m9FisListesiScreen('ly3');

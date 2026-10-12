@@ -109,15 +109,27 @@ Bu, kullanıcının sözlü anlattığı, Figma node yapısından/metadata'sınd
 - Ekranlar hash route'larıyla açılıyor (`js/router.js`): her drawer yaprak item'ının `id`'si
   bir route, ekranlar `js/screens/*.js` içinde `M9_SCREENS[route] = { title, render(toolbar, body) }`
   olarak kaydoluyor ve `app.html`'e script olarak ekleniyor. Şu an sadece
-  Fiş Listesi yazıldı — iki route'tan açılıyor: `yevmiye-fis-listesi-ly1` / `-ly2` (aynı liste
-  ve veri, kayıt window'unun iki layout denemesi; `M9_FIS_WINDOW_LAYOUTS` ile seçiliyor).
-  Diğerleri "henüz hazırlanmadı" placeholder'ı.
-  - **Ly1** (Figma 1738:135102): solda Segmented Tab'lı form (Fiş / E-Defter), sağda Hareketler.
-  - **Ly2** (Figma 1752:165085): dikey — daraltılabilir Fiş Bilgileri + E-Defter kartları
+  Fiş Listesi yazıldı — üç route'tan açılıyor: `yevmiye-fis-listesi-ly1` / `-ly2` / `-ly3` (aynı
+  liste ve veri, kayıt window'unun üç layout denemesi; `M9_FIS_WINDOW_LAYOUTS` ile seçiliyor —
+  her layout `{ render, footer?, summary? }`). Diğerleri "henüz hazırlanmadı" placeholder'ı.
+  (2026-10-12'de yeniden numaralandı: eski Ly1 → Ly2, eski Ly2 → Ly3, yeni Ly1 eklendi.)
+  - **Ly1**: Ly2 ile aynı gövde ama summary şeridi YOK — toplamlar grid footer'ında
+    (`M9_HAREKET_FOOTER_SUM`: Borç, Alacak, KDV, Ba/Bs Matrah, Ba/Bs KDV; Birim/Kur Fiyatı ve
+    Miktar toplanmıyor). Hareketler toolbar'ında "Görünüm" butonu → Overflow Menu, içinde
+    "Toplam Satırı" switch'i (footer'ı gizler/gösterir, localStorage `m9.ly1.footer`).
+    Grid footer DS'te YOK, bu projede tasarlandı (renderDataTable `opts.footer`, CSS app.html
+    `.bt-grid__footer*`) — kullanıcı onayından sonra DS'e taşınmaya aday.
+  - **Ly2** (Figma 1738:135102): solda Segmented Tab'lı form (Fiş / E-Defter), sağda Hareketler,
+    altta summary şeridi.
+  - **Ly3** (Figma 1752:165085): dikey — daraltılabilir Fiş Bilgileri + E-Defter kartları
     (başlığın tamamı tıklanır, kapalıyken alt başlık özet gösterir, durum localStorage'da),
-    altta Hareketler. Ly2'ye özel: Toplam Bakiye ≠ 0 kırmızı.
+    altta Hareketler + summary. Ly3'e özel: Toplam Bakiye ≠ 0 kırmızı. Kullanıcı Ly3'ü revize edecek.
   - Ortak: window toolbar (sığmayan butonlar Overflow Menu'ye), Hareketler kartı
     (`_m9HareketlerCardHtml`), summary şeridi (formüller VARSAYIM, bkz. `M9_HAREKET_SUMMARY`).
+  - Overflow Menu (`renderOverflowMenu`) artık switch/checkbox toggle item'ı (`toggle`, `on`;
+    DS `btOvfToggle`, menü açık kalır) ve metinli tetikleyici (`triggerLabel`/`triggerIcon`) destekliyor.
+    Dikkat: `btToolbarFitOverflow` (window toolbar ResizeObserver) AÇIK TÜM overflow menüleri
+    kapatır — headless screenshot'ta menü bu yüzden görünmez, testte `_btOvfCloseAll`'ı etkisizleştir.
   - Kart başlıkları kullanıcı isteğiyle Title/sm/Medium (Figma'da md/Medium).
 - **Hareketler grid'i InCell editKind'ları** (`js/components.js` gridCellHtml, kolona `editable`
   + `editKind`): TextBox (varsayılan; `inputType: 'decimal'|'amount'|'integer'` ile sadece rakam —
