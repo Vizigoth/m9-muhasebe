@@ -116,10 +116,12 @@ Bu, kullanıcının sözlü anlattığı, Figma node yapısından/metadata'sınd
   - **Ly1**: Ly2 ile aynı gövde ama summary şeridi YOK — toplamlar grid footer'ında.
     Hareketler toolbar'ında "Görünüm" butonu → Overflow Menu, içinde "Toplam Satırı" switch'i
     (footer'ı gizler/gösterir, localStorage `m9.ly1.footer`), altında "Hesaplanan Alanlar" bölümünde
-    her footer aggregate'i için ayrı switch (etiket = kolon adı, açıklama = aggregate türü;
+    her footer aggregate'i için ayrı switch — DS "Overflow Menu Switches Icons" varyantı BİREBİR
+    (sol ikon = aggregate türü Σ/÷/#/↓/↑, label = kolon adı, ek CSS YOK;
     `btGridFooterSetAgg`, gizlenenler localStorage `m9.ly1.footerHidden`). Ana switch kapalıyken
-    alan switch'leri DS Disabled state'inde, kendi durumlarını korur. Menü 240px, açıklama aynı
-    satırda sağda, tüm metinler default text rengi (app.html `.m9-view-menu`, kullanıcı isteği).
+    alan switch'leri DS Disabled state'inde, kendi durumlarını korur. Liste genişliği DS formülüyle
+    (`OVF_LIST_BASE_WIDTH` 160 + slot başına 32 → 224px). DS component'ini ek CSS ile EZME —
+    bir kere label/açıklama sağa-sola yaslanıp DS dışına çıkıldı, kullanıcı düzeltti.
     Grid footer DS'te YOK, bu projede tasarlandı — Telerik Grid'in GridAggregates/FooterTemplate
     modelinden uyarlandı (kullanıcı referans olarak paylaştı, birebir değil): kolon tanımında
     `footer: { aggregate: 'sum'|'avg'|'min'|'max'|'count', label?, decimals? }` (dizi = alt alta

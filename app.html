@@ -94,14 +94,6 @@
     padding: var(--bt-space-sm, 6px) var(--bt-space-md, 8px);
   }
   .bt-grid__footer-agg[hidden] { display: none; }
-  /* Görünüm menüsü (Hareketler toolbar'ı) — kullanıcı isteğiyle: liste 240px,
-     açıklama (aggregate türü) etiketin ALTINDA değil aynı satırda sağda
-     (switch'in solunda), Group Label ve açıklama soluk değil default text rengi.
-     Açıklama `inherit` — Disabled item'da DS'in muted rengini item'dan alır. */
-  .m9-view-menu.bt-ovf-menu__list { min-width: 240px; }
-  .m9-view-menu .bt-ovf-menu__label { flex-direction: row; align-items: center; justify-content: space-between; gap: var(--bt-space-md, 8px); }
-  .m9-view-menu .bt-ovf-menu__label-desc { flex-shrink: 0; color: inherit; }
-  .m9-view-menu .bt-ovf-menu__group-label { color: var(--bt-text-primary-default, #1a1a1a); }
   .bt-grid__footer-agg { display: flex; align-items: baseline; justify-content: space-between; gap: var(--bt-space-md, 8px); white-space: nowrap; min-width: 0; }
   .bt-grid__footer-label { flex-shrink: 0; font: var(--bt-text-xs-medium, 500 12px/16px var(--font)); color: var(--bt-text-primary-default, #1a1a1a); }
   .bt-grid__footer-value {

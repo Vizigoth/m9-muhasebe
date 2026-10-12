@@ -1659,6 +1659,8 @@ window.btTabSelect = function (el) {
    ============================================================ */
 const _ovfIconMore = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>`;
 const OVF_ANIM_MS = 140;
+const OVF_LIST_BASE_WIDTH = 160;   // pages-web.js ile aynı
+const OVF_LIST_CTRL_WIDTH = 32;
 const _btOvfHideTimers = new WeakMap();
 function _btOvfReducedMotion() {
   return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1758,8 +1760,6 @@ document.addEventListener('scroll', function () { _btOvfCloseAll(); }, true);
  * aria-disabled, switch track--disabled; btOvfToggle tıklamayı yok sayar.
  * { group: 'Başlık' } → yeni bir .bt-ovf-menu__section başlatır (DS bölümler
  * arası divider'ı CSS'ten gelir); başlık verilirse Group Label olarak basılır.
- * opts.listClassName → listeye ek class (liste body'ye portal'landığı için
- * sayfaya özel stil wrapper'dan değil buradan verilir).
  * opts.triggerLabel (+ triggerIcon) → ⋯ yerine metinli tetikleyici buton
  * (DS "Example"'daki kısa metinli tetikleyici; varyant opts.triggerVariant,
  * varsayılan base-flat — toolbar komşularıyla aynı).
@@ -1788,6 +1788,11 @@ function renderOverflowMenu(items, opts) {
     if (it.group !== undefined) sections.push({ label: it.group, items: [] });
     else sections[sections.length - 1].items.push(it);
   });
+  // Liste genişliği — pages-web.js ovfMenuHtml ile aynı deterministik formül:
+  // taban OVF_LIST_BASE_WIDTH (160px) + item'lardaki en geniş aktif kontrol
+  // kombinasyonu için slot başına OVF_LIST_CTRL_WIDTH (32px); CSS max-width 320px.
+  const maxCtrls = Math.max(0, ...(items || []).filter(it => it.group === undefined).map(it => (it.icon ? 1 : 0) + (it.toggle ? 1 : 0)));
+  const listMinWidth = OVF_LIST_BASE_WIDTH + maxCtrls * OVF_LIST_CTRL_WIDTH;
   const sectionsHtml = sections.filter(s => s.items.length).map(s =>
     `<div class="bt-ovf-menu__section" role="group">${s.label ? `<div class="bt-ovf-menu__group-label">${s.label}</div>` : ''}${s.items.map(itemHtml).join('')}</div>`
   ).join('');
@@ -1796,7 +1801,7 @@ function renderOverflowMenu(items, opts) {
     : `<button type="button" class="bt-btn bt-btn--sm bt-btn--base-flat bt-btn--icon" aria-label="${o.label || 'Diğer'}" aria-haspopup="true" onclick="btOvfMenuToggle(event,this)">${_ovfIconMore}</button>`;
   return `<div class="bt-ovf-menu${o.className ? ' ' + o.className : ''}">
     ${trigger}
-    <div class="bt-ovf-menu__list${o.listClassName ? ' ' + o.listClassName : ''}" role="menu">${sectionsHtml}</div>
+    <div class="bt-ovf-menu__list" role="menu" style="min-width:${listMinWidth}px">${sectionsHtml}</div>
   </div>`;
 }
 
