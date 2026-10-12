@@ -244,8 +244,9 @@
   .m9-ly3-card__collapse { display: grid; grid-template-rows: 1fr; transition: grid-template-rows 220ms ease; }
   .m9-ly3-card.is-collapsed .m9-ly3-card__collapse { grid-template-rows: 0fr; }
   .m9-ly3-card__inner { min-height: 0; overflow: hidden; }
-  /* Figma: Header ile Content arası gap-xl (12px) + Content padding 2xl (16px) */
-  .m9-ly3-card__content { margin-top: var(--bt-space-xl); padding: var(--bt-space-2xl); container-type: inline-size; }
+  /* Header ile ilk alan arası yalnızca Content padding'i (2xl). Figma'daki Container gap-xl
+     (12px) + Content padding-top üst üste bindiği için hata — uygulanmıyor. */
+  .m9-ly3-card__content { padding: var(--bt-space-2xl); container-type: inline-size; }
   .m9-ly3-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--bt-space-2xl); }
   .m9-ly3-grid--5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
   .m9-ly3-grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
