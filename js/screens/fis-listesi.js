@@ -487,16 +487,41 @@ function m9UpdateDetailSummary() {
 function _m9FooterVisible() {
   try { return localStorage.getItem('m9.ly1.footer') !== '0'; } catch (e) { return true; }
 }
+// Toplam Satırı (ana switch) — kapalıyken alan switch'leri Disabled olur ama
+// kendi durumlarını korur (tekrar açılınca aynı alanlar görünür).
 function m9SetDetailFooter(visible) {
   try { localStorage.setItem('m9.ly1.footer', visible ? '1' : '0'); } catch (e) {}
   const footer = document.querySelector('#m9DetailGrid .bt-grid__footer');
   if (footer) footer.hidden = !visible;
+  document.querySelectorAll('.bt-ovf-menu__item[data-ovf-key^="agg:"]').forEach(it => {
+    it.classList.toggle('bt-ovf-menu__item--disabled', !visible);
+    if (visible) it.removeAttribute('aria-disabled'); else it.setAttribute('aria-disabled', 'true');
+    it.querySelector('.bt-switch__track').classList.toggle('bt-switch__track--disabled', !visible);
+  });
+}
+// Tek tek footer alanları — gizlenenler 'field:aggregate' listesi olarak hatırlanır.
+function _m9FooterHiddenAggs() {
+  try { return JSON.parse(localStorage.getItem('m9.ly1.footerHidden') || '[]'); } catch (e) { return []; }
+}
+function m9SetFooterAgg(key, visible) {
+  const hidden = new Set(_m9FooterHiddenAggs());
+  if (visible) hidden.delete(key); else hidden.add(key);
+  try { localStorage.setItem('m9.ly1.footerHidden', JSON.stringify([...hidden])); } catch (e) {}
+  btGridFooterSetAgg(document.getElementById('m9DetailGrid'), key, visible);
 }
 const _m9IcoView = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><line x1="14" x2="14" y1="2" y2="6"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="16" x2="16" y1="18" y2="22"/></svg>`; // Lucide sliders-horizontal
 function _m9ViewMenuHtml() {
   return renderOverflowMenu([
     { key: 'footer', label: 'Toplam Satırı', toggle: 'switch', on: _m9FooterVisible(),
       onClick: "m9SetDetailFooter(this.getAttribute('aria-checked')==='true')" },
+    { group: 'Hesaplanan Alanlar' },
+    // Kolon sırasıyla her footer aggregate'i: etiket = kolon adı, açıklama = aggregate türü
+    ...M9_HAREKET_COLUMNS.flatMap(c => c.footer ? [].concat(c.footer).map(a => {
+      const key = `${c.field}:${a.aggregate}`;
+      return { key: 'agg:' + key, label: c.headerText, desc: a.label || _GRID_AGG_LABELS[a.aggregate],
+        toggle: 'switch', on: !_m9FooterHiddenAggs().includes(key), disabled: !_m9FooterVisible(),
+        onClick: `m9SetFooterAgg('${key}', this.getAttribute('aria-checked')==='true')` };
+    }) : []),
   ], { triggerLabel: 'Görünüm', triggerIcon: _m9IcoView });
 }
 
@@ -507,7 +532,7 @@ function m9RenderDetailGrid() {
   const withFooter = M9_FIS_WINDOW_LAYOUTS[m9FisLayout].footer;
   const cols = withFooter ? M9_HAREKET_COLUMNS : M9_HAREKET_COLUMNS.map(({ footer, ...c }) => c);
   const grid = document.getElementById('m9DetailGrid');
-  grid.innerHTML = renderDataTable(cols, m9DetailRows, { emptyText: 'Kayıt bulunamadı', footer: { hidden: !_m9FooterVisible() } });
+  grid.innerHTML = renderDataTable(cols, m9DetailRows, { emptyText: 'Kayıt bulunamadı', footer: { hidden: !_m9FooterVisible(), hiddenAggs: _m9FooterHiddenAggs() } });
   btGridFooterUpdate(grid);
   m9SyncDetailToolbar();
 }

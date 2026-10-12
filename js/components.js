@@ -1093,6 +1093,13 @@ window.btGridFooterUpdate = function (el) {
   });
 };
 
+// Tek bir footer aggregate'ini gizler/gösterir (key = 'field:aggregate').
+window.btGridFooterSetAgg = function (el, key, visible) {
+  const grid = el && (el.classList.contains('bt-grid') ? el : (el.closest('.bt-grid') || el.querySelector('.bt-grid')));
+  const agg = grid && grid.querySelector(`:scope > .bt-grid__footer .bt-grid__footer-agg[data-agg-key="${key}"]`);
+  if (agg) agg.hidden = !visible;
+};
+
 function renderDataTable(columns, rows, opts) {
   const o = opts || {};
   const cols = columns || [];
@@ -1152,8 +1159,9 @@ function renderDataTable(columns, rows, opts) {
   // + FooterTemplate modelinden uyarlandı). Kolon tanımında footer:
   //   { aggregate: 'sum'|'avg'|'min'|'max'|'count', label?, decimals? }
   //   veya bunların dizisi (aynı hücrede alt alta satırlar).
-  // Herhangi bir kolonda footer varsa satır çizilir; opts.footer = { hidden }
-  // başlangıçta gizler. Değerleri grid'in KENDİSİ hesaplar (btGridFooterUpdate)
+  // Herhangi bir kolonda footer varsa satır çizilir; opts.footer = { hidden,
+  // hiddenAggs: ['field:aggregate', …] } satırı / tek tek aggregate'leri
+  // başlangıçta gizler (sonradan: btGridFooterSetAgg). Değerleri grid'in KENDİSİ hesaplar (btGridFooterUpdate)
   // — görünen (filtrelenmiş) satırların hücre değerlerinden. Satır header ile
   // aynı kolon genişlik/frozen desenini kullanır, resize'da birlikte güncellenir.
   const hasFooter = cols.some(c => c.footer);
@@ -1167,7 +1175,9 @@ function renderDataTable(columns, rows, opts) {
     const style = (c.fillWidth ? `flex:1;min-width:${w}px;` : `width:${w}px;`) + (fz ? `position:sticky;left:${fz.sticky}px;z-index:5;` : '');
     const content = aggs.length ? `<div class="bt-grid__footer-aggs">${aggs.map(a => {
       const dec = a.decimals != null ? a.decimals : (a.aggregate === 'count' ? 0 : 2);
-      return `<div class="bt-grid__footer-agg" data-agg="${a.aggregate}" data-decimals="${dec}"><span class="bt-grid__footer-label">${a.label || _GRID_AGG_LABELS[a.aggregate] || ''}</span><span class="bt-grid__footer-value"></span></div>`;
+      const key = `${c.field}:${a.aggregate}`;
+      const hiddenAttr = o.footer && (o.footer.hiddenAggs || []).includes(key) ? ' hidden' : '';
+      return `<div class="bt-grid__footer-agg" data-agg="${a.aggregate}" data-agg-key="${key}" data-decimals="${dec}"${hiddenAttr}><span class="bt-grid__footer-label">${a.label || _GRID_AGG_LABELS[a.aggregate] || ''}</span><span class="bt-grid__footer-value"></span></div>`;
     }).join('')}</div>` : '';
     return `<div class="${cls}" style="${style}">${content}</div>`;
   }).join('')}</div>` : '';
@@ -1743,6 +1753,11 @@ document.addEventListener('scroll', function () { _btOvfCloseAll(); }, true);
  * item'ı: sağ slotta gerçek kontrol, tıklama btOvfToggle (menü açık kalır),
  * on = başlangıç durumu; onClick toggle'dan SONRA çalışır (`this` = item,
  * yeni durum aria-checked'te).
+ * desc → label altında açıklama satırı (.bt-ovf-menu__label-desc).
+ * disabled (toggle item'ında) → DS Disabled state: item--disabled +
+ * aria-disabled, switch track--disabled; btOvfToggle tıklamayı yok sayar.
+ * { group: 'Başlık' } → yeni bir .bt-ovf-menu__section başlatır (DS bölümler
+ * arası divider'ı CSS'ten gelir); başlık verilirse Group Label olarak basılır.
  * opts.triggerLabel (+ triggerIcon) → ⋯ yerine metinli tetikleyici buton
  * (DS "Example"'daki kısa metinli tetikleyici; varyant opts.triggerVariant,
  * varsayılan base-flat — toolbar komşularıyla aynı).
@@ -1750,27 +1765,36 @@ document.addEventListener('scroll', function () { _btOvfCloseAll(); }, true);
 function renderOverflowMenu(items, opts) {
   const o = opts || {};
   const ctrl = inner => `<span class="bt-ovf-menu__ctrl" aria-hidden="true">${inner}</span>`;
-  const itemHtml = (items || []).map(it => {
-    const label = `<span class="bt-ovf-menu__label"><span class="bt-ovf-menu__label-text">${it.label}</span></span>`;
+  const itemHtml = it => {
+    const label = `<span class="bt-ovf-menu__label"><span class="bt-ovf-menu__label-text">${it.label}</span>${it.desc ? `<span class="bt-ovf-menu__label-desc">${it.desc}</span>` : ''}</span>`;
     const left = it.icon ? ctrl(`<span class="bt-icon">${it.icon}</span>`) : '';
     if (it.toggle) {
       const right = it.toggle === 'switch'
-        ? ctrl(`<div class="bt-switch__track${it.on ? ' bt-switch__track--on' : ''}"><div class="bt-switch__thumb"></div></div>`)
+        ? ctrl(`<div class="bt-switch__track${it.on ? ' bt-switch__track--on' : ''}${it.disabled ? ' bt-switch__track--disabled' : ''}"><div class="bt-switch__thumb"></div></div>`)
         : ctrl(`<span class="bt-checkbox__box${it.on ? ' bt-checkbox__box--checked' : ''}">${_chkCheck}</span>`);
-      return `<div class="bt-ovf-menu__item" role="menuitemcheckbox" aria-checked="${it.on ? 'true' : 'false'}" data-ovf-key="${it.key || ''}" onclick="btOvfToggle(event,this);${it.onClick || ''}">
+      return `<div class="bt-ovf-menu__item${it.disabled ? ' bt-ovf-menu__item--disabled' : ''}" role="menuitemcheckbox" aria-checked="${it.on ? 'true' : 'false'}"${it.disabled ? ' aria-disabled="true"' : ''} data-ovf-key="${it.key || ''}" onclick="btOvfToggle(event,this);${it.onClick || ''}">
       <div class="bt-ovf-menu__item-row">${left}${label}${right}</div>
     </div>`;
     }
     return `<div class="bt-ovf-menu__item" role="menuitem" data-ovf-key="${it.key || ''}" onclick="btOvfMenuClose(event,this);${it.onClick || ''}">
       <div class="bt-ovf-menu__item-row">${left}${label}</div>
     </div>`;
-  }).join('');
+  };
+  // { group } işaretlerinde section'lara böl
+  const sections = [{ label: null, items: [] }];
+  (items || []).forEach(it => {
+    if (it.group !== undefined) sections.push({ label: it.group, items: [] });
+    else sections[sections.length - 1].items.push(it);
+  });
+  const sectionsHtml = sections.filter(s => s.items.length).map(s =>
+    `<div class="bt-ovf-menu__section" role="group">${s.label ? `<div class="bt-ovf-menu__group-label">${s.label}</div>` : ''}${s.items.map(itemHtml).join('')}</div>`
+  ).join('');
   const trigger = o.triggerLabel
     ? `<button type="button" class="bt-btn bt-btn--sm bt-btn--${o.triggerVariant || 'base-flat'}" aria-haspopup="true" onclick="btOvfMenuToggle(event,this);this.blur()">${o.triggerIcon || ''}<span>${o.triggerLabel}</span></button>`
     : `<button type="button" class="bt-btn bt-btn--sm bt-btn--base-flat bt-btn--icon" aria-label="${o.label || 'Diğer'}" aria-haspopup="true" onclick="btOvfMenuToggle(event,this)">${_ovfIconMore}</button>`;
   return `<div class="bt-ovf-menu${o.className ? ' ' + o.className : ''}">
     ${trigger}
-    <div class="bt-ovf-menu__list" role="menu"><div class="bt-ovf-menu__section" role="group">${itemHtml}</div></div>
+    <div class="bt-ovf-menu__list" role="menu">${sectionsHtml}</div>
   </div>`;
 }
 

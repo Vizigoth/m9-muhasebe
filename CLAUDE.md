@@ -115,7 +115,10 @@ Bu, kullanıcının sözlü anlattığı, Figma node yapısından/metadata'sınd
   (2026-10-12'de yeniden numaralandı: eski Ly1 → Ly2, eski Ly2 → Ly3, yeni Ly1 eklendi.)
   - **Ly1**: Ly2 ile aynı gövde ama summary şeridi YOK — toplamlar grid footer'ında.
     Hareketler toolbar'ında "Görünüm" butonu → Overflow Menu, içinde "Toplam Satırı" switch'i
-    (footer'ı gizler/gösterir, localStorage `m9.ly1.footer`).
+    (footer'ı gizler/gösterir, localStorage `m9.ly1.footer`), altında "Hesaplanan Alanlar" bölümünde
+    her footer aggregate'i için ayrı switch (etiket = kolon adı, açıklama = aggregate türü;
+    `btGridFooterSetAgg`, gizlenenler localStorage `m9.ly1.footerHidden`). Ana switch kapalıyken
+    alan switch'leri DS Disabled state'inde, kendi durumlarını korur.
     Grid footer DS'te YOK, bu projede tasarlandı — Telerik Grid'in GridAggregates/FooterTemplate
     modelinden uyarlandı (kullanıcı referans olarak paylaştı, birebir değil): kolon tanımında
     `footer: { aggregate: 'sum'|'avg'|'min'|'max'|'count', label?, decimals? }` (dizi = alt alta
