@@ -231,8 +231,9 @@
   /* ── Fiş Detayı Ly3 (Figma 1752:165085) — dikey yığın: daraltılabilir
      Fiş Bilgileri + E-Defter kartları, altta kalan yüksekliği dolduran
      Hareketler. Figma'da TEK Panel (padding 2xl) içinde kartlar arası gap 2xl. */
-  #m9RecordWindow .bt-window__body.m9-ly3 { flex-direction: column; overflow-y: auto; padding: var(--bt-space-2xl); gap: var(--bt-space-2xl); }
-  #m9RecordWindow .bt-window__body.m9-ly3 { container-type: inline-size; }
+  /* Gövde Ly1 gibi yatay (row) kalır: solda kayan kart yığını (.m9-ly3-main), Ly6'da sağda Satır Detayı */
+  .m9-ly3-main { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow-y: auto; padding: var(--bt-space-2xl); gap: var(--bt-space-2xl); }
+  .m9-ly3-main { container-type: inline-size; }
   .m9-ly3-panel { flex-shrink: 0; }
   /* Figma 1782:281034 — Fiş (1167) + E-Defter (647) yan yana, gap 2xl, eşit yükseklik.
      Fiş'in 5 kolonu ~1360px gövdenin altında sığmaz → kartlar alt alta. */

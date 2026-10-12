@@ -160,7 +160,10 @@ Bu, kullanıcının sözlü anlattığı, Figma node yapısından/metadata'sınd
   - **Ly6** (2026-10-12): Ly5'in daraltılabilir versiyonu (layout `collapsible: true`) — Fiş,
     E-Defter VE Hareketler kartları aç/kapa (başlığın tamamı tıklanır, chevron, `m9Ly3ToggleCard`).
     Kapalı kartın alt başlığında özet (`M9_LY3_CARD_SUMMARY`; Hareketler: "4 hareket · Borç … ·
-    Alacak …"). Durum layout başına localStorage `m9.ly6.collapsed` (varsayılan hepsi açık).
+    Alacak …"). Durum layout başına localStorage `m9.ly6.collapsed` (varsayılan Fiş ve E-Defter
+    KAPALI, Hareketler açık — kullanıcı kararı). Ly1'in Satır Detayı da var (layout `rowDetail: true`):
+    Ly3…Ly6 gövdesi yatay — kartlar kayan `.m9-ly3-main` içinde (container query'ler ona bağlı),
+    Satır Detayı onun sağında 440px açılır; Hareketler kapatılınca Satır Detayı da kapanır.
     Hareketler kapalıyken 640px min-height bırakılır (`:has(.is-collapsed)`); açıkken toolbar
     + grid `.m9-fis-moves__body` içinde (header–toolbar arası gap toolbar margin'i, 0fr'de kapansın diye).
   - Ortak: window toolbar (sığmayan butonlar Overflow Menu'ye), Hareketler kartı
