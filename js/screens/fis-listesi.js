@@ -487,16 +487,23 @@ function m9UpdateDetailSummary() {
 function _m9FooterVisible() {
   try { return localStorage.getItem('m9.ly1.footer') !== '0'; } catch (e) { return true; }
 }
-// Toplam Satırı (ana switch) — kapalıyken alan switch'leri Disabled olur ama
-// kendi durumlarını korur (tekrar açılınca aynı alanlar görünür).
+// Toplam Satırı (ana switch) — kapalıyken alan switch'leri Off · Disabled
+// görünür (footer kapalıyken hiçbir alan "açık" görünmesin — kullanıcı kararı);
+// alanların kendi tercihi localStorage'da saklı kalır, ana switch açılınca
+// her switch o tercihe göre geri gelir.
 function m9SetDetailFooter(visible) {
   try { localStorage.setItem('m9.ly1.footer', visible ? '1' : '0'); } catch (e) {}
   const footer = document.querySelector('#m9DetailGrid .bt-grid__footer');
   if (footer) footer.hidden = !visible;
+  const hidden = _m9FooterHiddenAggs();
   document.querySelectorAll('.bt-ovf-menu__item[data-ovf-key^="agg:"]').forEach(it => {
+    const on = visible && !hidden.includes(it.dataset.ovfKey.slice(4));
     it.classList.toggle('bt-ovf-menu__item--disabled', !visible);
     if (visible) it.removeAttribute('aria-disabled'); else it.setAttribute('aria-disabled', 'true');
-    it.querySelector('.bt-switch__track').classList.toggle('bt-switch__track--disabled', !visible);
+    it.setAttribute('aria-checked', String(on));
+    const track = it.querySelector('.bt-switch__track');
+    track.classList.toggle('bt-switch__track--disabled', !visible);
+    track.classList.toggle('bt-switch__track--on', on);
   });
 }
 // Tek tek footer alanları — gizlenenler 'field:aggregate' listesi olarak hatırlanır.
@@ -532,7 +539,7 @@ function _m9ViewMenuHtml() {
     ...M9_HAREKET_COLUMNS.flatMap(c => c.footer ? [].concat(c.footer).map(a => {
       const key = `${c.field}:${a.aggregate}`;
       return { key: 'agg:' + key, label: c.headerText, icon: _M9_ICO_AGG[a.aggregate],
-        toggle: 'switch', on: !_m9FooterHiddenAggs().includes(key), disabled: !_m9FooterVisible(),
+        toggle: 'switch', on: _m9FooterVisible() && !_m9FooterHiddenAggs().includes(key), disabled: !_m9FooterVisible(),
         onClick: `m9SetFooterAgg('${key}', this.getAttribute('aria-checked')==='true')` };
     }) : []),
   ], { triggerLabel: 'Görünüm', triggerIcon: _m9IcoView });

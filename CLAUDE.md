@@ -119,7 +119,8 @@ Bu, kullanıcının sözlü anlattığı, Figma node yapısından/metadata'sınd
     her footer aggregate'i için ayrı switch — DS "Overflow Menu Switches Icons" varyantı BİREBİR
     (sol ikon = aggregate türü Σ/÷/#/↓/↑, label = kolon adı, ek CSS YOK;
     `btGridFooterSetAgg`, gizlenenler localStorage `m9.ly1.footerHidden`). Ana switch kapalıyken
-    alan switch'leri DS Disabled state'inde, kendi durumlarını korur. Liste genişliği DS formülüyle
+    alan switch'leri Off · Disabled görünür (kullanıcı kararı — footer kapalıyken hiçbir alan açık
+    görünmesin); her alanın tercihi localStorage'da saklı kalır, ana switch açılınca geri gelir. Liste genişliği DS formülüyle
     (`OVF_LIST_BASE_WIDTH` 160 + slot başına 32 → 224px). DS component'ini ek CSS ile EZME —
     bir kere label/açıklama sağa-sola yaslanıp DS dışına çıkıldı, kullanıcı düzeltti.
     Grid footer DS'te YOK, bu projede tasarlandı — Telerik Grid'in GridAggregates/FooterTemplate
