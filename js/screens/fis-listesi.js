@@ -225,10 +225,11 @@ const M9_HAREKET_COLUMNS = [
   // frozen — Fiş Listesi'ndeki Fiş Numarası ile aynı desen (position:sticky +
   // sağ kenar gölgesi); bkz. app.html'deki #m9DetailGrid .bt-grid__body notu.
   { field: 'sira',                  headerText: 'Sıra',                         width: 156, headerCheckbox: true, cellLeading: 'checkbox', frozen: true },
-  { field: 'cariNo',                headerText: 'Cari Numarası',                width: 156, align: _m9R },
-  // Ünvan — InCell edit'i Select LookUp: sol artı ikonu sm window'da cari
-  // listesini açar (m9OpenLookup('unvan')), seçim hücreye yazılır.
-  { field: 'unvan',                 headerText: 'Ünvan',                        width: 193, cellLeading: 'dot', editKind: 'lookup', editLookup: () => "m9OpenLookup('unvan', this)" },
+  // Cari Numarası / Ünvan — InCell edit'i Select LookUp: sol artı ikonu sm
+  // window'da AYNI cari listesini açar (m9OpenLookup('cari')); seçilen cari
+  // iki hücreye birden yazılır (Hesap Kodu / Ad ile aynı desen).
+  { field: 'cariNo',                headerText: 'Cari Numarası',                width: 156, align: _m9R, editKind: 'lookup', editLookup: () => "m9OpenLookup('cari', this)" },
+  { field: 'unvan',                 headerText: 'Ünvan',                        width: 193, cellLeading: 'dot', editKind: 'lookup', editLookup: () => "m9OpenLookup('cari', this)" },
   { field: 'tarihBazliUnvan',       headerText: 'Tarih Bazlı Ünvan',            width: 193, cellLeading: 'dot' },
   // Hesap Kodu / Ad / Maliyet Merkezi — Select LookUp (bkz. M9_LOOKUPS)
   { field: 'hesapKodu',             headerText: 'Hesap Kodu',                   width: 193, editKind: 'lookup', editLookup: () => "m9OpenLookup('hesap', this)" },
@@ -345,15 +346,15 @@ const M9_MALIYET_MERKEZLERI = [
    Hesap Kodu ve Ad AYNI hesap planı listesini kullanır; hangisinden seçilirse
    seçilsin ikisi birlikte dolar (tutarsız kod/ad çifti oluşmasın). */
 const M9_LOOKUPS = {
-  unvan: {
-    title: 'Ünvan Seç',
+  cari: {
+    title: 'Cari Seç',
     rows: M9_CARI_LIST,
     columns: [
       { field: 'cariNo', headerText: 'Cari Numarası', width: 140, align: 'right', filter: true },
       { field: 'unvan',  headerText: 'Ünvan',         width: 220, filter: true },
       { field: 'sehir',  headerText: 'Şehir',         width: 120, filter: true, fillWidth: true },
     ],
-    apply: r => ({ unvan: r.unvan }),
+    apply: r => ({ cariNo: r.cariNo, unvan: r.unvan }),
   },
   hesap: {
     title: 'Hesap Seç',

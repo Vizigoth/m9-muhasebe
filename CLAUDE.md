@@ -148,7 +148,7 @@ Bu, kullanıcının sözlü anlattığı, Figma node yapısından/metadata'sınd
   + `editKind`): TextBox (varsayılan; `inputType: 'decimal'|'amount'|'integer'` ile sadece rakam —
   `amount` = para tutarı: Borç/Alacak/Kur Fiyatı/Birim Fiyatı/KDV/Ba-Bs tutarları, en fazla
   2 ondalık yazılır, commit'te her zaman 2 ondalığa tamamlanır: 500 → 500.00; Miktar `decimal`),
-  `lookup` (Select LookUp → sm window, `M9_LOOKUPS`: Ünvan / Hesap Kodu+Ad / Maliyet Merkezi;
+  `lookup` (Select LookUp → sm window, `M9_LOOKUPS`: Cari (Cari Numarası+Ünvan — iki kolon aynı pencereyi açar, seçim ikisine birden yazılır) / Hesap Kodu+Ad / Maliyet Merkezi;
   satıra TEK tıklama = seçim, Seç butonu yok), `dropdown` ve `date` (liste/takvim body'ye
   portal'lı `.bt-grid-popover`'da; dropdown açıkken DS'teki `bt-input--active` + 12×7 chevron).
   İç içe window z-index: lookup overlay 1001 / window 1002, popover + overflow menü 1010.

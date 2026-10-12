@@ -464,7 +464,7 @@ function gridCellHtml(opts) {
   const linkIconHtml = contentLink ? `<span class="bt-grid__link-icon" aria-hidden="true">${_gridIconLinkOut}</span>` : '';
   const contentHtml  = showContent ? `<span class="bt-grid__content${contentLink ? ' bt-grid__content--link' : ''}${alignRight ? ' bt-grid__content--right' : ''}${showPlaceholder ? ' bt-grid__content--placeholder' : ''}"${onClickAttr}>${showPlaceholder ? placeholder : contentText}${linkIconHtml}</span>` : '';
   const trailingHtml = gridTrailingHtml(trailing, o.trailingOpts);
-  const editInner = o.editKind === 'lookup' ? _gridEditLookupHtml(editValue, o.editLookup)
+  const editInner = o.editKind === 'lookup' ? _gridEditLookupHtml(editValue, o.editLookup, o.inputType)
     : o.editKind === 'dropdown' ? _gridEditDropdownHtml(editValue)
     : o.editKind === 'date' ? _gridEditDateHtml(editValue)
     : _gridEditTextboxHtml(editValue, o.inputType);
@@ -516,13 +516,18 @@ window.btGridNumericInput = function (el, kind) {
    .bt-tbx__control--left + artı ikonu + .bt-tbx__field) hücre içinde. Sol
    ikona tıklama `onLookup` JS'ini çalıştırır (`this` = ikon) — genelde bir
    seçim penceresi açar, seçilen değer btGridCellSetValue ile hücreye yazılır.
-   onmousedown preventDefault: ikona basınca input blur olup edit kapanmasın. */
+   onmousedown preventDefault: ikona basınca input blur olup edit kapanmasın.
+   inputType verilirse (ör. Cari Numarası 'integer') elle yazarken TextBox'taki
+   aynı sayısal kısıt uygulanır. */
 const _slkIconPlus = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
-function _gridEditLookupHtml(value, onLookup) {
+function _gridEditLookupHtml(value, onLookup, inputType) {
   const v = (value == null ? '' : String(value)).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  const numAttrs = (inputType === 'decimal' || inputType === 'amount' || inputType === 'integer')
+    ? ` inputmode="${inputType === 'integer' ? 'numeric' : 'decimal'}" data-input-type="${inputType}" oninput="btGridNumericInput(this,'${inputType}')"`
+    : '';
   return `<div class="bt-input bt-input--sm" style="gap:0;width:100%;"><div class="bt-tbx__input">
     <div class="bt-tbx__control bt-tbx__control--left"><span class="bt-tbx__icon" role="button" aria-label="Listeden seç" style="cursor:pointer;" onmousedown="event.preventDefault()" onclick="event.stopPropagation();${onLookup || ''}">${_slkIconPlus}</span></div>
-    <div class="bt-tbx__field"><input class="bt-tbx__text" type="text" value="${v}" onkeydown="btGridCellEditKeydown(event,this)" onblur="btGridCellEditBlur(event,this)" /></div>
+    <div class="bt-tbx__field"><input class="bt-tbx__text" type="text" value="${v}"${numAttrs} onkeydown="btGridCellEditKeydown(event,this)" onblur="btGridCellEditBlur(event,this)" /></div>
   </div></div>`;
 }
 /* Bir hücreye dışarıdan (ör. lookup penceresinden) değer yazar — edit
