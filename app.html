@@ -164,20 +164,14 @@
      genişlik 0; açılınca 440px'e kayarak genişler (iç kısım sabit 440px, geçişte
      yeniden dizilmez) ve Hareketler daralır. */
   .m9-row-detail {
-    width: 0; flex-shrink: 0; overflow: hidden;
+    width: 0; flex-shrink: 0; overflow: hidden; box-sizing: border-box;
     background: var(--bt-surface-primary-default);
     border-left: 1px solid transparent;
     transition: width 0.3s cubic-bezier(0.4,0,0.2,1), border-color 0.3s;
   }
+  /* Sol form paneliyle (.m9-fis-form, 440px border-box) birebir aynı genişlik */
   .m9-row-detail.is-open { width: 440px; border-left-color: var(--bt-border-primary-default); }
-  .m9-row-detail__inner { width: 440px; height: 100%; display: flex; flex-direction: column; }
-  .m9-row-detail__header {
-    display: flex; align-items: center; justify-content: space-between; gap: var(--bt-space-xs);
-    padding: var(--bt-space-xs) var(--bt-space-2xl);
-    border-bottom: 1px solid var(--bt-border-primary-default);
-    flex-shrink: 0;
-  }
-  .m9-row-detail__actions { display: flex; align-items: center; gap: var(--bt-space-xs); }
+  .m9-row-detail__inner { width: 439px; height: 100%; display: flex; flex-direction: column; } /* 440 − 1px border */
   .m9-row-detail__body { flex: 1; min-height: 0; overflow-y: auto; padding: var(--bt-space-2xl); }
 
   .m9-fis-moves {

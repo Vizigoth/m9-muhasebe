@@ -610,14 +610,16 @@ function _m9RowDetailFieldHtml(r, c) {
 // sağdan kayarak genişler (app.html .m9-row-detail).
 function _m9RowDetailSectionHtml() {
   return `<section class="m9-row-detail" id="m9RowDetail" aria-hidden="true"><div class="m9-row-detail__inner">
-    <div class="m9-row-detail__header">
-      <div>
-        <div class="m9-fis-moves__title">Satır Detayı</div>
-        <div class="m9-fis-moves__subtitle" id="m9RowDetailSubtitle"></div>
+    <!-- bt-window header'ının aynısı: solda kapat + başlık, sağda Uygula -->
+    <div class="bt-window__header">
+      <div class="bt-window__header-left">
+        <div class="bt-window__controls">
+          <button type="button" class="bt-btn bt-btn--sm bt-btn--base-flat bt-btn--icon" aria-label="Satır Detayı'nı kapat" onclick="m9CloseRowDetail()">${_winIconClose}</button>
+        </div>
+        <span class="bt-window__title" id="m9RowDetailTitle">Satır Detayı</span>
       </div>
-      <div class="m9-row-detail__actions">
+      <div class="bt-window__header-actions">
         <button type="button" class="bt-btn bt-btn--sm bt-btn--primary-solid" onclick="m9ApplyRowDetail()">Uygula</button>
-        <button type="button" class="bt-btn bt-btn--sm bt-btn--base-flat bt-btn--icon" aria-label="Satır Detayı'nı kapat" onclick="m9CloseRowDetail()">${_winIconClose}</button>
       </div>
     </div>
     <div class="m9-row-detail__body"><div class="m9-hareket-form" id="m9RowDetailForm"></div></div>
@@ -642,7 +644,7 @@ function m9OpenRowDetail() {
   if (idx == null || !m9DetailRows[idx]) return;
   m9RowDetailIndex = idx;
   const r = m9DetailRows[idx];
-  document.getElementById('m9RowDetailSubtitle').textContent = `Sıra ${r.sira || String(idx + 1).padStart(3, '0')} — ${r.unvan || r.hesapKodu || 'yeni hareket'}`;
+  document.getElementById('m9RowDetailTitle').textContent = `Satır Detayı ${r.sira || String(idx + 1).padStart(3, '0')}`;
   const form = document.getElementById('m9RowDetailForm');
   form.innerHTML = _m9HareketFormHtml(c => _m9RowDetailFieldHtml(r, c));
   // Sayısal alanlar — grid'deki InCell edit'le aynı kısıt (btGridNumericInput)

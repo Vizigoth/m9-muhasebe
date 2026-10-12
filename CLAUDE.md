@@ -168,7 +168,8 @@ Bu, kullanıcının sözlü anlattığı, Figma node yapısından/metadata'sınd
   - **Satır Detayı** (sadece Ly1, layout `rowDetail: true`): Hareketler toolbar'ında Sil'in yanında;
     seçili satır yokken disabled. Seçili hareketin 41 alanını Fiş Detayı gövdesinin SAĞINDA açılan
     bir bölümde (section `#m9RowDetail`, bt-window DEĞİL — kullanıcı kararı; 0→440px kayarak açılır,
-    Hareketler daralır; `m9OpenRowDetail`/`m9CloseRowDetail`) formda düzenletir — düzen Detaylı Arama'yla ortak (`M9_HAREKET_FORM_LAYOUT`,
+    Hareketler daralır; genişlik sol form paneliyle aynı 440px; header bt-window header'ının
+    aynısı: solda × + "Satır Detayı 002", sağda Uygula; `m9OpenRowDetail`/`m9CloseRowDetail`) formda düzenletir — düzen Detaylı Arama'yla ortak (`M9_HAREKET_FORM_LAYOUT`,
     `_m9HareketFormHtml`), alan component'i grid'deki edit türüyle aynı (lookup → Select LookUp,
     + ikonu aynı lookup penceresini açar ve seçimi forma yazar; dropdown/tarih/sayı kısıtı).
     Uygula → satıra yazar (tutar 2 ondalık, tarih grid biçimi), grid/toplam yenilenir, satır seçili
