@@ -868,13 +868,19 @@ function btGridFilterCloseAll() {
     panel.remove();
   });
 }
+/* Filtre sonrası: footer yeniden hesaplanır, grid dışındaki özet alanları
+   (ör. summary şeridi) için bubbling 'btgridfilterchange' olayı yayınlanır. */
+function _btGridAfterFilter(grid) {
+  btGridFooterUpdate(grid);
+  grid.dispatchEvent(new CustomEvent('btgridfilterchange', { bubbles: true }));
+}
 window.btGridApplyFilters = function (grid) {
   if (!grid) return;
   const body = grid.querySelector('.bt-grid__body');
   if (!body) return;
   const activeHeaders = Array.from(grid.querySelectorAll('.bt-grid__header-cell[data-filter-active="true"]'));
   const rows = Array.from(body.children).filter(r => r.classList.contains('bt-grid__row'));
-  if (!activeHeaders.length) { rows.forEach(r => { r.style.display = ''; }); btGridFooterUpdate(grid); return; }
+  if (!activeHeaders.length) { rows.forEach(r => { r.style.display = ''; }); _btGridAfterFilter(grid); return; }
   const filters = activeHeaders.map(h => ({
     nth: Array.from(h.parentElement.children).indexOf(h) + 1,
     values: new Set(JSON.parse(h.dataset.filterValues || '[]')),
@@ -887,7 +893,7 @@ window.btGridApplyFilters = function (grid) {
     });
     row.style.display = visible ? '' : 'none';
   });
-  btGridFooterUpdate(grid);
+  _btGridAfterFilter(grid);
 };
 function btGridFilterUpdateTriggerStyle(headerEl) {
   const btn = headerEl.querySelector('.bt-grid__filter-btn');
@@ -1072,35 +1078,40 @@ document.addEventListener('click', function (e) {
    satır sayısı; avg/min/max'ta hiç değer yoksa "—". Grid render'ından sonra,
    InCell commit'inde ve filtre uygulanınca çağrılır. el: grid'in içindeki/
    dışındaki herhangi bir eleman. */
-const _GRID_AGG_LABELS = { sum: 'Toplam', avg: 'Ortalama', min: 'En Az', max: 'En Çok', count: 'Kayıt' };
+const _GRID_AGG_LABELS = { sum: 'Toplam', avg: 'Ortalama', min: 'En Az', max: 'En Çok', count: 'Kayıt Sayısı' };
+const _btGridOf = el => el && (el.classList.contains('bt-grid') ? el : (el.closest('.bt-grid') || el.querySelector('.bt-grid')));
+/* Tek bir aggregate'in değeri — footer'ın ve grid DIŞINDAKİ özet alanlarının
+   (ör. summary şeridi) ORTAK hesabı, böylece ikisi her zaman aynı sonucu verir.
+   field: kolonun data-field'ı; kind: sum|avg|min|max|count. Değer yoksa null. */
+window.btGridAggregate = function (el, field, kind) {
+  const grid = _btGridOf(el);
+  if (!grid) return null;
+  const rows = [...grid.querySelectorAll(':scope > .bt-grid__body > .bt-grid__row')].filter(r => r.style.display !== 'none');
+  if (kind === 'count') return rows.length;
+  const nums = rows.map(r => {
+    const c = r.querySelector(`.bt-grid__cell[data-field="${field}"] .bt-grid__content`);
+    if (!c || c.classList.contains('bt-grid__content--placeholder')) return NaN;
+    return parseFloat(c.textContent.replace(',', '.'));
+  }).filter(n => !isNaN(n));
+  if (kind === 'sum') return nums.reduce((s, n) => s + n, 0);
+  if (!nums.length) return null;
+  if (kind === 'avg') return nums.reduce((s, n) => s + n, 0) / nums.length;
+  return Math[kind](...nums);
+};
 window.btGridFooterUpdate = function (el) {
-  const grid = el && (el.classList.contains('bt-grid') ? el : (el.closest('.bt-grid') || el.querySelector('.bt-grid')));
+  const grid = _btGridOf(el);
   const footer = grid && grid.querySelector(':scope > .bt-grid__footer');
   if (!footer) return;
-  const rows = [...grid.querySelectorAll(':scope > .bt-grid__body > .bt-grid__row')].filter(r => r.style.display !== 'none');
-  [...footer.children].forEach((cell, i) => {
-    cell.querySelectorAll('.bt-grid__footer-agg').forEach(aggEl => {
-      const kind = aggEl.dataset.agg;
-      const nums = kind === 'count' ? [] : rows.map(r => {
-        const c = r.children[i] && r.children[i].querySelector('.bt-grid__content');
-        if (!c || c.classList.contains('bt-grid__content--placeholder')) return NaN;
-        return parseFloat(c.textContent.replace(',', '.'));
-      }).filter(n => !isNaN(n));
-      let v;
-      if (kind === 'count') v = rows.length;
-      else if (kind === 'sum') v = nums.reduce((s, n) => s + n, 0);
-      else if (!nums.length) v = null;
-      else if (kind === 'avg') v = nums.reduce((s, n) => s + n, 0) / nums.length;
-      else v = Math[kind](...nums);
-      aggEl.querySelector('.bt-grid__footer-value').textContent = v == null ? '—' : v.toFixed(Number(aggEl.dataset.decimals));
-      aggEl.classList.toggle('bt-grid__footer-agg--empty', v == null || Math.abs(v) < 0.005);
-    });
+  footer.querySelectorAll('.bt-grid__footer-agg').forEach(aggEl => {
+    const v = btGridAggregate(grid, aggEl.dataset.aggKey.split(':')[0], aggEl.dataset.agg);
+    aggEl.querySelector('.bt-grid__footer-value').textContent = v == null ? '—' : v.toFixed(Number(aggEl.dataset.decimals));
+    aggEl.classList.toggle('bt-grid__footer-agg--empty', v == null || Math.abs(v) < 0.005);
   });
 };
 
 // Tek bir footer aggregate'ini gizler/gösterir (key = 'field:aggregate').
 window.btGridFooterSetAgg = function (el, key, visible) {
-  const grid = el && (el.classList.contains('bt-grid') ? el : (el.closest('.bt-grid') || el.querySelector('.bt-grid')));
+  const grid = _btGridOf(el);
   const agg = grid && grid.querySelector(`:scope > .bt-grid__footer .bt-grid__footer-agg[data-agg-key="${key}"]`);
   if (agg) agg.hidden = !visible;
 };
