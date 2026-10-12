@@ -828,7 +828,7 @@ function _m9RenderWindowBodyLy3(row, detailRows) {
   body.innerHTML =
     `<div class="m9-ly3-row">` +
     _m9Ly3CardHtml('fis', 'Fiş Bilgileri', 'Fişin türü, tarihleri ve açıklaması', fisBilgileri) +
-    _m9Ly3CardHtml('edefter', 'E-Defter Bilgileri', 'E-Defter evrak bilgileri', eDefterBilgileri) +
+    _m9Ly3CardHtml('edefter', 'E-Defter Bilgileri', 'E-Defter ödeme ve evrak bilgileri', eDefterBilgileri) +
     `</div>` +
     `<section class="m9-ly3-panel m9-ly3-panel--fill">${_m9HareketlerCardHtml()}</section>`;
 
