@@ -138,12 +138,11 @@
   #m9Lookup .bt-searchbox { flex-shrink: 0; width: 100%; }
   #m9LookupGrid { flex: 1; min-height: 0; border-radius: var(--bt-radius-sm, 4px); }
   /* Hareketler › Detaylı Arama (sm window) — grid'in her alanı bir input;
-     panel genişliğine göre 3 → 2 → 1 kolon */
+     2 kolon, M9_DETAIL_SEARCH_LAYOUT'ta tek başına olan alanlar tam genişlik */
   #m9DetailSearch .bt-window__panel { container-type: inline-size; }
-  .m9-search-info { font: var(--bt-text-xs-regular); color: var(--bt-text-primary-emphasis); }
-  .m9-search-form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--bt-space-2xl); }
-  @container (max-width: 720px) { .m9-search-form { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-  @container (max-width: 420px) { .m9-search-form { grid-template-columns: minmax(0, 1fr); } }
+  .m9-search-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--bt-space-2xl); }
+  .m9-search-form__full { grid-column: 1 / -1; }
+  @container (max-width: 320px) { .m9-search-form { grid-template-columns: minmax(0, 1fr); } }
   /* Overflow Menu listesi açılınca body'ye portal'lanıyor ve DS'teki z-index'i
      200 — .bt-window (1000) içinden açıldığında pencerenin ARKASINDA kalıyordu. */
   body > .bt-ovf-menu__list[data-bt-ovf-portal="1"] { z-index: 1010; }

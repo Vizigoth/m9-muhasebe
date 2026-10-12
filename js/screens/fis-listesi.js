@@ -442,7 +442,7 @@ function m9ApplyLookup(idx) {
      alanı için bir input (sm window); doldurulan her alan bir kriter (VE). Metin/sayı
      alanları "içerir", tarih alanları dd/mm/yyyy "içerir" (yazarken daralır),
      dropdown alanları birebir eşit ("Tümü" = kriter yok). Yazdıkça grid canlı
-     filtrelenir; pencerede kaç hareketin eşleştiği görünür.
+     filtrelenir. Temizle header'daki more (⋯) Overflow Menu'de.
    İkisi birlikte ve kolon filtreleriyle VE'lenir — grid motorunun ek satır
    filtresi kancası (#m9DetailGrid._btRowFilter, bkz. btGridApplyFilters).
    Aramadayken Ekle ile eklenen satır kriterlere uymasa da görünür kalır
@@ -474,25 +474,40 @@ function m9ApplyDetailSearch() {
   if (!grid) return;
   btGridApplyFilters(grid);
   btGridFooterUpdate(grid);
-  const info = document.getElementById('m9DetailSearchInfo');
-  if (info) {
-    const rows = [...grid.querySelectorAll('.bt-grid__body .bt-grid__row')];
-    const shown = rows.filter(r => r.style.display !== 'none').length;
-    const n = Object.keys(m9DetailCriteria).length;
-    info.textContent = n
-      ? `${n} alana göre arama — ${rows.length} hareketten ${shown} tanesi eşleşiyor`
-      : `Aramak istediğin alanları doldur — ${rows.length} hareketin tamamı gösteriliyor`;
-  }
+}
+/* Form düzeni — mantıksal sıra; satır başına 1 alan (tam genişlik: uzun metin /
+   açıklama) ya da 2 alan (birbirini tamamlayan çift: kod–ad, borç–alacak,
+   başlangıç–bitiş…). Listede olmayan bir kolon olursa sona tek başına eklenir. */
+const M9_DETAIL_SEARCH_LAYOUT = [
+  ['cariNo', 'unvan'], ['tarihBazliUnvan'],
+  ['hesapKodu', 'ad'], ['tarihBazliAd'],
+  ['izahat'],
+  ['borc', 'alacak'], ['kur', 'kurFiyati'], ['borcluAdet', 'alacakAdet'],
+  ['miktar', 'birim'], ['birimFiyati', 'kdvTutari'],
+  ['maliyetMerkezi', 'maliyetMerkeziAciklama'], ['proje'],
+  ['evrakTipi', 'evrakNo'], ['belgeTuru', 'indeksNo'],
+  ['valorTarihi', 'duzeltmeyeEsasTarih'], ['baslangicTarihi', 'bitisTarihi'],
+  ['enflasyonKatilmaz'], ['transferBilgisi'], ['ident', 'formIdent'],
+  ['eDefterOdemeTuru', 'eDefterEvrakTuru'], ['eDefterEvrakTuruAciklama'], ['eDefterEvrakNo', 'eDefterEvrakTarihi'],
+  ['baBs'], ['baBsMatrah', 'baBsKdvTutari'], ['baBsAciklama'],
+];
+function _m9DetailSearchFieldHtml(c) {
+  const sm = { size: 'sm' };
+  const id = 'm9q_' + c.field;
+  if (c.editKind === 'dropdown') return winDropdownHtml({ ...sm, id, label: c.headerText, value: '', placeholder: 'Tümü', options: ['Tümü', ...c.editOptions] });
+  if (c.editKind === 'date') return winDateHtml({ ...sm, id, label: c.headerText, value: '', placeholder: 'gg/aa/yyyy' });
+  return winFieldHtml(c.headerText, '', id, { ...sm, placeholder: c.headerText });
 }
 function _m9DetailSearchFormHtml() {
-  const sm = { size: 'sm' };
-  return _m9SearchCols().map(c => {
-    const id = 'm9q_' + c.field;
-    if (c.editKind === 'dropdown') return winDropdownHtml({ ...sm, id, label: c.headerText, value: '', placeholder: 'Tümü', options: ['Tümü', ...c.editOptions] });
-    if (c.editKind === 'date') return winDateHtml({ ...sm, id, label: c.headerText, value: '', placeholder: 'gg/aa/yyyy' });
-    return winFieldHtml(c.headerText, '', id, { ...sm, placeholder: c.headerText });
-  }).join('');
+  const cols = Object.fromEntries(_m9SearchCols().map(c => [c.field, c]));
+  const placed = new Set(M9_DETAIL_SEARCH_LAYOUT.flat());
+  const rows = [...M9_DETAIL_SEARCH_LAYOUT, ...Object.keys(cols).filter(f => !placed.has(f)).map(f => [f])];
+  return rows.map(r => r.length === 1
+    ? `<div class="m9-search-form__full">${_m9DetailSearchFieldHtml(cols[r[0]])}</div>`
+    : r.map(f => _m9DetailSearchFieldHtml(cols[f])).join('')).join('');
 }
+// Lucide eraser — Temizle (more menüsü)
+const _m9IcoEraser = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg>';
 // Formdaki dolu alanlar → m9DetailCriteria
 function _m9ReadDetailCriteria() {
   const crit = {};
@@ -512,9 +527,9 @@ function m9EnsureDetailSearchWindow() {
     id: 'm9DetailSearch',
     size: 'sm',
     title: 'Detaylı Arama',
-    headerActions: `<button type="button" class="bt-btn bt-btn--sm bt-btn--base-flat" onclick="m9ClearDetailSearch()">Temizle</button>
+    headerActions: `${renderOverflowMenu([{ key: 'clear', label: 'Temizle', icon: _m9IcoEraser, onClick: 'm9ClearDetailSearch()' }], { label: 'Diğer işlemler' })}
       <button type="button" class="bt-btn bt-btn--sm bt-btn--primary-solid" onclick="dexClosePanel('m9DetailSearch','m9DetailSearchOv')">Tamam</button>`,
-    bodyHtml: `<div class="m9-search-info" id="m9DetailSearchInfo"></div><div class="m9-search-form" id="m9DetailSearchForm">${_m9DetailSearchFormHtml()}</div>`,
+    bodyHtml: `<div class="m9-search-form" id="m9DetailSearchForm">${_m9DetailSearchFormHtml()}</div>`,
   }));
   // Canlı arama — TextBox 'input', Dropdown/DatePicker 'change' yayar
   const win = document.getElementById('m9DetailSearch');
