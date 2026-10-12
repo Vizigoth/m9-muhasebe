@@ -109,8 +109,8 @@ Bu, kullanıcının sözlü anlattığı, Figma node yapısından/metadata'sınd
 - Ekranlar hash route'larıyla açılıyor (`js/router.js`): her drawer yaprak item'ının `id`'si
   bir route, ekranlar `js/screens/*.js` içinde `M9_SCREENS[route] = { title, render(toolbar, body) }`
   olarak kaydoluyor ve `app.html`'e script olarak ekleniyor. Şu an sadece
-  Fiş Listesi yazıldı — beş route'tan açılıyor: `yevmiye-fis-listesi-ly1` … `-ly5` (aynı
-  liste ve veri, kayıt window'unun beş layout denemesi; `M9_FIS_WINDOW_LAYOUTS` ile seçiliyor —
+  Fiş Listesi yazıldı — altı route'tan açılıyor: `yevmiye-fis-listesi-ly1` … `-ly6` (aynı
+  liste ve veri, kayıt window'unun altı layout denemesi; `M9_FIS_WINDOW_LAYOUTS` ile seçiliyor —
   her layout `{ render, footer?, summary? }`). Diğerleri "henüz hazırlanmadı" placeholder'ı.
   (2026-10-12'de yeniden numaralandı: eski Ly1 → Ly2, eski Ly2 → Ly3, yeni Ly1 eklendi.)
   - **Ly1**: Ly2 ile aynı gövde ama summary şeridi YOK — toplamlar grid footer'ında.
@@ -148,8 +148,8 @@ Bu, kullanıcının sözlü anlattığı, Figma node yapısından/metadata'sınd
     E-Defter (2 kolon, Açıklama düzenlenebilir) kartları yan yana (`.m9-ly3-row`, 1167fr/647fr,
     eşit yükseklik; gövde <1360px'te alt alta), altta Hareketler + summary. Kartlar sabit (aç/kapa
     yok). Eski daraltılabilir kart kodu (Figma 1752:165085 — başlık tıklanır, kapalıyken özet,
-    localStorage) duruyor: `_m9Ly3CardHtml`'e `collapsed` verilince geri gelir; kullanıcı
-    daraltılabilir versiyonu ayrıca deneyecek. Ly3/Ly4/Ly5'e özel: Toplam Bakiye ≠ 0 kırmızı.
+    localStorage) duruyor: `_m9Ly3CardHtml`'e `collapsed` verilince geri gelir — Ly6 bunu kullanır.
+    Ly3…Ly6'ya özel: Toplam Bakiye ≠ 0 kırmızı.
   - **Ly4**: Ly3'ün birebir kopyası — kullanıcı yeni bir layout kullanımını bunun üzerinde
     deneyecek (henüz farkı yok).
   - **Ly5** (eski Ly4, 2026-10-12'de yeniden numaralandı): Ly3'ün aynısı (`_m9RenderWindowBodyLy3`, layout `stacked: true`) — Fiş ve E-Defter
@@ -157,6 +157,12 @@ Bu, kullanıcının sözlü anlattığı, Figma node yapısından/metadata'sınd
     kartı doldurur. Hareketler min-height 640px (Ly3'te 320); sığmazsa gövde kayar.
     Toplamlar Ly1 gibi grid footer'ında (summary yok); Toplamlar menüsü footer'ı yönetir,
     tercih ayrı (`m9.ly5.footer*`).
+  - **Ly6** (2026-10-12): Ly5'in daraltılabilir versiyonu (layout `collapsible: true`) — Fiş,
+    E-Defter VE Hareketler kartları aç/kapa (başlığın tamamı tıklanır, chevron, `m9Ly3ToggleCard`).
+    Kapalı kartın alt başlığında özet (`M9_LY3_CARD_SUMMARY`; Hareketler: "4 hareket · Borç … ·
+    Alacak …"). Durum layout başına localStorage `m9.ly6.collapsed` (varsayılan hepsi açık).
+    Hareketler kapalıyken 640px min-height bırakılır (`:has(.is-collapsed)`); açıkken toolbar
+    + grid `.m9-fis-moves__body` içinde (header–toolbar arası gap toolbar margin'i, 0fr'de kapansın diye).
   - Ortak: window toolbar (sığmayan butonlar Overflow Menu'ye), Hareketler kartı
     (`_m9HareketlerCardHtml`), summary şeridi (formüller VARSAYIM, bkz. `M9_HAREKET_SUMMARY`).
   - Pencere yığını (drawer gibi, DS'te yok — `_winStack`/`_winRestack`, components.js):

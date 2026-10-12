@@ -246,6 +246,13 @@
   .m9-ly3-row--stacked ~ .m9-ly3-panel--fill { min-height: 640px; }
   .m9-ly3-panel--fill { flex: 1 0 auto; min-height: 320px; /* Figma 1080px window'a iki form kartı açıkken sığar */ display: flex; flex-direction: column; }
   .m9-ly3-panel--fill > .m9-fis-moves__card { flex: 1; }
+  /* Ly6 — daraltılabilir Hareketler: header ile toolbar arası gap açılır gövdenin içinde
+     (kapalıyken header altında boşluk kalmasın); kapalıyken panel min-height'ı bırakır. */
+  .m9-ly3-card--moves { gap: 0; }
+  .m9-ly3-card--moves > .m9-ly3-card__collapse { flex: 1; min-height: 0; }
+  .m9-fis-moves__body { display: flex; flex-direction: column; gap: var(--bt-space-xl); }
+  .m9-fis-moves__body > .m9-fis-moves__toolbar { margin-top: var(--bt-space-xl); } /* padding değil — 0fr'de padding kapanmaz */
+  .m9-ly3-panel--fill:has(> .m9-ly3-card.is-collapsed) { flex: 0 0 auto; min-height: 0; }
   .m9-ly3-card {
     background: var(--bt-surface-primary-default);
     border: 1px solid var(--bt-border-primary-default);
@@ -262,7 +269,7 @@
   .m9-ly3-card__toggle svg { transition: transform 180ms ease; }
   .m9-ly3-card.is-collapsed .m9-ly3-card__toggle svg { transform: rotate(-90deg); }
   /* Aç/kapa — grid-rows 0fr↔1fr (sabit yükseklik gerektirmeyen yumuşak geçiş) */
-  .m9-ly3-card__collapse { display: grid; grid-template-rows: 1fr; transition: grid-template-rows 220ms ease; }
+  .m9-ly3-card__collapse { display: grid; grid-template-rows: 1fr; grid-template-columns: minmax(0, 1fr); /* geniş grid kartı taşırmasın */ transition: grid-template-rows 220ms ease; }
   .m9-ly3-card.is-collapsed .m9-ly3-card__collapse { grid-template-rows: 0fr; }
   .m9-ly3-card__inner { min-height: 0; overflow: hidden; }
   /* Açık ve durağan kartta kırpma yok — Date Picker takvimi / Dropdown listesi kartın dışına taşabilsin */

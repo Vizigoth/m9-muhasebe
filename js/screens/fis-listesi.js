@@ -1,7 +1,7 @@
 /* ============================================================
    M9 MUHASEBE — Ekran: Fiş Listesi
-   Nav: Bilgi Girişi › Yevmiye Fiş Listesi Ly1 … Ly5
-   (route: yevmiye-fis-listesi-ly1 … -ly5 — aynı liste, farklı window
+   Nav: Bilgi Girişi › Yevmiye Fiş Listesi Ly1 … Ly6
+   (route: yevmiye-fis-listesi-ly1 … -ly6 — aynı liste, farklı window
    layout; bkz. M9_FIS_WINDOW_LAYOUTS)
    Figma "M9 Design" › Main Page 1 (1697:25814): Toolbar + Data Table +
    Kayıt Detayı paneli (bt-window XL). Kabuk (sidebar/header) ve ekran
@@ -914,12 +914,20 @@ let m9EditingIndex = null; // null → Yeni Ekle; sayı → m9FisRows[] içindek
    layout'un `totals` hedefi varsa (Ly1/Ly2) çizilir. */
 function _m9HareketlerCardHtml() {
   const lay = M9_FIS_WINDOW_LAYOUTS[m9FisLayout];
+  // Ly6 — Hareketler de Fiş/E-Defter kartları gibi daraltılabilir (aynı m9Ly3ToggleCard).
+  const collapsed = lay.collapsible ? _m9Ly3LoadCollapsed().hareketler : undefined;
+  const collapsible = collapsed !== undefined;
+  const subtitle = 'Borç ve alacak hareketleri';
   return `
-      <div class="m9-fis-moves__card">
-        <div class="m9-fis-moves__header">
-          <div class="m9-fis-moves__title">Hareketler</div>
-          <div class="m9-fis-moves__subtitle">Borç ve alacak hareketleri</div>
+      <div class="m9-fis-moves__card${collapsible ? ` m9-ly3-card m9-ly3-card--collapsible m9-ly3-card--moves${collapsed ? ' is-collapsed' : ''}` : ''}" data-card="hareketler">
+        <div class="m9-fis-moves__header${collapsible ? ' m9-ly3-card__header' : ''}"${collapsible ? ' onclick="m9Ly3ToggleCard(this)"' : ''}>
+          <div>
+            <div class="m9-fis-moves__title">Hareketler</div>
+            <div class="m9-fis-moves__subtitle${collapsible ? ' m9-ly3-card__subtitle' : ''}" data-default="${subtitle}">${subtitle}</div>
+          </div>
+          ${collapsible ? `<button type="button" class="bt-btn bt-btn--sm bt-btn--base-flat bt-btn--icon m9-ly3-card__toggle" aria-label="Hareketler panelini aç/kapat" aria-expanded="${!collapsed}">${_m9Ly3Chevron}</button>` : ''}
         </div>
+        ${collapsible ? `<div class="m9-ly3-card__collapse" ontransitionend="if (event.target === this) this.closest('.m9-ly3-card').classList.remove('is-animating')"><div class="m9-ly3-card__inner m9-fis-moves__body">` : ''}
         <div class="m9-fis-moves__toolbar">
           <button type="button" class="bt-btn bt-btn--sm bt-btn--primary-solid" onclick="m9AddDetailRow()">${icoPlus}<span>Ekle</span></button>
           <button type="button" class="bt-btn bt-btn--sm bt-btn--base-flat" id="m9DetailDeleteBtn" disabled onclick="m9DeleteDetailRows()">${icoTrash}<span>Sil</span></button>
@@ -931,10 +939,11 @@ function _m9HareketlerCardHtml() {
           <div class="bt-grid-actions-container" id="m9DetailGrid"></div>
           ${lay.summary ? `<div class="m9-grid-summary" id="m9DetailSummary"${_m9SummaryShown() ? '' : ' hidden'}>${_m9SummaryItemsHtml()}</div>` : ''}
         </div>
+        ${collapsible ? '</div></div>' : ''}
       </div>`;
 }
 function _m9AfterBodyRender(detailRows) {
-  // Layout'a özel gövde stilleri (app.html'de .m9-ly3 altında) — Ly3/Ly4/Ly5 (dikey kart düzeni)
+  // Layout'a özel gövde stilleri (app.html'de .m9-ly3 altında) — Ly3…Ly6 (dikey kart düzeni)
   document.getElementById('m9RecordWindow-body').classList.toggle('m9-ly3', M9_FIS_WINDOW_LAYOUTS[m9FisLayout].render === _m9RenderWindowBodyLy3);
   m9DetailRows = detailRows;
   _m9ResetDetailSearch();
@@ -943,6 +952,8 @@ function _m9AfterBodyRender(detailRows) {
   // önce çalışır, bu delege listener bubble'da sonra).
   document.getElementById('m9DetailGrid').addEventListener('click', m9SyncDetailToolbar);
   document.getElementById('m9SaveBtn').disabled = true; // her açılışta sıfırlanır
+  // Ly6 — kapalı açılan kartların alt başlığında özet (form/grid çizildikten sonra)
+  document.querySelectorAll('#m9RecordWindow-body .m9-ly3-card.is-collapsed').forEach(_m9Ly3UpdateSubtitle);
 }
 
 function _m9RenderWindowBody(row, detailRows) {
@@ -1002,17 +1013,23 @@ let m9FisLayout = 'ly1';
      • Açık/kapalı durumu tarayıcıda hatırlanır (localStorage, kişisel tercih).
      • Summary'de Toplam Bakiye ≠ 0 (fiş dengede değil) kırmızı gösterilir. */
 const _m9Ly3Chevron = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>`;
-const M9_LY3_CARD_DEFAULTS = { fis: false, edefter: false }; // true = kapalı — Figma'da ikisi de açık
+const M9_LY3_CARD_DEFAULTS = { fis: false, edefter: false, hareketler: false }; // true = kapalı — Figma'da hepsi açık
+const _m9Ly3CollapsedKey = () => `m9.${m9FisLayout}.collapsed`; // layout başına ayrı tercih (Ly6)
 function _m9Ly3LoadCollapsed() {
-  try { return { ...M9_LY3_CARD_DEFAULTS, ...JSON.parse(localStorage.getItem('m9.ly3.collapsed') || '{}') }; }
+  try { return { ...M9_LY3_CARD_DEFAULTS, ...JSON.parse(localStorage.getItem(_m9Ly3CollapsedKey()) || '{}') }; }
   catch (e) { return { ...M9_LY3_CARD_DEFAULTS }; }
 }
 function _m9Ly3SaveCollapsed(key, collapsed) {
-  try { const s = _m9Ly3LoadCollapsed(); s[key] = collapsed; localStorage.setItem('m9.ly3.collapsed', JSON.stringify(s)); } catch (e) {}
+  try { const s = _m9Ly3LoadCollapsed(); s[key] = collapsed; localStorage.setItem(_m9Ly3CollapsedKey(), JSON.stringify(s)); } catch (e) {}
 }
 // Kapalı kartın alt başlığında gösterilen özet — o an formda girili değerlerden.
 const M9_LY3_CARD_SUMMARY = {
   fis:     () => [_m9Ly3Val('m9f_fisNo'), _m9Ly3Val('m9f_fisTarihi'), _m9Ly3Dd('m9f_fisTipi', M9_FIS_TIPI_OPTS), _m9Ly3Dd('m9f_islemTuru', M9_ISLEM_TURU_OPTS)],
+  hareketler: () => [
+    `${m9DetailRows.length} hareket`,
+    `Borç ${_m9Sum(m9DetailRows, 'borc').toFixed(2)}`,
+    `Alacak ${_m9Sum(m9DetailRows, 'alacak').toFixed(2)}`,
+  ],
   edefter: () => [_m9Ly3Dd('m9f_edOdemeTuru', M9_ED_ODEME_TURU_OPTS), _m9Ly3Dd('m9f_edEvrakTuru', M9_ED_EVRAK_TURU_OPTS), _m9Ly3Val('m9f_edEvrakNo'), _m9Ly3Val('m9f_edEvrakTarihi')],
 };
 function _m9Ly3Val(id) { const el = document.getElementById(id); return el ? el.value.trim() : ''; }
@@ -1027,7 +1044,7 @@ function m9Ly3ToggleCard(header) {
   const card = header.closest('.m9-ly3-card');
   card.classList.add('is-animating'); // geçiş boyunca içerik kırpılır (bkz. app.html)
   const collapsed = card.classList.toggle('is-collapsed');
-  header.querySelector('button').setAttribute('aria-expanded', String(!collapsed));
+  header.querySelector('.m9-ly3-card__toggle').setAttribute('aria-expanded', String(!collapsed));
   _m9Ly3UpdateSubtitle(card);
   _m9Ly3SaveCollapsed(card.dataset.card, collapsed);
 }
@@ -1084,12 +1101,13 @@ function _m9RenderWindowBodyLy3(row, detailRows) {
     <div class="m9-ly3-grid__full">${winTextareaHtml('Açıklama', row.eDefterAciklama, 'm9f_edAciklama', { ...sm, placeholder: 'Açıklama' })}</div>
   </div>`;
 
-  // Fiş + E-Defter sabit kartlar — Ly3/Ly4 yan yana, Ly5 alt alta (daraltılabilir versiyon
-  // ayrıca denenecek — _m9Ly3CardHtml'e collapsed değeri verilince aç/kapa geri gelir).
+  // Fiş + E-Defter — Ly3/Ly4 yan yana, Ly5 alt alta sabit kartlar; Ly6 alt alta daraltılabilir
+  // (collapsed değeri verilince kart aç/kapa olur, Hareketler de — bkz. _m9HareketlerCardHtml).
+  const collapsed = M9_FIS_WINDOW_LAYOUTS[m9FisLayout].collapsible ? _m9Ly3LoadCollapsed() : {};
   body.innerHTML =
     `<div class="m9-ly3-row${stacked ? " m9-ly3-row--stacked" : ""}">` +
-    _m9Ly3CardHtml('fis', 'Fiş Bilgileri', 'Fişin türü, tarihleri ve açıklaması', fisBilgileri) +
-    _m9Ly3CardHtml('edefter', 'E-Defter Bilgileri', 'E-Defter ödeme ve evrak bilgileri', eDefterBilgileri) +
+    _m9Ly3CardHtml('fis', 'Fiş Bilgileri', 'Fişin türü, tarihleri ve açıklaması', fisBilgileri, collapsed.fis) +
+    _m9Ly3CardHtml('edefter', 'E-Defter Bilgileri', 'E-Defter ödeme ve evrak bilgileri', eDefterBilgileri, collapsed.edefter) +
     `</div>` +
     `<section class="m9-ly3-panel m9-ly3-panel--fill">${_m9HareketlerCardHtml()}</section>`;
 
@@ -1103,13 +1121,16 @@ function _m9RenderWindowBodyLy3(row, detailRows) {
            Toplamlar menüsü Ly2 gibi summary'yi yönetir (tercihler ayrı)
      ly4 — ly3'ün birebir kopyası (yeni bir layout denemesinin başlangıç noktası)
      ly5 — ly3'ün kartları alt alta (E-Defter 4 kolon, kartı doldurur); toplamlar Ly1 gibi
-           grid footer'ında (summary yok), Toplamlar menüsü footer'ı yönetir */
+           grid footer'ında (summary yok), Toplamlar menüsü footer'ı yönetir
+     ly6 — ly5'in daraltılabilir versiyonu: Fiş, E-Defter ve Hareketler kartları aç/kapa
+           (kapalı kartın alt başlığında özet; durum m9.ly6.collapsed'da) */
 const M9_FIS_WINDOW_LAYOUTS = {
   ly1: { render: _m9RenderWindowBody, footer: true, totals: 'footer', rowDetail: true },
   ly2: { render: _m9RenderWindowBody, summary: true, totals: 'summary' },
   ly3: { render: _m9RenderWindowBodyLy3, summary: true, totals: 'summary' },
   ly4: { render: _m9RenderWindowBodyLy3, summary: true, totals: 'summary' },
   ly5: { render: _m9RenderWindowBodyLy3, footer: true, totals: 'footer', stacked: true },
+  ly6: { render: _m9RenderWindowBodyLy3, footer: true, totals: 'footer', stacked: true, collapsible: true },
 };
 
 function m9OpenRecordWindow(idx) {
@@ -1206,3 +1227,4 @@ M9_SCREENS['yevmiye-fis-listesi-ly2'] = m9FisListesiScreen('ly2');
 M9_SCREENS['yevmiye-fis-listesi-ly3'] = m9FisListesiScreen('ly3');
 M9_SCREENS['yevmiye-fis-listesi-ly4'] = m9FisListesiScreen('ly4');
 M9_SCREENS['yevmiye-fis-listesi-ly5'] = m9FisListesiScreen('ly5');
+M9_SCREENS['yevmiye-fis-listesi-ly6'] = m9FisListesiScreen('ly6');
