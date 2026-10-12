@@ -131,8 +131,8 @@
      pencere. DS'te overlay 999 / window 1000 — tek pencere için; iç içe açılınca
      ikinci overlay xl window'un altında kalıp karartmıyor/dışarı tıklamayı
      yakalamıyordu, bu yüzden bir kat yukarı alınıyor. */
-  #m9LookupOv { z-index: 1001; }
-  #m9Lookup { z-index: 1002; }
+  #m9LookupOv, #m9DetailSearchOv { z-index: 1001; }
+  #m9Lookup, #m9DetailSearch { z-index: 1002; } /* Detaylı Arama da aynı iç içe pencere */
   /* arama tam genişlik, grid kalan yüksekliği doldurur */
   #m9Lookup .bt-window__panel { min-height: 0; overflow: hidden; }
   #m9Lookup .bt-searchbox { flex-shrink: 0; width: 100%; }
