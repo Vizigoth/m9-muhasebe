@@ -822,7 +822,7 @@ function _m9RenderWindowBody(row, detailRows) {
   const sm = { size: 'sm' };
 
   const fisBilgileri = `
-    ${winFieldHtml('Fiş Numarası', row.fisNo, 'm9f_fisNo', { ...sm, placeholder: 'Fiş Numarası' })}
+    ${winFieldHtml('Fiş Numarası', row.fisNo, 'm9f_fisNo', { ...sm, placeholder: 'Fiş Numarası', readonly: true })}
     ${winDateHtml({ ...sm, id: 'm9f_fisTarihi', label: 'Fiş Tarihi', value: m9ParseDate(row.fisTarihi) })}
     ${winDropdownHtml({ ...sm, id: 'm9f_fisTipi', label: 'Fiş Tipi', value: row.fisTipi, placeholder: 'Fiş Tipi', options: M9_FIS_TIPI_OPTS })}
     ${winFieldHtml('Önceki Numarası', row.oncekiNo, 'm9f_oncekiNo', { ...sm, placeholder: 'Önceki Numarası' })}
@@ -930,7 +930,7 @@ function _m9RenderWindowBodyLy3(row, detailRows) {
   // Figma 1782:281034 — 5 kolon × 2 satır, Açıklama tam genişlik en altta.
   // Kullanıcı alanı Figma'da yok; Giriş/Son Güncelleme Tarihi DatePicker "Read Only".
   const fisBilgileri = `<div class="m9-ly3-grid m9-ly3-grid--5">
-    ${winFieldHtml('Fiş Numarası', row.fisNo, 'm9f_fisNo', { ...sm, placeholder: 'Fiş Numarası' })}
+    ${winFieldHtml('Fiş Numarası', row.fisNo, 'm9f_fisNo', { ...sm, placeholder: 'Fiş Numarası', readonly: true })}
     ${winDateHtml({ ...sm, id: 'm9f_fisTarihi', label: 'Fiş Tarihi', value: m9ParseDate(row.fisTarihi) })}
     ${winDropdownHtml({ ...sm, id: 'm9f_fisTipi', label: 'Fiş Tipi', value: row.fisTipi, placeholder: 'Fiş Tipi', options: M9_FIS_TIPI_OPTS })}
     ${winFieldHtml('Önceki Numarası', row.oncekiNo, 'm9f_oncekiNo', { ...sm, placeholder: 'Önceki Numarası' })}
@@ -987,6 +987,8 @@ function m9OpenNewRecordWindow() {
   document.getElementById('m9RecordWindow-title').textContent = 'Yeni Fiş';
   const emptyRow = {};
   M9_FIS_COLUMNS.forEach(c => { if (c.field) emptyRow[c.field] = ''; });
+  // Fiş Numarası Read Only — sistem verir: mevcutların en büyüğü + 1 (000007…)
+  emptyRow.fisNo = String(Math.max(0, ...m9FisRows.map(r => Number(r.fisNo) || 0)) + 1).padStart(6, '0');
   M9_FIS_WINDOW_LAYOUTS[m9FisLayout].render(emptyRow, []);
   dexOpenPanel('m9RecordWindow', 'm9RecordWindowOv');
 }
