@@ -467,11 +467,33 @@ function _m9AggItems() {
     summaryLabel: a.aggregate === 'count' ? _GRID_AGG_LABELS.count : `${_GRID_AGG_LABELS[a.aggregate]} ${c.headerText}`,
   })) : []);
 }
+/* Ly2 summary'sinin ÖZEL alanları — grid kolonu toplamı olmayan, türetilmiş
+   değerler (kullanıcı isteğiyle eski summary'den geri eklendi). Şeridin sonunda.
+     Toplam Bakiye  — Toplam Borç − Toplam Alacak; diğer toplamlar gibi GÖRÜNEN
+                      (filtrelenmiş) satırlardan (fiş dengedeyse 0.00).
+     Hesap Bakiyesi — SEÇİLİ satırın Hesap Kodu'na ait, bu fişteki TÜM
+                      hareketlerin Σ Borç − Σ Alacak'ı (hesap bakiyesi filtreye
+                      göre değişmemeli). Seçim yoksa 0.00. VARSAYIM — gerçek
+                      hesap bakiyesi veritabanından gelecek. */
+const M9_SUMMARY_CUSTOM = [
+  { key: 'custom:toplamBakiye', label: 'Toplam Bakiye',
+    calc: grid => (btGridAggregate(grid, 'borc', 'sum') || 0) - (btGridAggregate(grid, 'alacak', 'sum') || 0) },
+  { key: 'custom:hesapBakiyesi', label: 'Hesap Bakiyesi',
+    calc: () => {
+      const sel = m9SelectedDetailIndexes();
+      const hesapKodu = sel.length ? (m9DetailRows[sel[0]] || {}).hesapKodu : null;
+      const rows = hesapKodu ? m9DetailRows.filter(r => r.hesapKodu === hesapKodu) : [];
+      return _m9Sum(rows, 'borc') - _m9Sum(rows, 'alacak');
+    } },
+];
 // Summary şeridinin item'ları — Ly2'de menüde gizlenenler hariç.
 function _m9SummaryDefs() {
   if (_m9TotalsMode() !== 'summary') return M9_HAREKET_SUMMARY_LY3;
   const hidden = _m9TotalsHidden();
-  return _m9AggItems().filter(a => !hidden.includes(a.key)).map(a => ({ key: a.key, label: a.summaryLabel }));
+  return [
+    ..._m9AggItems().map(a => ({ key: a.key, label: a.summaryLabel })),
+    ...M9_SUMMARY_CUSTOM.map(c => ({ key: c.key, label: c.label })),
+  ].filter(s => !hidden.includes(s.key));
 }
 // Ayraç yalnızca GÖRÜNEN item'lar arasına girer.
 function _m9SummaryItemsHtml() {
@@ -499,10 +521,12 @@ function m9UpdateDetailSummary() {
   if (_m9TotalsMode() === 'summary') {
     const grid = document.getElementById('m9DetailGrid');
     const defs = Object.fromEntries(_m9AggItems().map(a => [a.key, a]));
+    const custom = Object.fromEntries(M9_SUMMARY_CUSTOM.map(c => [c.key, c]));
     box.querySelectorAll('[data-summary]').forEach(el => {
-      const a = defs[el.dataset.summary];
-      const v = btGridAggregate(grid, a.field, a.aggregate);
-      el.textContent = v == null ? '—' : v.toFixed(a.decimals);
+      const key = el.dataset.summary;
+      const a = defs[key];
+      const v = a ? btGridAggregate(grid, a.field, a.aggregate) : custom[key].calc(grid);
+      el.textContent = v == null ? '—' : v.toFixed(a ? a.decimals : 2);
       el.classList.toggle('m9-grid-summary__value--empty', v == null || Math.abs(v) < 0.005);
     });
     return;
@@ -553,8 +577,11 @@ const M9_TOTALS = {
   },
   summary: {
     store: 'm9.ly2.summary', masterLabel: 'Toplam Alanı',
-    // Ly1 footer'ıyla AYNI aggregate listesi
-    items: () => _m9AggItems().map(a => ({ key: a.key, label: a.menuLabel, icon: a.aggregate })),
+    // Ly1 footer'ıyla AYNI aggregate listesi + özel alanlar (bakiyeler — terazi ikonu)
+    items: () => [
+      ..._m9AggItems().map(a => ({ key: a.key, label: a.menuLabel, icon: a.aggregate })),
+      ...M9_SUMMARY_CUSTOM.map(c => ({ key: c.key, label: c.label, icon: 'balance' })),
+    ],
     applyMaster: () => _m9RenderSummary(),
     applyItem: () => _m9RenderSummary(),
   },
@@ -602,6 +629,7 @@ const _M9_ICO_AGG = {
   count: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="9" y2="9"/><line x1="4" x2="20" y1="15" y2="15"/><line x1="10" x2="8" y1="3" y2="21"/><line x1="16" x2="14" y1="3" y2="21"/></svg>', // hash
   min:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17V3"/><path d="m6 11 6 6 6-6"/><path d="M19 21H5"/></svg>', // arrow-down-to-line
   max:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h14"/><path d="m18 13-6-6-6 6"/><path d="M12 7v14"/></svg>', // arrow-up-to-line
+  balance: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>', // scale — özel bakiye alanları
 };
 // Ana switch ikonu — grid altındaki şerit (footer satırı / summary alanı)
 const _m9IcoFooterRow = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 15h18"/></svg>'; // panel-bottom

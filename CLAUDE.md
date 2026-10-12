@@ -138,7 +138,10 @@ Bu, kullanıcının sözlü anlattığı, Figma node yapısından/metadata'sınd
     `_m9AggItems()` (kolonların footer tanımı — Ly1 footer'ı, Ly2 summary'si ve iki menü TEK liste)
     + `btGridAggregate` (footer'la aynı hesap, görünen/filtrelenmiş satırlar; filtrede grid
     `btgridfilterchange` yayınlar). Etiketler "Kayıt Sayısı", "Toplam Borç", "Ortalama Kur Fiyatı".
-    Gizlenen item'ın ayracı da kalkar, hiç item kalmazsa şerit gizlenir; 8 item sığmazsa şerit
+    Sonda 2 ÖZEL alan (`M9_SUMMARY_CUSTOM`, menüde terazi ikonu): Toplam Bakiye (Toplam Borç −
+    Toplam Alacak, görünen satırlar) ve Hesap Bakiyesi (seçili satırın hesabının bu fişteki TÜM
+    hareketleri, filtreden bağımsız — VARSAYIM, gerçeği veritabanından gelecek).
+    Gizlenen item'ın ayracı da kalkar, hiç item kalmazsa şerit gizlenir; item'lar sığmazsa şerit
     kendi içinde yatay kayar. Ortak yapı: `M9_TOTALS` (footer / summary hedefi, layout'un `totals`
     alanı), tercihler layout başına ayrı localStorage (`m9.ly1.footer*` / `m9.ly2.summary*`).
     Ly3'te menü yok, summary eski 4 başlıkla (`M9_HAREKET_SUMMARY_LY3`) kalıyor.
